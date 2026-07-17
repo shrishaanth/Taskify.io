@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* ── Tailwind v4: enable class-based dark mode ── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Smooth theme colour transitions ── */
+html {
+  transition: background-color 250ms ease, color 250ms ease;
+}
+
+/* Apply to everything EXCEPT elements that need animation freedom */
+:root:not([data-animating]) *:not([data-no-transition]):not([data-no-transition] *) {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Opt out elements (framer-motion animated, inputs, etc.) */
+[data-no-transition],
+[data-no-transition] * {
+  transition: none !important;
+}
