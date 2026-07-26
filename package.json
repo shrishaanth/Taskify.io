@@ -1,0 +1,26 @@
+{
+  "name": "taskify",
+  "version": "2.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w packages/shared && npm run build -w packages/ui && npm run build -w server && npm run build -w client",
+    "build:server": "npm run build -w packages/shared && npm run build -w server",
+    "build:client": "npm run build -w packages/ui && npm run build -w client",
+    "lint": "npm run lint -w server && npm run lint -w client",
+    "test": "npm run test -w server",
+    "clean": "rm -rf node_modules packages/*/node_modules server/node_modules client/node_modules packages/*/dist server/dist client/dist"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "~5.7.3"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

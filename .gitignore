@@ -1,11 +1,14 @@
 # Dependencies
 node_modules/
-client/node_modules/
-server/node_modules/
 
 # Build outputs
-client/dist/
-server/dist/
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
 
 # Logs
 *.log
@@ -25,7 +28,13 @@ Thumbs.db
 .idea/
 
 # Vite cache
-client/.vite/
+.vite/
 
 # ts-node cache
-server/.ts-node/
+.ts-node/
+
+# Test artifacts
+coverage/
+
+# Docker
+.dockerignore

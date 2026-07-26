@@ -1,41 +1,102 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { JwtPayload } from "../types";
-import { UserModel } from "../models/user.model";
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { UserModel } from '../models';
+import { config } from '../config';
 
-const secret = process.env.JWT_SECRET || "secret";
+const secret = config.jwtSecret;
+
+export interface JwtPayload {
+  userId: string;
+  tokenVersion: number;
+}
+
+export function requireAdmin(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): void {
+  // Legacy compatibility: old routes are being retired in Phase 4.
+  // New routes use requirePermission instead.
+  if (!req.user) {
+    res.status(401).json({ message: 'Authentication required' });
+    return;
+  }
+  next();
+}
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;
 }
 
-/** Verifies the JWT and re-checks the user's current role from the database
- * on every request, so a role change (or account deletion) by an admin
- * takes effect immediately instead of waiting for the token to expire. */
-export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
+/**
+ * Verifies JWT and re-checks the user's tokenVersion from the database
+ * on every request. This ensures token revocation (password change, admin
+ * force-logout) takes effect immediately instead of waiting for token expiry.
+ */
+export async function requireAuth(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Missing token" });
+  if (!authHeader?.startsWith('Bearer ')) {
+    res.status(401).json({ message: 'Missing or invalid authorization header' });
+    return;
   }
 
   const token = authHeader.slice(7);
   try {
     const payload = jwt.verify(token, secret) as JwtPayload;
-    const user = await UserModel.findById(payload.userId).select('role').lean().exec();
-    if (!user) return res.status(401).json({ message: "Account no longer exists" });
 
-    req.user = { userId: payload.userId, role: user.role as JwtPayload['role'] };
+    // Fresh DB check: if tokenVersion doesn't match, the token is revoked
+    const user = await UserModel.findById(payload.userId)
+      .select('tokenVersion')
+      .lean()
+      .exec();
+
+    if (!user) {
+      res.status(401).json({ message: 'Account no longer exists' });
+      return;
+    }
+
+    if (user.tokenVersion !== payload.tokenVersion) {
+      res.status(401).json({ message: 'Token revoked — please log in again' });
+      return;
+    }
+
+    req.user = { userId: payload.userId, tokenVersion: payload.tokenVersion };
     next();
-  } catch {
-    res.status(401).json({ message: "Invalid token" });
+  } catch (err) {
+    if (err instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ message: 'Token expired' });
+      return;
+    }
+    res.status(401).json({ message: 'Invalid token' });
   }
 }
 
-/** Gate for Admin-only endpoints (create/edit/delete users, delete tasks,
- * assign tasks to others). Must run after requireAuth. */
-export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ message: "Admin role required" });
+/**
+ * Optional auth — sets req.user if a valid token is present, but doesn't
+ * reject the request if missing. Useful for public endpoints that show
+ * different content to authenticated users.
+ */
+export async function optionalAuth(
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    next();
+    return;
+  }
+
+  const token = authHeader.slice(7);
+  try {
+    const payload = jwt.verify(token, secret) as JwtPayload;
+    req.user = { userId: payload.userId, tokenVersion: payload.tokenVersion };
+  } catch {
+    // Silently ignore invalid tokens for optional auth
   }
   next();
 }

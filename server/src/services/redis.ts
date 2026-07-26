@@ -1,35 +1,24 @@
-import Redis from "ioredis";
-import { config } from "../config";
-
-/**
- * Redis is strictly optional. With REDIS_URL set we get:
- *   - Socket.IO pub/sub adapter (events reach users on ANY app instance)
- *   - cross-instance presence (who's online)
- *   - short-lived caching of hot reads (dashboard stats)
- *   - a distributed lock so scheduled jobs run once per cluster, not once
- *     per instance
- * Without it, everything degrades gracefully to single-instance behaviour.
- */
+import Redis from 'ioredis';
+import { config } from '../config';
 
 let client: Redis | null = null;
 let available = false;
 
 export function initRedis(): Redis | null {
   if (!config.redisUrl) {
-    console.log("Redis: REDIS_URL not set — running in single-instance mode");
+    console.log('Redis: not configured — running in single-instance mode');
     return null;
   }
   client = new Redis(config.redisUrl, {
     maxRetriesPerRequest: 2,
-    lazyConnect: false,
     retryStrategy: (times) => Math.min(times * 500, 10_000),
   });
-  client.on("ready", () => {
+  client.on('ready', () => {
     available = true;
-    console.log("Redis: connected");
+    console.log('Redis: connected');
   });
-  client.on("error", (err) => {
-    if (available) console.error("Redis error:", err.message);
+  client.on('error', (err) => {
+    if (available) console.error('Redis error:', err.message);
     available = false;
   });
   return client;
@@ -39,16 +28,12 @@ export function getRedis(): Redis | null {
   return available && client ? client : null;
 }
 
-/** Duplicate connections for the Socket.IO adapter (it needs a dedicated
- * pub and sub connection, separate from the general-purpose client). */
 export function duplicateForAdapter(): { pub: Redis; sub: Redis } | null {
   if (!client) return null;
   return { pub: client.duplicate(), sub: client.duplicate() };
 }
 
-// ── Cache helpers ───────────────────────────────────────────────────────────
-// Simple read-through cache with TTL. Failures are swallowed: a cache being
-// down must never break a request.
+// ── Cache helpers ────────────────────────────────────────────
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
   const r = getRedis();
@@ -61,57 +46,79 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
   }
 }
 
-export async function cacheSet(key: string, value: unknown, ttlSeconds: number): Promise<void> {
+export async function cacheSet(
+  key: string,
+  value: unknown,
+  ttlSeconds: number,
+): Promise<void> {
   const r = getRedis();
   if (!r) return;
   try {
-    await r.set(key, JSON.stringify(value), "EX", ttlSeconds);
-  } catch {
-    /* cache write failures are non-fatal */
-  }
-}
-
-export async function cacheDelPrefix(prefix: string): Promise<void> {
-  const r = getRedis();
-  if (!r) return;
-  try {
-    const keys = await r.keys(`${prefix}*`);
-    if (keys.length) await r.del(...keys);
+    await r.set(key, JSON.stringify(value), 'EX', ttlSeconds);
   } catch {
     /* non-fatal */
   }
 }
 
-// ── Distributed lock ────────────────────────────────────────────────────────
-// Scheduled jobs (due-soon reminders) must run once per cluster. Whichever
-// instance grabs the lock first runs the job; the others skip that tick.
-// With no Redis there's only one instance anyway, so the lock returns true.
+export const cacheDelPrefix = cacheDelPattern;
+export const presenceList = getOnlineUsers;
 
-export async function acquireJobLock(name: string, ttlSeconds: number): Promise<boolean> {
+export async function cacheDel(key: string): Promise<void> {
   const r = getRedis();
-  if (!r) return true;
+  if (!r) return;
   try {
-    const ok = await r.set(`lock:${name}`, config.instanceId, "EX", ttlSeconds, "NX");
-    return ok === "OK";
+    await r.del(key);
+  } catch {
+    /* non-fatal */
+  }
+}
+
+export async function cacheDelPattern(pattern: string): Promise<void> {
+  const r = getRedis();
+  if (!r) return;
+  try {
+    // Use SCAN for production safety (not KEYS)
+    let cursor = '0';
+    do {
+      const result = await r.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+      cursor = result[0];
+      const keys = result[1];
+      if (keys.length) await r.del(...keys);
+    } while (cursor !== '0');
+  } catch {
+    /* non-fatal */
+  }
+}
+
+// ── Distributed lock ─────────────────────────────────────────
+
+export async function acquireLock(
+  name: string,
+  ttlSeconds: number,
+): Promise<boolean> {
+  const r = getRedis();
+  if (!r) return true; // single instance
+  try {
+    const ok = await r.set(`lock:${name}`, '1', 'EX', ttlSeconds, 'NX');
+    return ok === 'OK';
   } catch {
     return true;
   }
 }
 
-// ── Presence ────────────────────────────────────────────────────────────────
-// A Redis set of online userIds shared by all instances. Falls back to an
-// in-memory map on single-instance deployments.
+// Alias for backward compatibility with old job code
+export const acquireJobLock = acquireLock;
 
-const localPresence = new Map<string, number>(); // userId -> connection count
-const PRESENCE_KEY = "presence:online";
+// ── Presence ─────────────────────────────────────────────────
+
+const localPresence = new Map<string, number>();
 
 export async function presenceConnect(userId: string): Promise<void> {
-  const count = (localPresence.get(userId) || 0) + 1;
-  localPresence.set(userId, count);
+  localPresence.set(userId, (localPresence.get(userId) || 0) + 1);
   const r = getRedis();
   if (r) {
     try {
-      await r.hincrby(PRESENCE_KEY, userId, 1);
+      await r.sadd('presence:online', userId);
     } catch { /* non-fatal */ }
   }
 }
@@ -123,28 +130,21 @@ export async function presenceDisconnect(userId: string): Promise<void> {
   const r = getRedis();
   if (r) {
     try {
-      const left = await r.hincrby(PRESENCE_KEY, userId, -1);
-      if (left <= 0) await r.hdel(PRESENCE_KEY, userId);
+      await r.srem('presence:online', userId);
     } catch { /* non-fatal */ }
   }
 }
 
-export async function presenceList(): Promise<string[]> {
+export async function getOnlineUsers(): Promise<string[]> {
   const r = getRedis();
   if (r) {
     try {
-      const all = await r.hgetall(PRESENCE_KEY);
-      return Object.entries(all)
-        .filter(([, n]) => Number(n) > 0)
-        .map(([id]) => id);
-    } catch { /* fall through to local */ }
+      return await r.smembers('presence:online');
+    } catch { /* fall through */ }
   }
   return [...localPresence.keys()];
 }
 
-/** Called on boot so a crashed instance's stale presence entries don't
- * linger forever. Only safe because taskify runs a known, small cluster —
- * every instance restarting within the same window rebuilds the hash. */
-export async function presenceResetLocal(): Promise<void> {
+export function presenceResetLocal(): void {
   localPresence.clear();
 }

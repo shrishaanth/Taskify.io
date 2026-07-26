@@ -31,12 +31,13 @@ interface RecordArgs {
 export async function recordActivity(args: RecordArgs): Promise<void> {
   try {
     const entry = await ActivityModel.create({
+      organizationId: args.actorId, // placeholder — old service replaced in Phase 4
       action: args.action,
-      actor: args.actorId,
+      actorId: args.actorId,
       actorName: args.actorName,
-      task: args.taskId || null,
-      taskTitle: args.taskTitle || null,
-      targetUser: args.targetUserId || null,
+      targetType: 'issue',
+      targetId: args.taskId || null,
+      targetTitle: args.taskTitle || null,
       detail: args.detail || "",
     });
     emitActivity(toPublicActivity(entry));
