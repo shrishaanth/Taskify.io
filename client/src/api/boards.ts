@@ -1,5 +1,4 @@
 import type { BoardSummary, Column, Id } from "../types/domain";
-import type { BoardColorKey } from "../styles/tokens";
 import { boardColorKeyFor } from "../lib/labelColor";
 import { apiFetch } from "./http";
 
@@ -11,7 +10,7 @@ interface RawBoard {
   cardCount?: number;
 }
 
-/** `colorKey` is client-only (COMPONENT_INVENTORY.md §4 C1) — derived from id. */
+/** `colorKey` is client-only and picked deterministically from the board id. */
 function toBoardSummary(b: RawBoard): BoardSummary & { columns: Column[] } {
   return {
     id: b.id,
@@ -34,11 +33,7 @@ export async function getBoard(projectId: Id, boardId: Id) {
   );
 }
 
-export async function createBoard(
-  projectId: Id,
-  input: { name: string; colorKey?: BoardColorKey },
-) {
-  // colorKey is not persisted server-side; kept in the client cache only.
+export async function createBoard(projectId: Id, input: { name: string }) {
   const raw = await apiFetch<RawBoard>(`/projects/${projectId}/boards`, {
     method: "POST",
     body: { name: input.name },

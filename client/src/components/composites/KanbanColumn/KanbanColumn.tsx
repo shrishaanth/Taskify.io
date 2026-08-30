@@ -98,58 +98,62 @@ export function KanbanColumn({
         )}
       </div>
 
-      <div
-        className={styles.list}
-        data-testid="kanban-column-list"
-        onDragOver={
-          dragActive
-            ? (e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = "move";
-                setDropBeforeId((prev) => (prev === undefined ? null : prev));
-              }
-            : undefined
-        }
-        onDragLeave={
-          dragActive
-            ? (e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  setDropBeforeId(undefined);
+      <div className={styles.body}>
+        <div
+          className={styles.list}
+          data-testid="kanban-column-list"
+          onDragOver={
+            dragActive
+              ? (e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDropBeforeId((prev) => (prev === undefined ? null : prev));
                 }
-              }
-            : undefined
-        }
-        onDrop={dragActive ? () => finishDrop(dropBeforeId ?? null) : undefined}
-      >
-        {cards.map((card) => (
-          <KanbanCard
-            key={card.id}
-            card={card}
-            done={isDoneColumn}
-            draggable={draggable}
-            isDragging={draggingCardId === card.id}
-            isDropTarget={dragActive && dropBeforeId === card.id}
-            onOpen={() => onOpenCard(card.id)}
-            {...(draggable && onCardDragStart
-              ? { onDragStart: () => onCardDragStart(card.id) }
-              : {})}
-            {...(draggable && onCardDragEnd
-              ? { onDragEnd: onCardDragEnd }
-              : {})}
-            {...(dragActive
-              ? {
-                  onDragOverCard: () => setDropBeforeId(card.id),
-                  onDropOnCard: () => finishDrop(card.id),
+              : undefined
+          }
+          onDragLeave={
+            dragActive
+              ? (e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setDropBeforeId(undefined);
+                  }
                 }
-              : {})}
-            {...(now ? { now } : {})}
-          />
-        ))}
-      </div>
+              : undefined
+          }
+          onDrop={
+            dragActive ? () => finishDrop(dropBeforeId ?? null) : undefined
+          }
+        >
+          {cards.map((card) => (
+            <KanbanCard
+              key={card.id}
+              card={card}
+              done={isDoneColumn}
+              draggable={draggable}
+              isDragging={draggingCardId === card.id}
+              isDropTarget={dragActive && dropBeforeId === card.id}
+              onOpen={() => onOpenCard(card.id)}
+              {...(draggable && onCardDragStart
+                ? { onDragStart: () => onCardDragStart(card.id) }
+                : {})}
+              {...(draggable && onCardDragEnd
+                ? { onDragEnd: onCardDragEnd }
+                : {})}
+              {...(dragActive
+                ? {
+                    onDragOverCard: () => setDropBeforeId(card.id),
+                    onDropOnCard: () => finishDrop(card.id),
+                  }
+                : {})}
+              {...(now ? { now } : {})}
+            />
+          ))}
+        </div>
 
-      <button type="button" className={styles.add} onClick={onAddCard}>
-        <span aria-hidden="true">+</span> Add a card
-      </button>
+        <button type="button" className={styles.add} onClick={onAddCard}>
+          <span aria-hidden="true">+</span> Add a card
+        </button>
+      </div>
     </section>
   );
 }

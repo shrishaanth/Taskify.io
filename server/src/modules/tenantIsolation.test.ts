@@ -160,6 +160,7 @@ describe("UC-10 — writes across tenants return 404", () => {
           `/api/v1/orgs/${B.orgId}/invites/000000000000000000000abc`,
         ),
     ],
+    ["delete org B", () => call().delete(`/api/v1/orgs/${B.orgId}`)],
     [
       "change org member role",
       () =>

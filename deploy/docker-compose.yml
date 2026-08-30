@@ -1,0 +1,54 @@
+# Local multi-instance topology:
+#
+#   browser ──► web (nginx :8080, LB + static)
+#                 │  /api/*        ─┐
+#                 │  /socket.io/*  ─┤ ip_hash ──► app1:4000 ┐
+#                 │                 └──────────► app2:4000 ┘──► mongo:27017
+#
+# Run:  docker compose -f deploy/docker-compose.yml up --build
+# Open: http://localhost:8080
+#
+# NODE_ENV is left as "development" so the refresh cookie is not `secure`
+# (this stack terminates plain HTTP). For real production, terminate TLS at
+# nginx and set NODE_ENV=production on app1/app2.
+
+name: taskify
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+
+  app1: &app
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    environment:
+      NODE_ENV: development
+      PORT: "4000"
+      MONGODB_URI: mongodb://mongo:27017/taskify
+      JWT_ACCESS_SECRET: local-access-secret-change-me
+      JWT_REFRESH_SECRET: local-refresh-secret-change-me
+      CLIENT_ORIGIN: http://localhost:8080
+
+  app2:
+    <<: *app
+
+  web:
+    build:
+      context: ..
+      dockerfile: client/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - app1
+      - app2
+    ports:
+      - "8080:80"
+
+volumes:
+  mongo-data:

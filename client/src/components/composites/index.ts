@@ -4,9 +4,6 @@ export type { RoleBadgeProps, RoleValue } from "./RoleBadge/RoleBadge";
 export { PriorityBadge } from "./PriorityBadge/PriorityBadge";
 export type { PriorityBadgeProps } from "./PriorityBadge/PriorityBadge";
 
-export { ConnectionStatus } from "./ConnectionStatus/ConnectionStatus";
-export type { ConnectionStatusProps } from "./ConnectionStatus/ConnectionStatus";
-
 export { DueDateChip } from "./DueDateChip/DueDateChip";
 export type { DueDateChipProps } from "./DueDateChip/DueDateChip";
 
@@ -16,8 +13,6 @@ export type { DateFieldProps } from "./DateField/DateField";
 export { AddTile } from "./AddTile/AddTile";
 export type { AddTileProps } from "./AddTile/AddTile";
 
-export { BoardColorPicker } from "./BoardColorPicker/BoardColorPicker";
-export type { BoardColorPickerProps } from "./BoardColorPicker/BoardColorPicker";
 
 export { BoardTile } from "./BoardTile/BoardTile";
 export type { BoardTileProps } from "./BoardTile/BoardTile";
@@ -84,12 +79,6 @@ export type {
   InviteFormValues,
   InviteFormHandle,
 } from "./InviteForm/InviteForm";
-
-export { RichTextToolbar } from "./RichTextToolbar/RichTextToolbar";
-export type {
-  RichTextToolbarProps,
-  RichTextCommand,
-} from "./RichTextToolbar/RichTextToolbar";
 
 export { SubtaskItem } from "./SubtaskItem/SubtaskItem";
 export type { SubtaskItemProps } from "./SubtaskItem/SubtaskItem";

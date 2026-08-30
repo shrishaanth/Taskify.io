@@ -77,4 +77,32 @@ describe("NotificationPanel", () => {
     expect(screen.getByText("You're all caught up!")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Mark all as read" })).toBeDisabled();
   });
+
+  it("shows a Load more control and calls onLoadMore (infinite scroll)", async () => {
+    const onLoadMore = vi.fn();
+    const { rerender } = render(
+      <NotificationPanel
+        notifications={list}
+        onMarkAllRead={() => {}}
+        onLoadMore={onLoadMore}
+        hasMore
+        now={NOW}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Load more" }));
+    expect(onLoadMore).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <NotificationPanel
+        notifications={list}
+        onMarkAllRead={() => {}}
+        onLoadMore={onLoadMore}
+        hasMore={false}
+        now={NOW}
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: /Load more/ }),
+    ).not.toBeInTheDocument();
+  });
 });

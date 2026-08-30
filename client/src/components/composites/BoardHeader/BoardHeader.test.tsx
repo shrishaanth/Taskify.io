@@ -9,34 +9,21 @@ const crumbs = [
 ];
 
 describe("BoardHeader", () => {
-  it("renders breadcrumb, name, connection status and presence", () => {
-    render(
-      <BoardHeader
-        name="Sprint Backlog"
-        breadcrumbs={crumbs}
-        connection="live"
-        presence={[
-          { id: "1", name: "A B" },
-          { id: "2", name: "C D" },
-        ]}
-      />,
-    );
-    expect(screen.getByRole("heading", { level: 1, name: "Sprint Backlog" })).toBeInTheDocument();
-    expect(screen.getByText("Live")).toBeInTheDocument();
-    expect(screen.getAllByRole("img")).toHaveLength(2);
+  it("renders the breadcrumb and the board name", () => {
+    render(<BoardHeader name="Sprint Backlog" breadcrumbs={crumbs} />);
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Sprint Backlog" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("E-Commerce Redesign")).toBeInTheDocument();
   });
 
-  it("shows the offline state", () => {
-    render(
-      <BoardHeader name="B" breadcrumbs={crumbs} connection="offline" presence={[]} />,
-    );
-    expect(screen.getByText("Offline")).toBeInTheDocument();
-  });
-
-  it("has no invite control (FR-3.1)", () => {
-    render(
-      <BoardHeader name="B" breadcrumbs={crumbs} connection="live" presence={[]} />,
-    );
-    expect(screen.queryByRole("button", { name: /invite/i })).not.toBeInTheDocument();
+  it("has no connection badge, presence row, or invite control (FR-3.1)", () => {
+    render(<BoardHeader name="B" breadcrumbs={crumbs} />);
+    expect(screen.queryByText("Live")).not.toBeInTheDocument();
+    expect(screen.queryByText("Offline")).not.toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /invite/i }),
+    ).not.toBeInTheDocument();
   });
 });

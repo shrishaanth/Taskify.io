@@ -13,6 +13,10 @@ export interface TopNavBarProps {
   onOpenOrgMembers?: () => void;
   onOpenOrgSettings?: () => void;
   notifications: AppNotification[];
+  notificationUnreadCount?: number;
+  notificationsHasMore?: boolean;
+  loadingMoreNotifications?: boolean;
+  onLoadMoreNotifications?: () => void;
   onMarkAllNotificationsRead: () => void;
   onNotificationClick?: (id: string) => void;
   user: UserRef;
@@ -37,6 +41,10 @@ export function TopNavBar({
   onOpenOrgMembers,
   onOpenOrgSettings,
   notifications,
+  notificationUnreadCount,
+  notificationsHasMore,
+  loadingMoreNotifications,
+  onLoadMoreNotifications,
   onMarkAllNotificationsRead,
   onNotificationClick,
   user,
@@ -70,6 +78,18 @@ export function TopNavBar({
         <NotificationBell
           notifications={notifications}
           onMarkAllRead={onMarkAllNotificationsRead}
+          {...(notificationUnreadCount !== undefined
+            ? { unreadCount: notificationUnreadCount }
+            : {})}
+          {...(notificationsHasMore !== undefined
+            ? { hasMore: notificationsHasMore }
+            : {})}
+          {...(loadingMoreNotifications !== undefined
+            ? { loadingMore: loadingMoreNotifications }
+            : {})}
+          {...(onLoadMoreNotifications
+            ? { onLoadMore: onLoadMoreNotifications }
+            : {})}
           {...(onNotificationClick ? { onItemClick: onNotificationClick } : {})}
           {...(now ? { now } : {})}
         />

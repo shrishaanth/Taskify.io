@@ -5,7 +5,6 @@ import { Menu, type MenuItem } from "../../primitives/Menu/Menu";
 import { Input } from "../../primitives/Input/Input";
 import { Textarea } from "../../primitives/Textarea/Textarea";
 import { Select } from "../../primitives/Select/Select";
-import { RichTextToolbar } from "../RichTextToolbar/RichTextToolbar";
 import { SubtaskChecklist } from "../SubtaskChecklist/SubtaskChecklist";
 import { CommentList } from "../CommentList/CommentList";
 import { AssigneePicker } from "../AssigneePicker/AssigneePicker";
@@ -172,19 +171,16 @@ export function CardDetailModal({
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Description</h3>
             {canEdit ? (
-              <>
-                <RichTextToolbar onCommand={() => {}} />
-                <Textarea
-                  className={styles.descEdit}
-                  aria-label="Card description"
-                  value={desc}
-                  onChange={(e) => setDesc(e.target.value)}
-                  onBlur={() => {
-                    if (desc !== (card.description ?? ""))
-                      onUpdateCard({ description: desc });
-                  }}
-                />
-              </>
+              <Textarea
+                className={styles.descEdit}
+                aria-label="Card description"
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                onBlur={() => {
+                  if (desc !== (card.description ?? ""))
+                    onUpdateCard({ description: desc });
+                }}
+              />
             ) : (
               <p className={styles.descText}>{card.description}</p>
             )}

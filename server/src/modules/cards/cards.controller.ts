@@ -7,6 +7,7 @@ import {
   userDto,
 } from "../../lib/serialize.js";
 import { UserModel } from "../../models/index.js";
+import { emitBoardChanged } from "../../realtime/emit.js";
 import * as service from "./cards.service.js";
 
 function projectId(req: Request): string {
@@ -25,6 +26,7 @@ export async function create(req: Request, res: Response) {
     actorId: auth(req).userId,
     ...req.body,
   });
+  emitBoardChanged(req.params.boardId, "card:create");
   res.status(201).json(await service.serializeCard(card.toObject()));
 }
 
@@ -57,6 +59,7 @@ export async function update(req: Request, res: Response) {
     actorId: auth(req).userId,
     patch: req.body,
   });
+  emitBoardChanged(req.params.boardId, "card:update");
   res.json(await service.serializeCard(card.toObject()));
 }
 
@@ -67,10 +70,12 @@ export async function move(req: Request, res: Response) {
     columnId: req.body.columnId,
     order: req.body.order,
   });
+  emitBoardChanged(req.params.boardId, "card:move");
   res.json(await service.serializeCard(card.toObject()));
 }
 
 export async function remove(req: Request, res: Response) {
   await service.deleteCard(req.params.boardId, req.params.cardId);
+  emitBoardChanged(req.params.boardId, "card:delete");
   res.status(204).end();
 }

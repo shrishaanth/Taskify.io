@@ -178,6 +178,23 @@ export function attachmentDto(a: {
   };
 }
 
+function notificationTitle(type: string, payload: unknown): string {
+  const p = (payload ?? {}) as Record<string, unknown>;
+  const card = typeof p.cardTitle === "string" ? p.cardTitle : "a card";
+  const ctx =
+    typeof p.contextName === "string" ? p.contextName : "your workspace";
+  switch (type) {
+    case "card_assigned":
+      return `You were assigned to "${card}"`;
+    case "comment_mention":
+      return `New comment on "${card}"`;
+    case "role_changed":
+      return `Your role changed in ${ctx}`;
+    default:
+      return "You have a new notification";
+  }
+}
+
 export function notificationDto(n: {
   _id: Id;
   userId: Id;
@@ -189,6 +206,7 @@ export function notificationDto(n: {
     id: String(n._id),
     userId: String(n.userId),
     type: n.type,
+    title: notificationTitle(n.type, n.payload),
     payload: n.payload ?? {},
     read: n.read,
     createdAt: iso(n.createdAt),

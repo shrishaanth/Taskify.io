@@ -1,3 +1,4 @@
+import type { UIEvent } from "react";
 import { cn } from "../../utils/cn";
 import { EmptyState } from "../EmptyState/EmptyState";
 import { NotificationItem } from "../NotificationItem/NotificationItem";
@@ -8,6 +9,10 @@ export interface NotificationPanelProps {
   notifications: AppNotification[];
   onMarkAllRead: () => void;
   onItemClick?: (id: string) => void;
+  /** Infinite scroll: pull the next page of notifications. */
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
   now?: Date;
   className?: string;
 }
@@ -28,10 +33,19 @@ export function NotificationPanel({
   notifications,
   onMarkAllRead,
   onItemClick,
+  onLoadMore,
+  hasMore = false,
+  loadingMore = false,
   now,
   className,
 }: NotificationPanelProps) {
   const hasUnread = notifications.some((n) => !n.read);
+
+  const onScroll = (e: UIEvent<HTMLDivElement>) => {
+    if (!hasMore || loadingMore || !onLoadMore) return;
+    const el = e.currentTarget;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 48) onLoadMore();
+  };
 
   return (
     <div className={cn(styles.root, className)}>
@@ -54,7 +68,7 @@ export function NotificationPanel({
           description="No new alerts. Enjoy your clean inbox."
         />
       ) : (
-        <div className={styles.list}>
+        <div className={styles.list} onScroll={onScroll}>
           {notifications.map((n) => (
             <NotificationItem
               key={n.id}
@@ -63,6 +77,16 @@ export function NotificationPanel({
               {...(onItemClick ? { onClick: () => onItemClick(n.id) } : {})}
             />
           ))}
+          {hasMore && (
+            <button
+              type="button"
+              className={styles.loadMore}
+              onClick={() => onLoadMore?.()}
+              disabled={loadingMore}
+            >
+              {loadingMore ? "Loading…" : "Load more"}
+            </button>
+          )}
         </div>
       )}
     </div>

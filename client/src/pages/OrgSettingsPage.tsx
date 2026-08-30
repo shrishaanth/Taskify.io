@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { PageHeader } from "../components/composites/PageHeader/PageHeader";
 import { DangerZone } from "../components/composites/DangerZone/DangerZone";
+import { Modal } from "../components/primitives/Modal/Modal";
 import { Input } from "../components/primitives/Input/Input";
 import { Button } from "../components/primitives/Button/Button";
 import { useToast } from "../components/primitives/Toast/useToast";
-import { useUpdateOrg } from "../features/orgs";
+import { useDeleteOrg, useUpdateOrg } from "../features/orgs";
 import { canEditOrg } from "../lib/permissions";
 import { useSession } from "../stores/sessionStore";
 import { NotFoundPage } from "./NotFoundPage";
@@ -13,11 +14,15 @@ import styles from "./pages.module.css";
 
 export function OrgSettingsPage() {
   const { orgId = "" } = useParams();
+  const navigate = useNavigate();
   const org = useSession((s) => s.session?.orgs.find((o) => o.id === orgId));
   const updateOrg = useUpdateOrg(orgId);
+  const deleteOrg = useDeleteOrg(orgId);
   const toast = useToast();
 
   const [name, setName] = useState(org?.name ?? "");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   useEffect(() => {
     if (org) setName(org.name);
   }, [org]);
@@ -25,6 +30,7 @@ export function OrgSettingsPage() {
   if (!org) return <NotFoundPage />;
 
   const canEdit = canEditOrg(org.role);
+  const isOwner = org.role === "owner";
 
   return (
     <main className={styles.page}>
@@ -75,12 +81,68 @@ export function OrgSettingsPage() {
         </div>
 
         <DangerZone
-          description="Permanently delete this organization and all its data. This action is irreversible."
+          description="Permanently delete this organization and all its projects, boards, and cards. This action is irreversible."
           actionLabel="Delete Organization"
-          disabled
-          helperText="Requires no other Owners"
+          disabled={!isOwner}
+          {...(isOwner
+            ? { onAction: () => setDeleteOpen(true) }
+            : { helperText: "Only an Organization Owner can delete it" })}
         />
       </div>
+
+      <Modal
+        open={deleteOpen}
+        onClose={() => {
+          setDeleteOpen(false);
+          setConfirmText("");
+        }}
+        size="sm"
+        title="Delete organization"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setDeleteOpen(false);
+                setConfirmText("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              loading={deleteOrg.isPending}
+              disabled={confirmText !== org.name}
+              onClick={() =>
+                deleteOrg.mutate(undefined, {
+                  onSuccess: () => {
+                    toast.show({ tone: "success", title: "Organization deleted" });
+                    navigate("/", { replace: true });
+                  },
+                  onError: () =>
+                    toast.show({
+                      tone: "error",
+                      title: "Could not delete the organization",
+                    }),
+                })
+              }
+            >
+              Delete forever
+            </Button>
+          </>
+        }
+      >
+        <p style={{ marginTop: 0 }}>
+          This removes <strong>{org.name}</strong> and everything inside it.
+          Type the organization name to confirm.
+        </p>
+        <Input
+          aria-label="Type the organization name to confirm"
+          value={confirmText}
+          placeholder={org.name}
+          onChange={(e) => setConfirmText(e.target.value)}
+        />
+      </Modal>
     </main>
   );
 }

@@ -9,6 +9,7 @@ import { ApiError } from "../api/http";
 import { useBoard, useUpdateBoard } from "../features/boards";
 import { useProject } from "../features/projects";
 import { useCardMutations, useCards, useCardDetail } from "../features/cards";
+import { useBoardRealtime } from "../features/realtime";
 import { canWorkOnBoard } from "../lib/permissions";
 import { useSession } from "../stores/sessionStore";
 import type { CardSummary } from "../types/domain";
@@ -31,6 +32,7 @@ export function BoardPage() {
   const cardDetailQuery = useCardDetail(boardId, openCardId, members);
   const m = useCardMutations(boardId, openCardId);
   const updateBoard = useUpdateBoard(projectId, boardId);
+  useBoardRealtime(projectId, boardId);
   const updateBoardColumns = (
     columns: { id?: string; name: string; order: number }[],
   ) =>
@@ -112,13 +114,8 @@ export function BoardPage() {
 
   return (
     <div>
-      <div className={styles.page} style={{ paddingBottom: 0 }}>
-        <BoardHeader
-          name={board.name}
-          breadcrumbs={breadcrumbs}
-          connection="live"
-          presence={members}
-        />
+      <div className={styles.boardHead}>
+        <BoardHeader name={board.name} breadcrumbs={breadcrumbs} />
       </div>
 
       <BoardCanvas

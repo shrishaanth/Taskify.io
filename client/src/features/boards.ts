@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as boardsApi from "../api/boards";
-import type { BoardColorKey } from "../styles/tokens";
 import type { Id } from "../types/domain";
 import { qk } from "./queryClient";
 
@@ -24,7 +23,7 @@ export function useBoard(projectId: Id, boardId: Id) {
 export function useCreateBoard(projectId: Id) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; colorKey?: BoardColorKey }) =>
+    mutationFn: (input: { name: string }) =>
       boardsApi.createBoard(projectId, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.boards(projectId) }),
   });

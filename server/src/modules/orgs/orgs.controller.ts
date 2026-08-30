@@ -19,6 +19,11 @@ export async function update(req: Request, res: Response) {
   res.json(orgDto(org));
 }
 
+export async function destroy(req: Request, res: Response) {
+  await service.deleteOrg(req.params.orgId);
+  res.status(204).end();
+}
+
 export async function members(req: Request, res: Response) {
   const rows = await service.listMembers(req.params.orgId);
   res.json(rows.map((r) => ({ user: userDto(r.user), role: r.role })));

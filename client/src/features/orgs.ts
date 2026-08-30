@@ -29,6 +29,14 @@ export function useUpdateOrg(orgId: Id) {
   });
 }
 
+export function useDeleteOrg(orgId: Id) {
+  const refresh = useSession((s) => s.refresh);
+  return useMutation({
+    mutationFn: () => orgsApi.deleteOrg(orgId),
+    onSuccess: () => refresh(),
+  });
+}
+
 export function useOrgInvites(orgId: Id, enabled = true) {
   return useQuery({
     queryKey: qk.orgInvites(orgId),

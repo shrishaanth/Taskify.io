@@ -181,9 +181,9 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
         open={boardModalOpen}
         onClose={() => setBoardModalOpen(false)}
         pending={createBoard.isPending}
-        onCreate={({ name, colorKey }) => {
+        onCreate={({ name }) => {
           createBoard.mutate(
-            { name, colorKey },
+            { name },
             {
               onSuccess: (board) => {
                 setBoardModalOpen(false);

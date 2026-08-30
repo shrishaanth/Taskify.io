@@ -46,3 +46,20 @@
   max-height: 24rem;
   overflow-y: auto;
 }
+
+.loadMore {
+  align-self: center;
+  margin-top: var(--space-1);
+  border: 0;
+  background: none;
+  padding: var(--space-2);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-link);
+  cursor: pointer;
+}
+.loadMore:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}

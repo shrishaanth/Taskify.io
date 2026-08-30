@@ -3,13 +3,10 @@ import type { FormEvent } from "react";
 import { Modal } from "../../primitives/Modal/Modal";
 import { Input } from "../../primitives/Input/Input";
 import { Button } from "../../primitives/Button/Button";
-import { BoardColorPicker } from "../BoardColorPicker/BoardColorPicker";
-import type { BoardColorKey } from "../../../styles/tokens";
 import styles from "./dialogs.module.css";
 
 export interface CreateBoardValues {
   name: string;
-  colorKey: BoardColorKey;
 }
 
 export interface CreateBoardModalProps {
@@ -27,11 +24,10 @@ export function CreateBoardModal({
 }: CreateBoardModalProps) {
   const nameId = useId();
   const [name, setName] = useState("");
-  const [colorKey, setColorKey] = useState<BoardColorKey>("sky");
   const canSubmit = name.trim().length > 0 && !pending;
 
   const doCreate = () => {
-    if (canSubmit) onCreate({ name: name.trim(), colorKey });
+    if (canSubmit) onCreate({ name: name.trim() });
   };
   const onFormSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -67,10 +63,6 @@ export function CreateBoardModal({
             placeholder="e.g. Content Strategy"
             onChange={(e) => setName(e.target.value)}
           />
-        </div>
-        <div className={styles.field}>
-          <span className={styles.label}>Board Background Color</span>
-          <BoardColorPicker value={colorKey} onChange={setColorKey} />
         </div>
       </form>
     </Modal>

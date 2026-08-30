@@ -4,6 +4,7 @@ import {
   useNotifications,
   useMarkAllNotificationsRead,
 } from "../features/notifications";
+import { useRealtimeNotifications } from "../features/realtime";
 import { useSession } from "../stores/sessionStore";
 
 /** Authenticated layout: top nav + routed page content. */
@@ -15,10 +16,10 @@ export function AppShell() {
 
   const notificationsQuery = useNotifications();
   const markAllRead = useMarkAllNotificationsRead();
+  useRealtimeNotifications();
 
   const orgs = session?.orgs ?? [];
   const currentOrgId = orgId ?? orgs[0]?.id ?? "";
-  const notifications = notificationsQuery.data?.items ?? [];
 
   if (!session) return null;
 
@@ -31,7 +32,11 @@ export function AppShell() {
         onCreateOrg={() => navigate("/welcome")}
         onOpenOrgMembers={() => navigate(`/orgs/${currentOrgId}/members`)}
         onOpenOrgSettings={() => navigate(`/orgs/${currentOrgId}/settings`)}
-        notifications={notifications}
+        notifications={notificationsQuery.items}
+        notificationUnreadCount={notificationsQuery.unreadCount}
+        notificationsHasMore={notificationsQuery.hasNextPage}
+        loadingMoreNotifications={notificationsQuery.isFetchingNextPage}
+        onLoadMoreNotifications={() => void notificationsQuery.fetchNextPage()}
         onMarkAllNotificationsRead={() => markAllRead.mutate()}
         user={session.user}
         onLogout={() => {

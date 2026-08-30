@@ -8,8 +8,16 @@ import styles from "./NotificationBell.module.css";
 export interface NotificationBellProps
   extends Pick<
     NotificationPanelProps,
-    "notifications" | "onMarkAllRead" | "onItemClick" | "now"
+    | "notifications"
+    | "onMarkAllRead"
+    | "onItemClick"
+    | "onLoadMore"
+    | "hasMore"
+    | "loadingMore"
+    | "now"
   > {
+  /** True unread count from the server (may exceed what's loaded). */
+  unreadCount?: number;
   className?: string;
 }
 
@@ -29,10 +37,15 @@ export function NotificationBell({
   notifications,
   onMarkAllRead,
   onItemClick,
+  onLoadMore,
+  hasMore,
+  loadingMore,
+  unreadCount,
   now,
   className,
 }: NotificationBellProps) {
-  const unread = notifications.filter((n) => !n.read).length;
+  const unread =
+    unreadCount ?? notifications.filter((n) => !n.read).length;
   const badgeText = unread > 9 ? "9+" : String(unread);
 
   return (
@@ -45,9 +58,7 @@ export function NotificationBell({
           type="button"
           className={styles.wrap}
           aria-label={
-            unread > 0
-              ? `Notifications, ${unread} unread`
-              : "Notifications"
+            unread > 0 ? `Notifications, ${unread} unread` : "Notifications"
           }
           style={{
             border: "1px solid var(--border-subtle)",
@@ -74,6 +85,9 @@ export function NotificationBell({
         notifications={notifications}
         onMarkAllRead={onMarkAllRead}
         {...(onItemClick ? { onItemClick } : {})}
+        {...(onLoadMore ? { onLoadMore } : {})}
+        {...(hasMore !== undefined ? { hasMore } : {})}
+        {...(loadingMore !== undefined ? { loadingMore } : {})}
         {...(now ? { now } : {})}
       />
     </Popover>

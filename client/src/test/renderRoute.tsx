@@ -11,13 +11,15 @@ import { resetDb } from "./fakeApi";
 
 /**
  * Render the full route tree at `path`. By default the caller is "u-alex" with
- * a valid fake token; pass `{ anonymous: true }` for logged-out flows.
+ * a valid fake token; pass `{ anonymous: true }` for logged-out flows. `seed`
+ * runs after the DB reset and before the first render, to add fixtures.
  */
 export function renderRoute(
   path: string,
-  opts: { as?: string; anonymous?: boolean } = {},
+  opts: { as?: string; anonymous?: boolean; seed?: () => void } = {},
 ) {
   resetDb();
+  opts.seed?.();
   const client = makeQueryClient();
 
   if (opts.anonymous) {

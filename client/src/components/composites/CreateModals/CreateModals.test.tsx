@@ -53,16 +53,15 @@ describe("CreateProjectModal", () => {
 });
 
 describe("CreateBoardModal", () => {
-  it("defaults colour to sky and submits name + chosen colour", async () => {
+  it("submits just the board name (colour is auto-assigned)", async () => {
     const onCreate = vi.fn();
     render(<CreateBoardModal open onClose={() => {}} onCreate={onCreate} />);
     await userEvent.type(screen.getByLabelText("Board Name"), "Content Strategy");
-    await userEvent.click(screen.getByRole("radio", { name: "Green" }));
+    expect(
+      screen.queryByRole("radiogroup", { name: /background color/i }),
+    ).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Create Board" }));
-    expect(onCreate).toHaveBeenCalledWith({
-      name: "Content Strategy",
-      colorKey: "green",
-    });
+    expect(onCreate).toHaveBeenCalledWith({ name: "Content Strategy" });
   });
 });
 

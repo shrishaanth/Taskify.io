@@ -119,6 +119,32 @@ export const handlers = [
     if (patch.name) org.name = patch.name;
     return HttpResponse.json({ id: org.id, name: org.name, slug: org.slug });
   }),
+  http.delete(`${BASE}/orgs/:orgId`, ({ request, params }) => {
+    const uid = callerId(request);
+    const orgId = params.orgId as string;
+    const role = uid ? orgRoleOf(orgId, uid) : null;
+    if (!role) return notFound();
+    if (role !== "owner") return forbidden();
+    const projectIds = db.projects
+      .filter((p) => p.organizationId === orgId)
+      .map((p) => p.id);
+    const boardIds = db.boards
+      .filter((b) => b.organizationId === orgId)
+      .map((b) => b.id);
+    db.cards = db.cards.filter((c) => !boardIds.includes(c.boardId));
+    const cardIds = new Set(db.cards.map((c) => c.id));
+    db.subtasks = db.subtasks.filter((s) => cardIds.has(s.cardId));
+    db.comments = db.comments.filter((c) => cardIds.has(c.cardId));
+    db.boards = db.boards.filter((b) => b.organizationId !== orgId);
+    db.projectMembers = db.projectMembers.filter(
+      (m) => !projectIds.includes(m.projectId),
+    );
+    db.projects = db.projects.filter((p) => p.organizationId !== orgId);
+    db.invites = db.invites.filter((i) => i.orgId !== orgId);
+    db.orgMembers = db.orgMembers.filter((m) => m.orgId !== orgId);
+    db.orgs = db.orgs.filter((o) => o.id !== orgId);
+    return new HttpResponse(null, { status: 204 });
+  }),
   http.get(`${BASE}/orgs/:orgId/members`, ({ request, params }) => {
     const uid = callerId(request);
     const orgId = params.orgId as string;
@@ -850,10 +876,14 @@ export const handlers = [
   /* ---------------- notifications ---------------- */
   http.get(`${BASE}/notifications`, ({ request }) => {
     if (!callerId(request)) return unauth();
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get("page") ?? "1");
+    const limit = Number(url.searchParams.get("limit") ?? "20");
+    const start = (page - 1) * limit;
     return HttpResponse.json({
-      items: db.notifications,
-      page: 1,
-      limit: 20,
+      items: db.notifications.slice(start, start + limit),
+      page,
+      limit,
       total: db.notifications.length,
       unread: db.notifications.filter((n) => !n.read).length,
     });

@@ -8,6 +8,7 @@ import { requireProjectRole } from "../../middleware/requireProjectRole.js";
 import { resolveProjectFromCard } from "../../middleware/resolveScope.js";
 import { validate } from "../../middleware/validate.js";
 import { SubtaskModel } from "../../models/index.js";
+import { emitBoardChanged } from "../../realtime/emit.js";
 
 const objectId = z.string().regex(/^[a-f0-9]{24}$/i);
 
@@ -42,6 +43,7 @@ subtasksRouter.post(
       done: false,
       ...(req.body.assigneeId ? { assigneeId: req.body.assigneeId } : {}),
     });
+    emitBoardChanged(req.resolvedBoardId, "subtask:create");
     res.status(201).json(subtaskDto(doc));
   }),
 );
@@ -71,6 +73,7 @@ subtasksRouter.patch(
       else doc.assigneeId = req.body.assigneeId;
     }
     await doc.save();
+    emitBoardChanged(req.resolvedBoardId, "subtask:update");
     res.json(subtaskDto(doc));
   }),
 );
@@ -84,6 +87,7 @@ subtasksRouter.delete(
       cardId: req.params.cardId,
     });
     if (r.deletedCount === 0) throw AppError.notFound();
+    emitBoardChanged(req.resolvedBoardId, "subtask:delete");
     res.status(204).end();
   }),
 );

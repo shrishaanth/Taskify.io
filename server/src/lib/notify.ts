@@ -1,9 +1,11 @@
 import { NotificationModel, type NotificationType } from "../models/index.js";
+import { notificationDto } from "./serialize.js";
+import { emitNotificationNew } from "../realtime/emit.js";
 
 /**
- * FR-6.1 — create in-app notifications. The `notification:new` socket emit is
- * wired with the real-time layer; here we persist the rows that
- * `GET /notifications` serves.
+ * FR-6.1 — create in-app notifications: persist the rows that
+ * `GET /notifications` serves, then push each one to its recipient's socket
+ * room so the bell updates live.
  */
 async function create(
   userIds: string[],
@@ -13,9 +15,12 @@ async function create(
 ) {
   const targets = [...new Set(userIds)].filter((id) => id && id !== exclude);
   if (targets.length === 0) return;
-  await NotificationModel.insertMany(
+  const docs = await NotificationModel.insertMany(
     targets.map((userId) => ({ userId, type, payload, read: false })),
   );
+  for (const doc of docs) {
+    emitNotificationNew(String(doc.userId), notificationDto(doc));
+  }
 }
 
 export function notifyCardAssigned(

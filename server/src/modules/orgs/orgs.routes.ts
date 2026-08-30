@@ -57,6 +57,14 @@ orgsRouter.patch(
   asyncHandler(controller.update),
 );
 
+orgsRouter.delete(
+  "/:orgId",
+  requireAuth,
+  validate(orgIdParams),
+  requireOrgRole("owner"),
+  asyncHandler(controller.destroy),
+);
+
 orgsRouter.get(
   "/:orgId/members",
   requireAuth,

@@ -317,19 +317,18 @@ Do not add features, routes, fields, models, roles, or enum values that are not
 in the SRS. Known temptations from the mockups that are **not** backed by the
 SRS (full detail + resolutions in `COMPONENT_INVENTORY.md` §4):
 
-- Board background **color** — not a `Board` field. Client-only if kept.
+- Board background **color** — not a `Board` field. Client-only, now auto-picked
+  from the board id (the colour-picker UI was removed on request).
 - Project tile **progress bar / percent / category** — no such `Project`
   fields. Decorative only.
-- **Delete Organization** — no `DELETE /orgs/:orgId`. Danger-Zone button ships
-  disabled.
 - **Request Access** button on the 403 screen — no endpoint. Not wired.
 - Project-level invite that **creates an account** — project invite only sets a
   role for an existing **org member** (`PUT .../members/:userId`); resolve email
   → org member first, else inline error.
-- Notification types beyond `card_assigned | comment_mention | role_changed |
-  due_soon`.
+- Notification types beyond `card_assigned | comment_mention | role_changed`
+  (`due_soon` was removed on request — nothing generated it).
 - Rich-text description is stored in the plain `Card.description: string`
-  (markdown), not a new field.
+  (markdown), not a new field. The B/I/list/link toolbar was removed on request.
 
 ### 9.1 Deliberate additions beyond the API contract
 
@@ -343,8 +342,27 @@ email service (which is out of scope):
 - Client route `/invite/:token` (`AcceptInvitePage`) — UC-2's accept flow;
   calls the contracted `POST /orgs/invites/:inviteToken/accept`. Since no email
   is sent, the inviter copies the link from the Members page.
+- `GET /orgs/invites/mine` (any authed user) — pending invites for the caller's
+  own email, so the Welcome page can surface them.
+- `DELETE /orgs/:orgId` (Owner-only) — the SRS §4 has no soft-delete, but the
+  UI's Danger Zone needs a real cascade delete (projects → boards → cards →
+  subtasks/comments/attachments, plus memberships + invites). Added on request.
 - Server DTO enrichment (`orgInviteDto`, plus the Phase 7 `cardDto`/`boardDto`
   extras) — the contract does not specify response bodies.
+
+### 9.2 Real-time layer (`server/src/realtime/`)
+
+Socket.IO shares the HTTP listener. Auth = the same access token; rooms
+`user:<id>`, `org:<id>`, `board:<id>` (never a global broadcast). Emits:
+`notification:new` (from `lib/notify.ts`) and `board:changed` (from every card /
+subtask / comment / board mutation). The client connects on login and refetches
+the affected query on each event.
+
+**No Redis adapter** (`@socket.io/redis-adapter`) — deliberately deferred. Under
+the nginx load balancer, `ip_hash` pins each client to one app instance so it
+receives that instance's events; cross-instance fan-out needs the adapter.
+`deploy/` holds the nginx config + a docker-compose (`web` nginx → `app1`/`app2`
+→ `mongo`).
 
 ## 10. Out of scope (vision §"out of scope", requirements §3)
 

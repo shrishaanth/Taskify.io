@@ -23,7 +23,8 @@ describe("BoardPage", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Sprint Backlog" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Live")).toBeInTheDocument();
+    // no connection badge / presence row on the board header any more
+    expect(screen.queryByText("Live")).not.toBeInTheDocument();
     const todo = await screen.findByRole("region", { name: "To Do" });
     expect(
       within(todo).getByText(/Design system token mapping/),

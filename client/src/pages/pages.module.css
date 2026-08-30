@@ -6,6 +6,11 @@
   padding: var(--space-8) var(--space-6);
 }
 
+/* Board view is full-bleed: header lines up with the left edge of the columns. */
+.boardHead {
+  padding: var(--space-6) var(--space-4) 0;
+}
+
 .authScreen {
   min-height: 100vh;
   display: flex;

@@ -105,9 +105,33 @@ describe("OrgSettingsPage", () => {
     expect(screen.getByLabelText("Organization Name")).toHaveValue(
       "Acme Design Studio",
     );
+    // Alex is an Owner -> Delete is enabled
     expect(
       screen.getByRole("button", { name: "Delete Organization" }),
+    ).toBeEnabled();
+  });
+
+  it("disables Delete Organization for a non-Owner", async () => {
+    renderRoute("/orgs/org-acme/settings", { as: "u-sarah" }); // admin
+    expect(
+      await screen.findByRole("button", { name: "Delete Organization" }),
     ).toBeDisabled();
+  });
+
+  it("deletes the organization after typing its name to confirm", async () => {
+    renderRoute("/orgs/org-acme/settings");
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Delete Organization" }),
+    );
+    const confirm = await screen.findByLabelText(
+      "Type the organization name to confirm",
+    );
+    const deleteBtn = screen.getByRole("button", { name: "Delete forever" });
+    expect(deleteBtn).toBeDisabled();
+    await userEvent.type(confirm, "Acme Design Studio");
+    expect(deleteBtn).toBeEnabled();
+    await userEvent.click(deleteBtn);
+    expect(await screen.findByText("Organization deleted")).toBeInTheDocument();
   });
 
   it("saves a new organization name and shows a toast", async () => {

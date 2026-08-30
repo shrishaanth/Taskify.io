@@ -21,8 +21,7 @@ export type Priority = "low" | "medium" | "high" | "urgent";
 export type NotificationType =
   | "card_assigned"
   | "comment_mention"
-  | "role_changed"
-  | "due_soon";
+  | "role_changed";
 
 export interface UserRef {
   id: Id;

@@ -2,8 +2,23 @@ import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { createApp } from "../../app.js";
 import { asUser } from "../../test/api.js";
-import { OrgMembershipModel, UserModel } from "../../models/index.js";
-import { addOrgMember, makeOrg, makeUser } from "../../test/factories.js";
+import {
+  BoardModel,
+  CardModel,
+  OrgMembershipModel,
+  OrganizationModel,
+  ProjectModel,
+  UserModel,
+} from "../../models/index.js";
+import {
+  addOrgMember,
+  addProjectMember,
+  makeBoard,
+  makeCard,
+  makeOrg,
+  makeProject,
+  makeUser,
+} from "../../test/factories.js";
 
 const app = createApp();
 
@@ -60,6 +75,43 @@ describe("GET/PATCH /orgs/:orgId", () => {
       .send({ name: "Renamed Co" });
     expect(ok.status).toBe(200);
     expect(ok.body.name).toBe("Renamed Co");
+  });
+});
+
+describe("DELETE /orgs/:orgId", () => {
+  it("an Owner deletes the org and everything under it cascades", async () => {
+    const org = await makeOrg();
+    const owner = await makeUser();
+    await addOrgMember(org._id, owner._id, "owner");
+    const project = await makeProject(org._id, "Doomed Project");
+    await addProjectMember(project._id, owner._id, "head");
+    const board = await makeBoard(org._id, project._id);
+    await makeCard(org._id, board._id);
+
+    const res = await asUser(app, owner).delete(`/api/v1/orgs/${org._id}`);
+    expect(res.status).toBe(204);
+
+    expect(await OrganizationModel.exists({ _id: org._id })).toBeNull();
+    expect(await ProjectModel.exists({ _id: project._id })).toBeNull();
+    expect(await BoardModel.exists({ _id: board._id })).toBeNull();
+    expect(await CardModel.countDocuments({ boardId: board._id })).toBe(0);
+    expect(await OrgMembershipModel.countDocuments({ organizationId: org._id })).toBe(0);
+
+    // the org is gone for the ex-owner too
+    expect((await asUser(app, owner).get(`/api/v1/orgs/${org._id}`)).status).toBe(404);
+  });
+
+  it("an Admin cannot delete the org (403); a non-member gets 404", async () => {
+    const org = await makeOrg();
+    const owner = await makeUser();
+    const admin = await makeUser();
+    const outsider = await makeUser();
+    await addOrgMember(org._id, owner._id, "owner");
+    await addOrgMember(org._id, admin._id, "admin");
+
+    expect((await asUser(app, admin).delete(`/api/v1/orgs/${org._id}`)).status).toBe(403);
+    expect((await asUser(app, outsider).delete(`/api/v1/orgs/${org._id}`)).status).toBe(404);
+    expect(await OrganizationModel.exists({ _id: org._id })).not.toBeNull();
   });
 });
 

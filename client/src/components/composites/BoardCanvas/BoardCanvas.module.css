@@ -1,18 +1,20 @@
 .root {
   display: flex;
   gap: var(--space-4);
-  align-items: flex-start;
+  align-items: stretch;
   overflow-x: auto;
   padding: var(--space-4);
-  min-height: 12rem;
 }
 
 .addColumn {
   width: 17rem;
   flex-shrink: 0;
   display: flex;
+  /* line up with the grey card container, not the column header above it */
+  padding-top: 2.25rem;
 }
 .addColumn > * {
   width: 100%;
-  min-height: 8rem;
+  height: 100%;
+  min-height: 0;
 }

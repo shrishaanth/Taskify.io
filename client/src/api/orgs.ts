@@ -27,6 +27,10 @@ export function updateOrg(orgId: Id, patch: { name?: string; slug?: string }) {
   });
 }
 
+export function deleteOrg(orgId: Id) {
+  return apiFetch<void>(`/orgs/${orgId}`, { method: "DELETE" });
+}
+
 interface RawMember {
   user: { id: string; name: string; email?: string; avatarUrl?: string };
   role: OrgRole;
