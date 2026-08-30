@@ -1,40 +1,29 @@
-# Dependencies
+# dependencies
 node_modules/
+.pnp
+.pnp.js
 
-# Build outputs
+# builds
 dist/
 build/
+*.tsbuildinfo
 
-# Environment files
+# test / coverage
+coverage/
+.vitest/
+
+# env
 .env
 .env.local
 .env.*.local
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# TypeScript cache
-*.tsbuildinfo
-
-# OS files
+# editor / OS
 .DS_Store
 Thumbs.db
-
-# Editor folders
-.vscode/
 .idea/
+.vscode/*
+!.vscode/extensions.json
 
-# Vite cache
-.vite/
-
-# ts-node cache
-.ts-node/
-
-# Test artifacts
-coverage/
-
-# Docker
-.dockerignore
+# logs
+*.log
+npm-debug.log*
