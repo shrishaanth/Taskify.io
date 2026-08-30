@@ -42,7 +42,9 @@ export function validate(schemas: RequestSchemas): RequestHandler {
       query?: Record<string, unknown>;
     };
     if (data.body !== undefined) req.body = data.body;
-    if (data.params !== undefined) req.params = data.params;
+    // Mutate params in place — upstream middleware (resolveScope) may have
+    // injected keys (e.g. projectId) that this schema doesn't declare.
+    if (data.params !== undefined) Object.assign(req.params, data.params);
     if (data.query !== undefined) {
       // express 5 makes req.query a getter; mutate in place to stay compatible.
       for (const key of Object.keys(req.query)) delete (req.query as Record<string, unknown>)[key];

@@ -16,6 +16,11 @@ export {
   type OrgMembership,
   type OrgMembershipDoc,
 } from "./OrgMembership.js";
+export {
+  OrgInviteModel,
+  type OrgInvite,
+  type OrgInviteDoc,
+} from "./OrgInvite.js";
 export { ProjectModel, type Project, type ProjectDoc } from "./Project.js";
 export {
   ProjectMembershipModel,

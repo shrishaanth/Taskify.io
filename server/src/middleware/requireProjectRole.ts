@@ -28,8 +28,8 @@ function build({ roles = [], allowOrgManagerOverride = false }: Options): Reques
     try {
       if (!req.auth) throw AppError.unauthenticated();
 
-      const projectId = req.params.projectId;
-      if (!isValidObjectId(projectId)) throw AppError.notFound();
+      const projectId = req.params.projectId ?? req.resolvedProjectId;
+      if (!projectId || !isValidObjectId(projectId)) throw AppError.notFound();
 
       const project = await ProjectModel.findById(projectId)
         .select("organizationId")
@@ -97,4 +97,14 @@ export function requireProjectRole(...roles: ProjectRole[]): RequestHandler {
  */
 export function requireProjectManage(): RequestHandler {
   return build({ roles: ["head"], allowOrgManagerOverride: true });
+}
+
+/**
+ * Any project member (Head/Member) OR an Org Owner/Admin without a
+ * ProjectMembership. Use where the API contract allows "…, or Org Owner/Admin"
+ * on top of project access — comment/attachment deletion. The route handler
+ * still applies the finer author/uploader check.
+ */
+export function requireBoardAccessOrOrgManager(): RequestHandler {
+  return build({ roles: ["head", "member"], allowOrgManagerOverride: true });
 }

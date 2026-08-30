@@ -33,6 +33,13 @@ declare global {
       auth?: AuthContext;
       org?: OrgContext;
       project?: ProjectContext;
+      /**
+       * Project id derived by resolveScope from a `:boardId` / `:cardId` route
+       * param. Kept off `req.params` because Express restores `req.params` per
+       * router layer when `mergeParams` is on, dropping injected keys.
+       */
+      resolvedProjectId?: string;
+      resolvedBoardId?: string;
     }
   }
 }
