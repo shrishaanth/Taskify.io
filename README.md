@@ -12,7 +12,6 @@ real-time collaboration.
   <img alt="Express" src="https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white">
   <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-Mongoose_8-47A248?logo=mongodb&logoColor=white">
   <img alt="Socket.IO" src="https://img.shields.io/badge/Socket.IO-4-010101?logo=socketdotio&logoColor=white">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-655_passing-success">
 </p>
 
 **[▶ Live demo](https://taskify-io.vercel.app)** — SPA on Vercel, API + Socket.IO
