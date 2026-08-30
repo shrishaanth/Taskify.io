@@ -95,13 +95,19 @@ export function useCardMutations(boardId: Id, openCardId?: Id | null) {
           columnId: args.columnId,
           order: args.order,
         }),
-      // Optimistic: move the card in the cache now so it animates once.
-      onMutate: async (args: {
-        cardId: Id;
-        columnId: string;
-        order: number;
-      }) => {
-        await qc.cancelQueries({ queryKey: qk.cards(boardId) });
+      /**
+       * Optimistic: move the card in the cache *synchronously* so the board
+       * re-renders (and the FLIP animation starts) the instant the card is
+       * dropped — before the network request is even sent. `onMutate` must not
+       * be `async`/awaited or the update is deferred and the card visibly
+       * "sticks" before animating.
+       */
+      onMutate: (args: { cardId: Id; columnId: string; order: number }) => {
+        // Abort any in-flight board refetch (e.g. from a socket event) so it
+        // can't land stale data on top of the optimistic write. Not awaited —
+        // cancellation is synchronous enough and awaiting would re-introduce
+        // the delay.
+        void qc.cancelQueries({ queryKey: qk.cards(boardId) });
         const prev = qc.getQueryData<CardSummary[]>(qk.cards(boardId));
         if (prev) {
           qc.setQueryData<CardSummary[]>(

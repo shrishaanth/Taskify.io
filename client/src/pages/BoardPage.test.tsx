@@ -122,6 +122,42 @@ describe("BoardPage", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("keeps a column's cards as a flat vertical list after a drop (Issue 1)", async () => {
+    renderRoute(BOARD);
+    const doing = await screen.findByRole("region", { name: "In Progress" });
+    const cardEl = within(doing).getByRole("button", {
+      name: /Fix API integration bugs/,
+    });
+    const todoList = within(
+      screen.getByRole("region", { name: "To Do" }),
+    ).getByTestId("kanban-column-list");
+    const beforeCount = todoList.querySelectorAll(
+      '[aria-roledescription="Card"]',
+    ).length;
+
+    const dataTransfer = fakeDataTransfer();
+    fireEvent.dragStart(cardEl, { dataTransfer });
+    fireEvent.dragOver(todoList, { dataTransfer });
+    fireEvent.drop(todoList, { dataTransfer });
+
+    await waitFor(() =>
+      expect(
+        within(screen.getByRole("region", { name: "To Do" })).getByText(
+          /Fix API integration bugs/,
+        ),
+      ).toBeInTheDocument(),
+    );
+
+    // every card in To Do is a direct child of the single vertical list
+    // container — a row-wrapping layout would reparent or add wrappers
+    const list = within(
+      screen.getByRole("region", { name: "To Do" }),
+    ).getByTestId("kanban-column-list");
+    const cards = [...list.querySelectorAll('[aria-roledescription="Card"]')];
+    expect(cards.length).toBe(beforeCount + 1);
+    for (const c of cards) expect(c.parentElement).toBe(list);
+  });
+
   it("renames a card from the detail modal by clicking its title", async () => {
     renderRoute(BOARD);
     await userEvent.click(

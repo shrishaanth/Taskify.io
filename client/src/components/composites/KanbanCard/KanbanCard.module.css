@@ -10,9 +10,10 @@
   box-shadow: var(--shadow-xs);
   text-align: left;
   cursor: pointer;
-  transition:
-    box-shadow var(--duration-fast) var(--ease-standard),
-    transform var(--duration-base) var(--ease-out);
+  /* Only box-shadow transitions here. The move animation is driven entirely by
+     the FLIP hook's inline `transition: transform …` so there is never a second,
+     competing transform transition, and the pickup rotate stays instant. */
+  transition: box-shadow var(--duration-fast) var(--ease-standard);
 }
 .root:hover {
   box-shadow: var(--shadow-sm);
