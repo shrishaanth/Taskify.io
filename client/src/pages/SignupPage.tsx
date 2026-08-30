@@ -4,28 +4,43 @@ import { Link, useNavigate } from "react-router-dom";
 import { Input } from "../components/primitives/Input/Input";
 import { Button } from "../components/primitives/Button/Button";
 import { IconButton } from "../components/primitives/IconButton/IconButton";
+import * as authApi from "../api/auth";
+import { ApiError } from "../api/http";
 import { useSession } from "../stores/sessionStore";
 import styles from "./pages.module.css";
 
 export function SignupPage() {
   const navigate = useNavigate();
-  const signIn = useSession((s) => s.signIn);
+  const bootstrap = useSession((s) => s.bootstrap);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
     }
     setError(null);
-    // Signup creates an account only — no Organization (UC-1).
-    signIn();
-    navigate("/welcome");
+    setPending(true);
+    try {
+      // UC-1: creates an account only — no Organization.
+      await authApi.signup({ name, email, password });
+      await bootstrap();
+      navigate("/welcome");
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 409
+          ? "An account with that email already exists."
+          : "Could not create your account. Check the form and try again.",
+      );
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
@@ -87,7 +102,7 @@ export function SignupPage() {
           {error && <span className={styles.formError}>{error}</span>}
         </div>
 
-        <Button type="submit" fullWidth>
+        <Button type="submit" fullWidth loading={pending}>
           Create account
         </Button>
 

@@ -4,25 +4,32 @@ import userEvent from "@testing-library/user-event";
 import { renderRoute } from "../test/renderRoute";
 
 describe("ProjectPage — Boards tab", () => {
-  it("shows the board tiles and a New Board add-tile for a member", () => {
+  it("shows board tiles and a New Board add-tile", async () => {
     renderRoute("/orgs/org-acme/projects/prj-ecom");
-    expect(screen.getByRole("heading", { level: 1, name: "E-Commerce Redesign" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Sprint Backlog/ })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "E-Commerce Redesign" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Sprint Backlog/ }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "New Board" })).toBeInTheDocument();
   });
 
   it("opens a board tile -> board route", async () => {
     renderRoute("/orgs/org-acme/projects/prj-ecom");
-    await userEvent.click(screen.getByRole("button", { name: /Sprint Backlog/ }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Sprint Backlog/ }),
+    );
     expect(
       await screen.findByRole("heading", { level: 1, name: "Sprint Backlog" }),
     ).toBeInTheDocument();
   });
 
-  it("creates a board via the modal", async () => {
+  it("creates a board via the modal (empty project)", async () => {
     renderRoute("/orgs/org-acme/projects/prj-tokens");
-    // prj-tokens has zero boards -> empty state with a create action
-    await userEvent.click(screen.getByRole("button", { name: /New Board/ }));
+    await userEvent.click(
+      await screen.findByRole("button", { name: /New Board/ }),
+    );
     await userEvent.type(screen.getByLabelText("Board Name"), "Roadmap");
     await userEvent.click(screen.getByRole("button", { name: "Create Board" }));
     expect(
@@ -32,33 +39,55 @@ describe("ProjectPage — Boards tab", () => {
 
   it("switches to the Members tab", async () => {
     renderRoute("/orgs/org-acme/projects/prj-ecom");
-    await userEvent.click(screen.getByRole("tab", { name: "Members" }));
-    expect(await screen.findByRole("cell", { name: "alex@acme.com" })).toBeInTheDocument();
-    // head sees the invite panel
+    await userEvent.click(await screen.findByRole("tab", { name: "Members" }));
+    expect(
+      await screen.findByRole("cell", { name: "u-alex@acme.test" }),
+    ).toBeInTheDocument();
+    // Alex is Head -> invite panel visible
     expect(screen.getByLabelText("Search by Email Address")).toBeInTheDocument();
   });
 });
 
 describe("ProjectPage — access control", () => {
-  it("shows the 403 access-denied screen for a same-org project with no membership", () => {
+  it("shows the 403 screen for a same-org project with no membership", async () => {
     renderRoute("/orgs/org-acme/projects/prj-audit");
     expect(
-      screen.getByRole("heading", { name: "You don't have access to this project" }),
+      await screen.findByRole("heading", {
+        name: "You don't have access to this project",
+      }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Back to Projects" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Back to Projects" }),
+    ).toBeInTheDocument();
   });
 
-  it("shows not-found for an unknown project id", () => {
+  it("shows not-found for an unknown project id", async () => {
     renderRoute("/orgs/org-acme/projects/prj-nope");
-    expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Page not found" }),
+    ).toBeInTheDocument();
   });
 });
 
 describe("ProjectPage — Members tab permissions", () => {
-  it("a plain Member does not get the invite panel or manage controls", () => {
+  it("a plain Member (also a plain org member) does not get the invite panel", async () => {
+    // Marcus: org 'member' + project 'member' of prj-ecom — no manage rights.
+    renderRoute("/orgs/org-acme/projects/prj-ecom/members", { as: "u-marcus" });
+    await screen.findByRole("heading", { level: 1, name: "E-Commerce Redesign" });
+    expect(
+      screen.queryByLabelText("Search by Email Address"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Remove/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("an Org Owner sees the invite panel even as a plain project member (FR-2.7)", async () => {
+    // Alex is org owner + plain project member of prj-q3.
     renderRoute("/orgs/org-acme/projects/prj-q3/members");
-    // current user is a plain member of prj-q3
-    expect(screen.queryByLabelText("Search by Email Address")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Remove/ })).not.toBeInTheDocument();
+    await screen.findByRole("heading", { level: 1, name: "Q3 Marketing Strategy" });
+    expect(
+      await screen.findByLabelText("Search by Email Address"),
+    ).toBeInTheDocument();
   });
 });

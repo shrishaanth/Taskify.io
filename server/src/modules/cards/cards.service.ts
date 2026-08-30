@@ -1,6 +1,8 @@
+import { Types } from "mongoose";
 import { AppError } from "../../lib/errors.js";
 import { deleteCardCascade } from "../../lib/cascade.js";
 import { notifyCardAssigned } from "../../lib/notify.js";
+import { cardDto, userDto, type CardExtras } from "../../lib/serialize.js";
 import {
   AttachmentModel,
   BoardModel,
@@ -8,8 +10,58 @@ import {
   CommentModel,
   ProjectMembershipModel,
   SubtaskModel,
+  UserModel,
   type CardDoc,
 } from "../../models/index.js";
+
+type LeanCard = Parameters<typeof cardDto>[0];
+
+/** Attach assignee UserDtos + subtask/comment counts, then serialise. */
+export async function serializeCards(cards: LeanCard[]) {
+  const cardIds = cards.map((c) => new Types.ObjectId(String(c._id)));
+  const assigneeIds = [
+    ...new Set(cards.flatMap((c) => c.assigneeIds.map(String))),
+  ];
+
+  const [users, subAgg, comAgg] = await Promise.all([
+    UserModel.find({ _id: { $in: assigneeIds } }).lean(),
+    SubtaskModel.aggregate<{ _id: Types.ObjectId; total: number; done: number }>([
+      { $match: { cardId: { $in: cardIds } } },
+      {
+        $group: {
+          _id: "$cardId",
+          total: { $sum: 1 },
+          done: { $sum: { $cond: ["$done", 1, 0] } },
+        },
+      },
+    ]),
+    CommentModel.aggregate<{ _id: Types.ObjectId; count: number }>([
+      { $match: { cardId: { $in: cardIds } } },
+      { $group: { _id: "$cardId", count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const userById = new Map(users.map((u) => [String(u._id), u]));
+  const subById = new Map(subAgg.map((s) => [String(s._id), s]));
+  const comById = new Map(comAgg.map((c) => [String(c._id), c.count]));
+
+  return cards.map((c) => {
+    const extras: CardExtras = {
+      assignees: c.assigneeIds
+        .map((id) => userById.get(String(id)))
+        .filter((u): u is NonNullable<typeof u> => Boolean(u))
+        .map(userDto),
+      subtaskDone: subById.get(String(c._id))?.done ?? 0,
+      subtaskTotal: subById.get(String(c._id))?.total ?? 0,
+      commentCount: comById.get(String(c._id)) ?? 0,
+    };
+    return cardDto(c, extras);
+  });
+}
+
+export async function serializeCard(card: LeanCard) {
+  return (await serializeCards([card]))[0];
+}
 
 async function loadBoard(boardId: string) {
   const board = await BoardModel.findById(boardId).lean();

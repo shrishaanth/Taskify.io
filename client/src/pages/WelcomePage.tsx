@@ -2,13 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/primitives/Button/Button";
 import { CreateOrganizationModal } from "../components/composites/CreateModals/CreateOrganizationModal";
-import { useMockData } from "../stores/mockDataStore";
+import { useCreateOrg } from "../features/orgs";
+import { useSession } from "../stores/sessionStore";
 import styles from "./pages.module.css";
 
 export function WelcomePage() {
   const navigate = useNavigate();
-  const createOrg = useMockData((s) => s.createOrg);
-  const currentUser = useMockData((s) => s.users[s.currentUserId]);
+  const user = useSession((s) => s.session?.user);
+  const createOrg = useCreateOrg();
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
@@ -39,7 +40,7 @@ export function WelcomePage() {
           <h2 style={{ fontSize: "var(--font-size-md)" }}>Waiting for an invite?</h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "var(--font-size-sm)" }}>
             Ask your workspace administrator to invite your registered email:{" "}
-            <strong>{currentUser.email}</strong>
+            <strong>{user?.email}</strong>
           </p>
           <Button variant="secondary" disabled>
             Awaiting workspace approval
@@ -50,10 +51,14 @@ export function WelcomePage() {
       <CreateOrganizationModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        pending={createOrg.isPending}
         onCreate={(name) => {
-          const id = createOrg(name);
-          setModalOpen(false);
-          navigate(`/orgs/${id}/projects`);
+          createOrg.mutate(name, {
+            onSuccess: (org) => {
+              setModalOpen(false);
+              navigate(`/orgs/${org.id}/projects`);
+            },
+          });
         }}
       />
     </main>

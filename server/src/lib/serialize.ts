@@ -54,13 +54,16 @@ export function projectDto(p: {
   };
 }
 
-export function boardDto(b: {
-  _id: Id;
-  organizationId: Id;
-  projectId: Id;
-  name: string;
-  columns: { id: string; name: string; order: number }[];
-} & WithTimestamps) {
+export function boardDto(
+  b: {
+    _id: Id;
+    organizationId: Id;
+    projectId: Id;
+    name: string;
+    columns: { id: string; name: string; order: number }[];
+  } & WithTimestamps,
+  extra?: { cardCount?: number },
+) {
   return {
     id: String(b._id),
     organizationId: String(b.organizationId),
@@ -69,24 +72,35 @@ export function boardDto(b: {
     columns: b.columns
       .map((c) => ({ id: c.id, name: c.name, order: c.order }))
       .sort((a, z) => a.order - z.order),
+    ...(extra?.cardCount !== undefined ? { cardCount: extra.cardCount } : {}),
     createdAt: iso(b.createdAt),
     updatedAt: iso(b.updatedAt),
   };
 }
 
-export function cardDto(c: {
-  _id: Id;
-  organizationId: Id;
-  boardId: Id;
-  columnId: string;
-  order: number;
-  title: string;
-  description?: string | null;
-  labels: string[];
-  assigneeIds: Id[];
-  dueDate?: Date | null;
-  priority?: string | null;
-} & WithTimestamps) {
+export interface CardExtras {
+  assignees?: UserDto[];
+  subtaskDone?: number;
+  subtaskTotal?: number;
+  commentCount?: number;
+}
+
+export function cardDto(
+  c: {
+    _id: Id;
+    organizationId: Id;
+    boardId: Id;
+    columnId: string;
+    order: number;
+    title: string;
+    description?: string | null;
+    labels: string[];
+    assigneeIds: Id[];
+    dueDate?: Date | null;
+    priority?: string | null;
+  } & WithTimestamps,
+  extra: CardExtras = {},
+) {
   return {
     id: String(c._id),
     organizationId: String(c.organizationId),
@@ -97,6 +111,10 @@ export function cardDto(c: {
     ...(c.description ? { description: c.description } : {}),
     labels: [...c.labels],
     assigneeIds: c.assigneeIds.map(String),
+    assignees: extra.assignees ?? [],
+    subtaskDone: extra.subtaskDone ?? 0,
+    subtaskTotal: extra.subtaskTotal ?? 0,
+    commentCount: extra.commentCount ?? 0,
     ...(c.dueDate ? { dueDate: c.dueDate.toISOString() } : {}),
     ...(c.priority ? { priority: c.priority } : {}),
     createdAt: iso(c.createdAt),
@@ -120,16 +138,20 @@ export function subtaskDto(s: {
   };
 }
 
-export function commentDto(c: {
-  _id: Id;
-  cardId: Id;
-  authorId: Id;
-  body: string;
-} & WithTimestamps) {
+export function commentDto(
+  c: {
+    _id: Id;
+    cardId: Id;
+    authorId: Id;
+    body: string;
+  } & WithTimestamps,
+  author?: UserDto,
+) {
   return {
     id: String(c._id),
     cardId: String(c.cardId),
     authorId: String(c.authorId),
+    ...(author ? { author } : {}),
     body: c.body,
     createdAt: iso(c.createdAt),
   };

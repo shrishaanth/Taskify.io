@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
+import { Types } from "mongoose";
 import { AppError } from "../../lib/errors.js";
 import { deleteBoardCascade } from "../../lib/cascade.js";
-import { BoardModel, ProjectModel } from "../../models/index.js";
+import { BoardModel, CardModel, ProjectModel } from "../../models/index.js";
 
 const colId = () => `col_${randomBytes(5).toString("hex")}`;
 
@@ -38,7 +39,19 @@ async function projectOrgId(projectId: string) {
 }
 
 export async function listBoards(projectId: string) {
-  return BoardModel.find({ projectId }).sort({ createdAt: 1 }).lean();
+  const boards = await BoardModel.find({ projectId }).sort({ createdAt: 1 }).lean();
+  if (boards.length === 0) return [];
+
+  const counts = await CardModel.aggregate<{ _id: Types.ObjectId; count: number }>([
+    { $match: { boardId: { $in: boards.map((b) => new Types.ObjectId(String(b._id))) } } },
+    { $group: { _id: "$boardId", count: { $sum: 1 } } },
+  ]);
+  const countByBoard = new Map(counts.map((c) => [String(c._id), c.count]));
+
+  return boards.map((b) => ({
+    ...b,
+    cardCount: countByBoard.get(String(b._id)) ?? 0,
+  }));
 }
 
 export async function createBoard(input: {

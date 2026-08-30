@@ -1,14 +1,28 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ProjectHeader, type ProjectTabId } from "../components/composites/ProjectHeader/ProjectHeader";
+import {
+  ProjectHeader,
+  type ProjectTabId,
+} from "../components/composites/ProjectHeader/ProjectHeader";
 import { BoardTile } from "../components/composites/BoardTile/BoardTile";
 import { AddTile } from "../components/composites/AddTile/AddTile";
 import { EmptyState } from "../components/composites/EmptyState/EmptyState";
 import { MembersTable } from "../components/composites/MembersTable/MembersTable";
 import { InviteForm } from "../components/composites/InviteForm/InviteForm";
+import { Skeleton } from "../components/primitives/Skeleton/Skeleton";
 import { CreateBoardModal } from "../components/composites/CreateModals/CreateBoardModal";
-import { canWorkOnBoard, canManageProjectMembers } from "../lib/permissions";
-import { useMockData, EMPTY } from "../stores/mockDataStore";
+import { useToast } from "../components/primitives/Toast/useToast";
+import { ApiError } from "../api/http";
+import {
+  useProject,
+  useProjectMembers,
+  useRemoveProjectMember,
+  useSetProjectMember,
+} from "../features/projects";
+import { useOrgMembers } from "../features/orgs";
+import { useBoards, useCreateBoard } from "../features/boards";
+import { canManageProjectMembers, canWorkOnBoard } from "../lib/permissions";
+import { useSession } from "../stores/sessionStore";
 import { NotFoundPage } from "./NotFoundPage";
 import { AccessDeniedPage } from "./AccessDeniedPage";
 import styles from "./pages.module.css";
@@ -18,23 +32,38 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
   const { orgId = "", projectId = "" } = useParams();
   const [boardModalOpen, setBoardModalOpen] = useState(false);
 
-  const org = useMockData((s) => s.orgById(orgId));
-  const project = useMockData((s) => s.projectById(orgId, projectId));
-  const projectRole = useMockData((s) => s.projectRoleFor(projectId));
-  const orgRole = useMockData((s) => s.orgRoleFor(orgId));
-  const boards = useMockData((s) => s.boards[projectId] ?? EMPTY);
-  const members = useMockData((s) => s.projectMembers[projectId] ?? EMPTY);
-  const createBoard = useMockData((s) => s.createBoard);
-  const setRole = useMockData((s) => s.setProjectMemberRole);
-  const removeMember = useMockData((s) => s.removeProjectMember);
-  const inviteMember = useMockData((s) => s.inviteProjectMember);
+  const toast = useToast();
+  const org = useSession((s) => s.session?.orgs.find((o) => o.id === orgId));
+  const projectQuery = useProject(orgId, projectId);
+  const boardsQuery = useBoards(projectId);
+  const membersQuery = useProjectMembers(orgId, projectId);
+  const orgMembersQuery = useOrgMembers(orgId);
+  const createBoard = useCreateBoard(projectId);
+  const setRole = useSetProjectMember(orgId, projectId);
+  const removeMember = useRemoveProjectMember(orgId, projectId);
 
-  if (!org || !project) return <NotFoundPage />;
-  if (projectRole === null) return <AccessDeniedPage />;
+  if (!org) return <NotFoundPage />;
 
-  const viewer = { projectRole, orgRole };
+  if (projectQuery.isError) {
+    const status = (projectQuery.error as ApiError)?.status;
+    if (status === 403) return <AccessDeniedPage />;
+    return <NotFoundPage />;
+  }
+  if (projectQuery.isLoading || !projectQuery.data) {
+    return (
+      <main className={styles.page}>
+        <Skeleton variant="line" width={280} />
+        <Skeleton variant="block" height={200} />
+      </main>
+    );
+  }
+
+  const project = projectQuery.data;
+  const viewer = { projectRole: project.role, orgRole: org.role };
   const canWork = canWorkOnBoard(viewer);
   const canManageMembers = canManageProjectMembers(viewer);
+  const boards = boardsQuery.data ?? [];
+  const members = membersQuery.data ?? project.memberRows;
 
   const breadcrumbs = [
     { label: org.name, href: `/orgs/${orgId}/projects` },
@@ -74,15 +103,7 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
               <button
                 type="button"
                 onClick={() => setBoardModalOpen(true)}
-                style={{
-                  padding: "0.5rem 1rem",
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--primary)",
-                  color: "var(--primary-fg)",
-                  border: 0,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                className={styles.primaryPill}
               >
                 + New Board
               </button>
@@ -111,19 +132,45 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
             members={members}
             viewer={viewer}
             onChangeRole={(userId, role) =>
-              setRole(projectId, userId, role as "head" | "member")
+              setRole.mutate({ userId, role: role as "head" | "member" })
             }
-            onRemove={(userId) => removeMember(projectId, userId)}
+            onRemove={(userId) => removeMember.mutate(userId)}
           />
           {canManageMembers && (
             <div className={styles.card}>
               <h3 style={{ marginTop: 0 }}>Invite Member</h3>
-              <p style={{ color: "var(--text-secondary)", fontSize: "var(--font-size-sm)" }}>
+              <p
+                style={{
+                  color: "var(--text-secondary)",
+                  fontSize: "var(--font-size-sm)",
+                }}
+              >
                 Add team members to collaborate on {org.name} projects.
               </p>
               <InviteForm
                 scope="project"
-                onSubmit={(values) => inviteMember(projectId, values)}
+                onSubmit={(values) => {
+                  const role = values.role === "head" ? "head" : "member";
+                  // C6: a project invite grants a role to an existing ORG member.
+                  const target = (orgMembersQuery.data ?? []).find(
+                    (m) => m.user.email === values.email,
+                  );
+                  if (!target) {
+                    toast.show({
+                      tone: "error",
+                      title: "Not an organization member",
+                      description: "Invite them to the organization first.",
+                    });
+                    return;
+                  }
+                  setRole.mutate(
+                    { userId: target.user.id, role },
+                    {
+                      onSuccess: () =>
+                        toast.show({ tone: "success", title: "Member added" }),
+                    },
+                  );
+                }}
               />
             </div>
           )}
@@ -133,10 +180,19 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
       <CreateBoardModal
         open={boardModalOpen}
         onClose={() => setBoardModalOpen(false)}
+        pending={createBoard.isPending}
         onCreate={({ name, colorKey }) => {
-          const id = createBoard(projectId, orgId, { name, colorKey });
-          setBoardModalOpen(false);
-          navigate(`/orgs/${orgId}/projects/${projectId}/boards/${id}`);
+          createBoard.mutate(
+            { name, colorKey },
+            {
+              onSuccess: (board) => {
+                setBoardModalOpen(false);
+                navigate(
+                  `/orgs/${orgId}/projects/${projectId}/boards/${board.id}`,
+                );
+              },
+            },
+          );
         }}
       />
     </main>

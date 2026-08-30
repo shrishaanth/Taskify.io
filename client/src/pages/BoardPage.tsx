@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { BoardHeader } from "../components/composites/BoardHeader/BoardHeader";
 import { BoardCanvas } from "../components/composites/BoardCanvas/BoardCanvas";
 import { EmptyState } from "../components/composites/EmptyState/EmptyState";
 import { CardDetailModal } from "../components/composites/CardDetailModal/CardDetailModal";
+import { Skeleton } from "../components/primitives/Skeleton/Skeleton";
+import { ApiError } from "../api/http";
+import { useBoard, useUpdateBoard } from "../features/boards";
+import { useProject } from "../features/projects";
+import { useCardMutations, useCards, useCardDetail } from "../features/cards";
 import { canWorkOnBoard } from "../lib/permissions";
-import { useMockData, EMPTY } from "../stores/mockDataStore";
+import { useSession } from "../stores/sessionStore";
 import type { CardSummary } from "../types/domain";
 import { NotFoundPage } from "./NotFoundPage";
 import { AccessDeniedPage } from "./AccessDeniedPage";
@@ -15,55 +20,76 @@ export function BoardPage() {
   const { orgId = "", projectId = "", boardId = "" } = useParams();
   const [openCardId, setOpenCardId] = useState<string | null>(null);
 
-  const org = useMockData((s) => s.orgById(orgId));
-  const project = useMockData((s) => s.projectById(orgId, projectId));
-  const board = useMockData((s) => s.boardById(boardId));
-  const projectRole = useMockData((s) => s.projectRoleFor(projectId));
-  const orgRole = useMockData((s) => s.orgRoleFor(orgId));
-  const columns = useMockData((s) => s.boardColumns[boardId] ?? EMPTY);
-  const cards = useMockData((s) => s.cards[boardId] ?? EMPTY);
-  const doneColumnIds = useMockData((s) => s.doneColumnIds[boardId] ?? EMPTY);
-  const members = useMockData((s) => s.projectMembers[projectId] ?? EMPTY);
-  const currentUser = useMockData((s) => s.users[s.currentUserId]);
-  const currentUserId = useMockData((s) => s.currentUserId);
+  const org = useSession((s) => s.session?.orgs.find((o) => o.id === orgId));
+  const currentUser = useSession((s) => s.session?.user);
+  const projectQuery = useProject(orgId, projectId);
+  const boardQuery = useBoard(projectId, boardId);
+  const cardsQuery = useCards(boardId);
 
-  const addCard = useMockData((s) => s.addCard);
-  const addColumn = useMockData((s) => s.addColumn);
-  const renameColumn = useMockData((s) => s.renameColumn);
-  const deleteColumn = useMockData((s) => s.deleteColumn);
-  const getCardDetail = useMockData((s) => s.getCardDetail);
-  const updateCard = useMockData((s) => s.updateCard);
-  const deleteCard = useMockData((s) => s.deleteCard);
-  const toggleSubtask = useMockData((s) => s.toggleSubtask);
-  const addSubtask = useMockData((s) => s.addSubtask);
-  const addComment = useMockData((s) => s.addComment);
-  const deleteComment = useMockData((s) => s.deleteComment);
-  const addAttachment = useMockData((s) => s.addAttachment);
-  const deleteAttachment = useMockData((s) => s.deleteAttachment);
+  const project = projectQuery.data;
+  const members = useMemo(() => project?.members ?? [], [project]);
+  const cardDetailQuery = useCardDetail(boardId, openCardId, members);
+  const m = useCardMutations(boardId, openCardId);
+  const updateBoard = useUpdateBoard(projectId, boardId);
+  const updateBoardColumns = (
+    columns: { id?: string; name: string; order: number }[],
+  ) =>
+    updateBoard.mutate({
+      columns: columns.map((c, i) => ({
+        ...(c.id ? { id: c.id } : {}),
+        name: c.name,
+        order: i,
+      })),
+    });
 
-  // 404 before we reveal anything; then 403 for a same-org project the caller
-  // can't see; only then does board existence matter (UC-10 contrast).
-  if (!org || !project) return <NotFoundPage />;
-  if (projectRole === null) return <AccessDeniedPage />;
-  if (!board) return <NotFoundPage />;
+  if (!org) return <NotFoundPage />;
 
-  const viewer = { projectRole, orgRole };
+  if (projectQuery.isError) {
+    const status = (projectQuery.error as ApiError)?.status;
+    return status === 403 ? <AccessDeniedPage /> : <NotFoundPage />;
+  }
+  if (boardQuery.isError) {
+    const status = (boardQuery.error as ApiError)?.status;
+    return status === 403 ? <AccessDeniedPage /> : <NotFoundPage />;
+  }
+  if (
+    projectQuery.isLoading ||
+    boardQuery.isLoading ||
+    !project ||
+    !boardQuery.data ||
+    !currentUser
+  ) {
+    return (
+      <main className={styles.page}>
+        <Skeleton variant="line" width={260} />
+        <Skeleton variant="block" height={280} />
+      </main>
+    );
+  }
+
+  const board = boardQuery.data;
+  const viewer = { projectRole: project.role, orgRole: org.role };
   const canManage = canWorkOnBoard(viewer);
+  const cards = cardsQuery.data ?? [];
+
+  const doneColumnIds = board.columns
+    .filter((c) => /done|complete/i.test(c.name))
+    .map((c) => c.id);
 
   const cardsByColumn: Record<string, CardSummary[]> = {};
-  for (const col of columns) {
+  for (const col of board.columns) {
     cardsByColumn[col.id] = cards
       .filter((c) => c.columnId === col.id)
       .sort((a, b) => a.order - b.order);
   }
-
-  const detail = openCardId ? getCardDetail(boardId, openCardId) : undefined;
 
   const breadcrumbs = [
     { label: org.name, href: `/orgs/${orgId}/projects` },
     { label: project.name, href: `/orgs/${orgId}/projects/${projectId}` },
     { label: board.name },
   ];
+
+  const detail = openCardId ? cardDetailQuery.data : undefined;
 
   return (
     <div>
@@ -72,23 +98,38 @@ export function BoardPage() {
           name={board.name}
           breadcrumbs={breadcrumbs}
           connection="live"
-          presence={members.map((m) => m.user)}
+          presence={members}
         />
       </div>
 
       <BoardCanvas
-        columns={columns}
+        columns={board.columns}
         cardsByColumn={cardsByColumn}
         doneColumnIds={doneColumnIds}
         canManage={canManage}
-        onAddCard={(columnId) => addCard(boardId, columnId, "Untitled card")}
+        onAddCard={(columnId) =>
+          m.createCard.mutate({ title: "Untitled card", columnId })
+        }
         onOpenCard={(cardId) => setOpenCardId(cardId)}
-        onAddColumn={() => addColumn(boardId, "New Column")}
+        onAddColumn={() =>
+          updateBoardColumns([
+            ...board.columns,
+            { name: "New Column", order: board.columns.length },
+          ])
+        }
         onRenameColumn={(columnId) => {
-          const name = window.prompt("Rename column");
-          if (name) renameColumn(boardId, columnId, name);
+          const next = window.prompt("Rename column");
+          if (next) {
+            updateBoardColumns(
+              board.columns.map((c) =>
+                c.id === columnId ? { ...c, name: next } : c,
+              ),
+            );
+          }
         }}
-        onDeleteColumn={(columnId) => deleteColumn(boardId, columnId)}
+        onDeleteColumn={(columnId) =>
+          updateBoardColumns(board.columns.filter((c) => c.id !== columnId))
+        }
         emptyState={
           <EmptyState
             tone="red"
@@ -100,16 +141,10 @@ export function BoardPage() {
                   actions: (
                     <button
                       type="button"
-                      onClick={() => addColumn(boardId, "To Do")}
-                      style={{
-                        padding: "0.5rem 1rem",
-                        borderRadius: "var(--radius-md)",
-                        background: "var(--primary)",
-                        color: "var(--primary-fg)",
-                        border: 0,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
+                      className={styles.primaryPill}
+                      onClick={() =>
+                        updateBoardColumns([{ name: "To Do", order: 0 }])
+                      }
                     >
                       + Add your first column
                     </button>
@@ -128,25 +163,42 @@ export function BoardPage() {
           breadcrumb={`${project.name} / ${board.name}`.toUpperCase()}
           viewer={viewer}
           currentUser={currentUser}
-          currentUserId={currentUserId}
-          projectMembers={members.map((m) => m.user)}
-          onUpdateCard={(patch) => updateCard(detail.id, patch)}
-          onToggleSubtask={(id, done) => toggleSubtask(detail.id, id, done)}
-          onAddSubtask={(title) => addSubtask(detail.id, title)}
-          onAddComment={(body) => addComment(detail.id, body)}
-          onDeleteComment={(id) => deleteComment(detail.id, id)}
+          currentUserId={currentUser.id}
+          projectMembers={members}
+          onUpdateCard={(patch) =>
+            m.updateCard.mutate({ cardId: detail.id, patch })
+          }
+          onToggleSubtask={(id, done) =>
+            m.toggleSubtask.mutate({ cardId: detail.id, subtaskId: id, done })
+          }
+          onAddSubtask={(title) =>
+            m.addSubtask.mutate({ cardId: detail.id, title })
+          }
+          onAddComment={(body) =>
+            m.addComment.mutate({ cardId: detail.id, body })
+          }
+          onDeleteComment={(id) =>
+            m.deleteComment.mutate({ cardId: detail.id, commentId: id })
+          }
           onUploadAttachment={(file) =>
-            addAttachment(detail.id, {
-              name: file.name,
-              size: file.size,
-              type: file.type,
+            m.addAttachment.mutate({
+              cardId: detail.id,
+              meta: {
+                fileName: file.name,
+                fileUrl: `blob:${file.name}`,
+                mimeType: file.type || "application/octet-stream",
+                sizeBytes: file.size,
+              },
             })
           }
-          onDeleteAttachment={(id) => deleteAttachment(detail.id, id)}
-          onDeleteCard={() => {
-            deleteCard(boardId, detail.id);
-            setOpenCardId(null);
-          }}
+          onDeleteAttachment={(id) =>
+            m.deleteAttachment.mutate({ cardId: detail.id, attachmentId: id })
+          }
+          onDeleteCard={() =>
+            m.deleteCard.mutate(detail.id, {
+              onSuccess: () => setOpenCardId(null),
+            })
+          }
         />
       )}
     </div>

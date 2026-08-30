@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./pages/AppShell";
 import { LoginPage } from "./pages/LoginPage";
@@ -9,20 +11,50 @@ import { BoardPage } from "./pages/BoardPage";
 import { OrgMembersPage } from "./pages/OrgMembersPage";
 import { OrgSettingsPage } from "./pages/OrgSettingsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { Spinner } from "./components/primitives/Spinner/Spinner";
 import { useSession } from "./stores/sessionStore";
-import { useMockData } from "./stores/mockDataStore";
 
-function RootRedirect() {
-  const firstOrg = useMockData((s) => s.orgs[0]);
-  return <Navigate to={firstOrg ? `/orgs/${firstOrg.id}/projects` : "/welcome"} replace />;
+function FullPageLoader() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Spinner size="lg" label="Loading Taskify" />
+    </div>
+  );
 }
 
-function RequireAuth({ children }: { children: React.ReactNode }) {
-  const isAuthenticated = useSession((s) => s.isAuthenticated);
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+function RequireAuth({ children }: { children: ReactNode }) {
+  const status = useSession((s) => s.status);
+  if (status === "loading") return <FullPageLoader />;
+  if (status !== "authenticated") return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function RootRedirect() {
+  const status = useSession((s) => s.status);
+  const session = useSession((s) => s.session);
+  if (status === "loading") return <FullPageLoader />;
+  if (status !== "authenticated") return <Navigate to="/login" replace />;
+  const firstOrg = session?.orgs[0];
+  return (
+    <Navigate to={firstOrg ? `/orgs/${firstOrg.id}/projects` : "/welcome"} replace />
+  );
 }
 
 export function AppRoutes() {
+  const bootstrap = useSession((s) => s.bootstrap);
+  const status = useSession((s) => s.status);
+
+  useEffect(() => {
+    if (status === "loading") void bootstrap();
+  }, [status, bootstrap]);
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

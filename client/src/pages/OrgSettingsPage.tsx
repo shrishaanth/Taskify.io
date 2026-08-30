@@ -5,19 +5,16 @@ import { DangerZone } from "../components/composites/DangerZone/DangerZone";
 import { Input } from "../components/primitives/Input/Input";
 import { Button } from "../components/primitives/Button/Button";
 import { useToast } from "../components/primitives/Toast/useToast";
+import { useUpdateOrg } from "../features/orgs";
 import { canEditOrg } from "../lib/permissions";
-import { useMockData } from "../stores/mockDataStore";
+import { useSession } from "../stores/sessionStore";
 import { NotFoundPage } from "./NotFoundPage";
 import styles from "./pages.module.css";
 
 export function OrgSettingsPage() {
   const { orgId = "" } = useParams();
-  const org = useMockData((s) => s.orgById(orgId));
-  const orgRole = useMockData((s) => s.orgRoleFor(orgId));
-  const updateOrgName = useMockData((s) => s.updateOrgName);
-  const owners = useMockData(
-    (s) => (s.orgMembers[orgId] ?? []).filter((m) => m.role === "owner").length,
-  );
+  const org = useSession((s) => s.session?.orgs.find((o) => o.id === orgId));
+  const updateOrg = useUpdateOrg(orgId);
   const toast = useToast();
 
   const [name, setName] = useState(org?.name ?? "");
@@ -27,15 +24,17 @@ export function OrgSettingsPage() {
 
   if (!org) return <NotFoundPage />;
 
-  const canEdit = canEditOrg(orgRole);
-  const soleOwner = owners <= 1;
+  const canEdit = canEditOrg(org.role);
 
   return (
     <main className={styles.page}>
       <PageHeader
         title="Organization Settings"
         subtitle="Modify organization name, custom branding, and general configurations."
-        breadcrumbs={[{ label: org.name, href: `/orgs/${orgId}/projects` }, { label: "Settings" }]}
+        breadcrumbs={[
+          { label: org.name, href: `/orgs/${orgId}/projects` },
+          { label: "Settings" },
+        ]}
       />
 
       <div className={styles.settingsStack}>
@@ -54,11 +53,21 @@ export function OrgSettingsPage() {
           <div style={{ marginTop: "var(--space-4)" }}>
             <Button
               size="sm"
-              disabled={!canEdit || name.trim().length === 0 || name === org.name}
-              onClick={() => {
-                updateOrgName(orgId, name.trim());
-                toast.show({ tone: "success", title: "Organization updated" });
-              }}
+              loading={updateOrg.isPending}
+              disabled={
+                !canEdit || name.trim().length === 0 || name === org.name
+              }
+              onClick={() =>
+                updateOrg.mutate(
+                  { name: name.trim() },
+                  {
+                    onSuccess: () =>
+                      toast.show({ tone: "success", title: "Organization updated" }),
+                    onError: () =>
+                      toast.show({ tone: "error", title: "Could not save changes" }),
+                  },
+                )
+              }
             >
               Save Changes
             </Button>
@@ -69,11 +78,7 @@ export function OrgSettingsPage() {
           description="Permanently delete this organization and all its data. This action is irreversible."
           actionLabel="Delete Organization"
           disabled
-          helperText={
-            soleOwner
-              ? "Requires no other Owners"
-              : "Deleting removes every project, board and card"
-          }
+          helperText="Requires no other Owners"
         />
       </div>
     </main>

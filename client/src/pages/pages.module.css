@@ -108,6 +108,20 @@
   padding: var(--space-5);
 }
 
+.primaryPill {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: var(--primary-fg);
+  border: 0;
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+.primaryPill:hover {
+  background: var(--primary-hover);
+}
+
 .settingsStack {
   display: flex;
   flex-direction: column;

@@ -2,10 +2,11 @@ import type { Request, Response } from "express";
 import { auth } from "../../lib/http.js";
 import {
   attachmentDto,
-  cardDto,
   commentDto,
   subtaskDto,
+  userDto,
 } from "../../lib/serialize.js";
+import { UserModel } from "../../models/index.js";
 import * as service from "./cards.service.js";
 
 function projectId(req: Request): string {
@@ -14,7 +15,7 @@ function projectId(req: Request): string {
 
 export async function list(req: Request, res: Response) {
   const cards = await service.listCards(req.params.boardId);
-  res.json(cards.map(cardDto));
+  res.json(await service.serializeCards(cards));
 }
 
 export async function create(req: Request, res: Response) {
@@ -24,7 +25,7 @@ export async function create(req: Request, res: Response) {
     actorId: auth(req).userId,
     ...req.body,
   });
-  res.status(201).json(cardDto(card));
+  res.status(201).json(await service.serializeCard(card.toObject()));
 }
 
 export async function detail(req: Request, res: Response) {
@@ -32,10 +33,18 @@ export async function detail(req: Request, res: Response) {
     req.params.boardId,
     req.params.cardId,
   );
+  const serialized = await service.serializeCard(card.toObject());
+  const authors = await UserModel.find({
+    _id: { $in: [...new Set(comments.map((c) => String(c.authorId)))] },
+  }).lean();
+  const authorById = new Map(authors.map((u) => [String(u._id), u]));
   res.json({
-    ...cardDto(card),
+    ...serialized,
     subtasks: subtasks.map(subtaskDto),
-    comments: comments.map(commentDto),
+    comments: comments.map((c) => {
+      const a = authorById.get(String(c.authorId));
+      return commentDto(c, a ? userDto(a) : undefined);
+    }),
     attachments: attachments.map(attachmentDto),
   });
 }
@@ -48,7 +57,7 @@ export async function update(req: Request, res: Response) {
     actorId: auth(req).userId,
     patch: req.body,
   });
-  res.json(cardDto(card));
+  res.json(await service.serializeCard(card.toObject()));
 }
 
 export async function move(req: Request, res: Response) {
@@ -58,7 +67,7 @@ export async function move(req: Request, res: Response) {
     columnId: req.body.columnId,
     order: req.body.order,
   });
-  res.json(cardDto(card));
+  res.json(await service.serializeCard(card.toObject()));
 }
 
 export async function remove(req: Request, res: Response) {

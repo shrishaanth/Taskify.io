@@ -4,22 +4,37 @@ import { Link, useNavigate } from "react-router-dom";
 import { Input } from "../components/primitives/Input/Input";
 import { Button } from "../components/primitives/Button/Button";
 import { IconButton } from "../components/primitives/IconButton/IconButton";
+import * as authApi from "../api/auth";
+import { ApiError } from "../api/http";
 import { useSession } from "../stores/sessionStore";
-import { useMockData } from "../stores/mockDataStore";
 import styles from "./pages.module.css";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const signIn = useSession((s) => s.signIn);
-  const orgs = useMockData((s) => s.orgs);
+  const bootstrap = useSession((s) => s.bootstrap);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    signIn();
-    navigate(orgs[0] ? `/orgs/${orgs[0].id}/projects` : "/welcome");
+    setError(null);
+    setPending(true);
+    try {
+      await authApi.login({ email, password });
+      await bootstrap();
+      navigate("/");
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 401
+          ? "Invalid email or password."
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
@@ -58,6 +73,7 @@ export function LoginPage() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            invalid={Boolean(error)}
             trailingSlot={
               <IconButton
                 label={show ? "Hide password" : "Show password"}
@@ -67,9 +83,10 @@ export function LoginPage() {
               />
             }
           />
+          {error && <span className={styles.formError}>{error}</span>}
         </div>
 
-        <Button type="submit" fullWidth>
+        <Button type="submit" fullWidth loading={pending}>
           Log in
         </Button>
 

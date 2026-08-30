@@ -4,7 +4,7 @@ import * as service from "./boards.service.js";
 
 export async function list(req: Request, res: Response) {
   const boards = await service.listBoards(req.params.projectId);
-  res.json(boards.map(boardDto));
+  res.json(boards.map((b) => boardDto(b, { cardCount: b.cardCount })));
 }
 
 export async function create(req: Request, res: Response) {

@@ -11,7 +11,8 @@ import {
 } from "../../middleware/requireProjectRole.js";
 import { resolveProjectFromCard } from "../../middleware/resolveScope.js";
 import { validate } from "../../middleware/validate.js";
-import { CardModel, CommentModel } from "../../models/index.js";
+import { CardModel, CommentModel, UserModel } from "../../models/index.js";
+import { userDto } from "../../lib/serialize.js";
 import { canDeleteAuthored } from "./childScope.js";
 
 const objectId = z.string().regex(/^[a-f0-9]{24}$/i);
@@ -29,7 +30,16 @@ commentsRouter.get(
     const rows = await CommentModel.find({ cardId: req.params.cardId })
       .sort({ createdAt: 1 })
       .lean();
-    res.json(rows.map(commentDto));
+    const authors = await UserModel.find({
+      _id: { $in: [...new Set(rows.map((r) => String(r.authorId)))] },
+    }).lean();
+    const byId = new Map(authors.map((u) => [String(u._id), u]));
+    res.json(
+      rows.map((r) => {
+        const a = byId.get(String(r.authorId));
+        return commentDto(r, a ? userDto(a) : undefined);
+      }),
+    );
   }),
 );
 
@@ -47,6 +57,7 @@ commentsRouter.post(
       authorId: me,
       body: req.body.body,
     });
+    const author = await UserModel.findById(me).lean();
 
     // UC-8 — notify the card's assignees, except the author.
     const card = await CardModel.findById(req.params.cardId)
@@ -60,7 +71,7 @@ commentsRouter.post(
       );
     }
 
-    res.status(201).json(commentDto(comment));
+    res.status(201).json(commentDto(comment, author ? userDto(author) : undefined));
   }),
 );
 
