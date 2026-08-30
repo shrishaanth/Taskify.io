@@ -2,7 +2,6 @@ import { cn } from "../../utils/cn";
 import { OrgSwitcher } from "../OrgSwitcher/OrgSwitcher";
 import { NotificationBell } from "../NotificationBell/NotificationBell";
 import { UserMenu } from "../UserMenu/UserMenu";
-import { SearchInput } from "../SearchInput/SearchInput";
 import type { AppNotification, Id, OrgSummary, UserRef } from "../../../types/domain";
 import styles from "./TopNavBar.module.css";
 
@@ -17,8 +16,6 @@ export interface TopNavBarProps {
   onMarkAllNotificationsRead: () => void;
   onNotificationClick?: (id: string) => void;
   user: UserRef;
-  onSearch?: (q: string) => void;
-  searchPlaceholder?: string;
   onProfile?: () => void;
   onLogout?: () => void;
   onLogoutAll?: () => void;
@@ -43,8 +40,6 @@ export function TopNavBar({
   onMarkAllNotificationsRead,
   onNotificationClick,
   user,
-  onSearch,
-  searchPlaceholder = "Search projects…",
   onProfile,
   onLogout,
   onLogoutAll,
@@ -70,12 +65,6 @@ export function TopNavBar({
       />
 
       <span className={styles.spacer} />
-
-      <SearchInput
-        className={styles.search}
-        placeholder={searchPlaceholder}
-        {...(onSearch ? { onSearch } : {})}
-      />
 
       <div className={styles.right}>
         <NotificationBell

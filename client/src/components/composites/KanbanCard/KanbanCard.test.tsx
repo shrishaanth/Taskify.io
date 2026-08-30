@@ -23,15 +23,23 @@ const base: CardSummary = {
 };
 
 describe("KanbanCard — default state", () => {
-  it("renders labels, title, due date, subtask + comment counts and assignee", () => {
+  it("renders labels, title, priority, due date, subtask + comment counts and assignee", () => {
     render(<KanbanCard card={base} onOpen={() => {}} now={NOW} />);
     expect(screen.getByText("Design")).toBeInTheDocument();
     expect(screen.getByText("Tokens")).toBeInTheDocument();
+    expect(screen.getByText("High Priority")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Design system token mapping/ })).toBeInTheDocument();
     expect(screen.getByText("Oct 20")).toHaveAttribute("data-overdue", "false");
     expect(screen.getByTestId("subtask-progress")).toHaveTextContent("3/5");
     expect(screen.getByTestId("comment-count")).toHaveTextContent("2");
     expect(screen.getByRole("img", { name: "Alex Rivera" })).toBeInTheDocument();
+  });
+
+  it("omits the priority badge when the card has no priority", () => {
+    const noPriority: CardSummary = { ...base };
+    delete noPriority.priority;
+    render(<KanbanCard card={noPriority} onOpen={() => {}} now={NOW} />);
+    expect(screen.queryByText(/Priority/)).not.toBeInTheDocument();
   });
 
   it("opens on click", async () => {

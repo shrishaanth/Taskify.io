@@ -69,16 +69,6 @@ interface Comment {
   body: string;
   createdAt: string;
 }
-interface Attachment {
-  id: string;
-  cardId: string;
-  uploadedById: string;
-  fileName: string;
-  fileUrl: string;
-  mimeType: string;
-  sizeBytes: number;
-  createdAt: string;
-}
 interface OrgInviteRow {
   id: string;
   orgId: string;
@@ -100,7 +90,6 @@ export interface FakeDb {
   cards: Card[];
   subtasks: Subtask[];
   comments: Comment[];
-  attachments: Attachment[];
   invites: OrgInviteRow[];
   notifications: AppNotification[];
 }
@@ -241,7 +230,6 @@ export function seedDb(): FakeDb {
         createdAt: new Date(Date.now() - 3_600_000).toISOString(),
       },
     ],
-    attachments: [],
     invites: [
       {
         id: "inv-seed",

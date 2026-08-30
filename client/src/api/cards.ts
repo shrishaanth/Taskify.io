@@ -1,5 +1,4 @@
 import type {
-  Attachment,
   CardDetail,
   CardPatch,
   CardSummary,
@@ -29,18 +28,9 @@ interface RawComment {
   body: string;
   createdAt: string;
 }
-interface RawAttachment {
-  id: string;
-  uploadedById: string;
-  fileName: string;
-  fileUrl: string;
-  mimeType: string;
-  sizeBytes: number;
-}
 interface RawCardDetail extends RawCard {
   subtasks: RawSubtask[];
   comments: RawComment[];
-  attachments: RawAttachment[];
 }
 
 const toSummary = (c: RawCard): CardSummary => ({
@@ -58,7 +48,7 @@ const toSummary = (c: RawCard): CardSummary => ({
   commentCount: c.commentCount ?? 0,
 });
 
-/** Resolve the id-only refs on subtasks/comments/attachments against members. */
+/** Resolve the id-only refs on subtasks/comments against members. */
 function toDetail(c: RawCardDetail, members: UserRef[]): CardDetail {
   const byId = new Map(members.map((m) => [m.id, m]));
   const ref = (id?: string): UserRef =>
@@ -77,14 +67,6 @@ function toDetail(c: RawCardDetail, members: UserRef[]): CardDetail {
       body: cm.body,
       createdAt: cm.createdAt,
       author: cm.author ?? ref(cm.authorId),
-    })),
-    attachments: c.attachments.map<Attachment>((a) => ({
-      id: a.id,
-      fileName: a.fileName,
-      fileUrl: a.fileUrl,
-      mimeType: a.mimeType,
-      sizeBytes: a.sizeBytes,
-      uploadedBy: ref(a.uploadedById),
     })),
   };
 }
@@ -171,21 +153,6 @@ export function addComment(cardId: Id, body: string) {
 }
 export function deleteComment(cardId: Id, commentId: Id) {
   return apiFetch<void>(`/cards/${cardId}/comments/${commentId}`, {
-    method: "DELETE",
-  });
-}
-
-export function addAttachment(
-  cardId: Id,
-  meta: { fileName: string; fileUrl: string; mimeType: string; sizeBytes: number },
-) {
-  return apiFetch<RawAttachment>(`/cards/${cardId}/attachments`, {
-    method: "POST",
-    body: meta,
-  });
-}
-export function deleteAttachment(cardId: Id, attachmentId: Id) {
-  return apiFetch<void>(`/cards/${cardId}/attachments/${attachmentId}`, {
     method: "DELETE",
   });
 }

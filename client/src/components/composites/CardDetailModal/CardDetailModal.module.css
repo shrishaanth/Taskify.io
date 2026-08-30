@@ -23,6 +23,31 @@
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
 }
+.titleButton {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  margin-left: calc(var(--space-2) * -1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: text;
+}
+.titleButton:hover {
+  background-color: var(--bg-surface-muted);
+}
+.titleButton:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.titleInput {
+  font: inherit;
+  padding: var(--space-1) var(--space-2);
+}
 .headerActions {
   display: inline-flex;
   gap: var(--space-1);

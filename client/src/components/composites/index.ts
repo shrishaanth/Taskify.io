@@ -106,12 +106,6 @@ export type { CommentItemProps } from "./CommentItem/CommentItem";
 export { CommentList } from "./CommentList/CommentList";
 export type { CommentListProps } from "./CommentList/CommentList";
 
-export { AttachmentItem } from "./AttachmentItem/AttachmentItem";
-export type { AttachmentItemProps } from "./AttachmentItem/AttachmentItem";
-
-export { AttachmentList } from "./AttachmentList/AttachmentList";
-export type { AttachmentListProps } from "./AttachmentList/AttachmentList";
-
 export { LabelPicker } from "./LabelPicker/LabelPicker";
 export type { LabelPickerProps } from "./LabelPicker/LabelPicker";
 

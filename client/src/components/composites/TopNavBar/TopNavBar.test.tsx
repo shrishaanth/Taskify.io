@@ -34,20 +34,13 @@ function setup(extra: Partial<Parameters<typeof TopNavBar>[0]> = {}) {
 }
 
 describe("TopNavBar", () => {
-  it("renders brand, org switcher, search, bell and account", () => {
+  it("renders brand, org switcher, bell and account (no search bar)", () => {
     setup();
     expect(screen.getByText("Taskify")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /acme design studio/i })).toBeInTheDocument();
-    expect(screen.getByRole("search")).toBeInTheDocument();
+    expect(screen.queryByRole("search")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /notifications/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Account: Alex Rivera" })).toBeInTheDocument();
-  });
-
-  it("wires search submit", async () => {
-    const onSearch = vi.fn();
-    setup({ onSearch });
-    await userEvent.type(screen.getByRole("searchbox"), "hello{Enter}");
-    expect(onSearch).toHaveBeenCalledWith("hello");
   });
 
   it("opens the notification panel from the bell", async () => {
@@ -65,10 +58,5 @@ describe("TopNavBar", () => {
     );
     await userEvent.click(screen.getByRole("menuitem", { name: "Members" }));
     expect(onOpenOrgMembers).toHaveBeenCalledTimes(1);
-  });
-
-  it("uses a context-specific search placeholder", () => {
-    setup({ searchPlaceholder: "Search boards, tasks…" });
-    expect(screen.getByPlaceholderText("Search boards, tasks…")).toBeInTheDocument();
   });
 });

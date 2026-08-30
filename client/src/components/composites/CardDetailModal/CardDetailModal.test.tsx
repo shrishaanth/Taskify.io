@@ -38,16 +38,6 @@ const card: CardDetail = {
       createdAt: "2026-08-30T10:00:00Z",
     },
   ],
-  attachments: [
-    {
-      id: "a1",
-      fileName: "hero_draft_v1.png",
-      fileUrl: "/f/a1",
-      mimeType: "image/png",
-      sizeBytes: 2048,
-      uploadedBy: { id: "u2", name: "Alex Rivera" },
-    },
-  ],
 };
 
 function setup(over: Partial<CardDetailModalProps> = {}) {
@@ -64,7 +54,6 @@ function setup(over: Partial<CardDetailModalProps> = {}) {
     onToggleSubtask: vi.fn(),
     onAddSubtask: vi.fn(),
     onAddComment: vi.fn(),
-    onUploadAttachment: vi.fn(),
     now: NOW,
     ...over,
   };
@@ -82,7 +71,16 @@ describe("CardDetailModal — layout", () => {
     expect(within(dialog).getByText("Alex Rivera")).toBeInTheDocument();
     expect(within(dialog).getByText("Marketing")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Due date")).toHaveValue("2026-10-24");
-    expect(within(dialog).getByText("hero_draft_v1.png")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Attachments")).not.toBeInTheDocument();
+  });
+
+  it("renames the card by clicking the title (Head/Member)", async () => {
+    const { onUpdateCard } = setup();
+    await userEvent.click(screen.getByRole("button", { name: card.title }));
+    const input = screen.getByLabelText("Card title");
+    await userEvent.clear(input);
+    await userEvent.type(input, "Refreshed hero banner{Enter}");
+    expect(onUpdateCard).toHaveBeenCalledWith({ title: "Refreshed hero banner" });
   });
 
   it("closes via the close button", async () => {

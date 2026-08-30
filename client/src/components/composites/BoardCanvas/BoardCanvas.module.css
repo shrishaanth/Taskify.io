@@ -10,4 +10,9 @@
 .addColumn {
   width: 17rem;
   flex-shrink: 0;
+  display: flex;
+}
+.addColumn > * {
+  width: 100%;
+  min-height: 8rem;
 }

@@ -51,15 +51,6 @@ export interface Comment {
   createdAt: IsoDate;
 }
 
-export interface Attachment {
-  id: Id;
-  fileName: string;
-  fileUrl: string;
-  mimeType: string;
-  sizeBytes: number;
-  uploadedBy: UserRef;
-}
-
 export interface CardSummary {
   id: Id;
   boardId: Id;
@@ -79,7 +70,6 @@ export interface CardDetail extends CardSummary {
   description?: string;
   subtasks: Subtask[];
   comments: Comment[];
-  attachments: Attachment[];
 }
 
 /** Editable card fields (PATCH /boards/:boardId/cards/:cardId). */

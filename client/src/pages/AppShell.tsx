@@ -34,7 +34,6 @@ export function AppShell() {
         notifications={notifications}
         onMarkAllNotificationsRead={() => markAllRead.mutate()}
         user={session.user}
-        onSearch={() => {}}
         onLogout={() => {
           void signOut().then(() => navigate("/login"));
         }}

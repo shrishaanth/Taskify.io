@@ -1,7 +1,19 @@
 import { describe, it, expect, vi } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, within, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderRoute } from "../test/renderRoute";
+
+function fakeDataTransfer() {
+  const store: Record<string, string> = {};
+  return {
+    setData: (k: string, v: string) => {
+      store[k] = v;
+    },
+    getData: (k: string) => store[k] ?? "",
+    effectAllowed: "",
+    dropEffect: "",
+  };
+}
 
 const BOARD = "/orgs/org-acme/projects/prj-ecom/boards/brd-sprint";
 
@@ -79,6 +91,51 @@ describe("BoardPage", () => {
     expect(
       screen.queryByText(/Fix API integration bugs/),
     ).not.toBeInTheDocument();
+  });
+
+  it("moves a card to another column by drag and drop", async () => {
+    renderRoute(BOARD);
+    const doing = await screen.findByRole("region", { name: "In Progress" });
+    const cardEl = within(doing).getByRole("button", {
+      name: /Fix API integration bugs/,
+    });
+
+    const dataTransfer = fakeDataTransfer();
+    fireEvent.dragStart(cardEl, { dataTransfer });
+    const doneRegion = screen.getByRole("region", { name: "Done" });
+    const dropZone = within(doneRegion).getByTestId("kanban-column-list");
+    fireEvent.dragOver(dropZone, { dataTransfer });
+    fireEvent.drop(dropZone, { dataTransfer });
+
+    await waitFor(() =>
+      expect(
+        within(screen.getByRole("region", { name: "Done" })).getByText(
+          /Fix API integration bugs/,
+        ),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      within(screen.getByRole("region", { name: "In Progress" })).queryByText(
+        /Fix API integration bugs/,
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renames a card from the detail modal by clicking its title", async () => {
+    renderRoute(BOARD);
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Fix API integration bugs/ }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: /Fix API integration bugs/ }),
+    );
+    const input = within(dialog).getByLabelText("Card title");
+    await userEvent.clear(input);
+    await userEvent.type(input, "Checkout flow fixes{Enter}");
+    expect(
+      await within(dialog).findByRole("heading", { name: "Checkout flow fixes" }),
+    ).toBeInTheDocument();
   });
 
   it("shows the empty board state when the board has no columns", async () => {

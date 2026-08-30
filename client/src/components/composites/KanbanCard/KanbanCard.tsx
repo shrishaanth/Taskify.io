@@ -2,6 +2,7 @@ import { cn } from "../../utils/cn";
 import { Chip } from "../../primitives/Chip/Chip";
 import { Avatar } from "../../primitives/Avatar/Avatar";
 import { DueDateChip } from "../DueDateChip/DueDateChip";
+import { PriorityBadge } from "../PriorityBadge/PriorityBadge";
 import { labelToneFor } from "../../../lib/labelColor";
 import type { CardSummary } from "../../../types/domain";
 import styles from "./KanbanCard.module.css";
@@ -11,6 +12,14 @@ export interface KanbanCardProps {
   /** Column is a "done" column — suppresses overdue styling. */
   done?: boolean;
   isDragging?: boolean;
+  /** Enables HTML5 drag to move the card between columns. */
+  draggable?: boolean;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  /** A drag is hovering over this card — show an insertion cue. */
+  isDropTarget?: boolean;
+  onDragOverCard?: () => void;
+  onDropOnCard?: () => void;
   onOpen: () => void;
   now?: Date;
   className?: string;
@@ -32,6 +41,12 @@ export function KanbanCard({
   card,
   done = false,
   isDragging = false,
+  draggable = false,
+  onDragStart,
+  onDragEnd,
+  isDropTarget = false,
+  onDragOverCard,
+  onDropOnCard,
   onOpen,
   now,
   className,
@@ -43,11 +58,44 @@ export function KanbanCard({
       type="button"
       className={cn(styles.root, className)}
       data-dragging={isDragging ? "true" : "false"}
+      data-drop-target={isDropTarget ? "true" : "false"}
       aria-roledescription="Card"
+      draggable={draggable}
       onClick={onOpen}
+      onDragStart={
+        draggable
+          ? (e) => {
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", card.id);
+              onDragStart?.();
+            }
+          : undefined
+      }
+      onDragEnd={draggable ? () => onDragEnd?.() : undefined}
+      onDragOver={
+        onDragOverCard
+          ? (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDragOverCard();
+            }
+          : undefined
+      }
+      onDrop={
+        onDropOnCard
+          ? (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDropOnCard();
+            }
+          : undefined
+      }
     >
-      {card.labels.length > 0 && (
+      {(card.labels.length > 0 || card.priority) && (
         <span className={styles.labels}>
+          {card.priority && (
+            <PriorityBadge priority={card.priority} size="sm" />
+          )}
           {card.labels.map((label) => (
             <Chip key={label} tone={labelToneFor(label)} size="sm">
               {label}

@@ -78,22 +78,5 @@ export function useCardMutations(boardId: Id, openCardId?: Id | null) {
         cardsApi.deleteComment(args.cardId, args.commentId),
       onSuccess: invalidateCard,
     }),
-    addAttachment: useMutation({
-      mutationFn: (args: {
-        cardId: Id;
-        meta: {
-          fileName: string;
-          fileUrl: string;
-          mimeType: string;
-          sizeBytes: number;
-        };
-      }) => cardsApi.addAttachment(args.cardId, args.meta),
-      onSuccess: invalidateCard,
-    }),
-    deleteAttachment: useMutation({
-      mutationFn: (args: { cardId: Id; attachmentId: Id }) =>
-        cardsApi.deleteAttachment(args.cardId, args.attachmentId),
-      onSuccess: invalidateCard,
-    }),
   };
 }

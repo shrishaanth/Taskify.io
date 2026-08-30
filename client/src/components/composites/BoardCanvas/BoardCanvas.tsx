@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { cn } from "../../utils/cn";
 import { AddTile } from "../AddTile/AddTile";
 import { KanbanColumn } from "../KanbanColumn/KanbanColumn";
@@ -13,6 +13,15 @@ export interface BoardCanvasProps {
   onAddColumn?: () => void;
   onRenameColumn?: (columnId: string) => void;
   onDeleteColumn?: (columnId: string) => void;
+  /**
+   * Move a card via drag-and-drop. `beforeCardId` is the card to drop in front
+   * of, or null to append to the end of `toColumnId`.
+   */
+  onMoveCard?: (
+    cardId: string,
+    toColumnId: string,
+    beforeCardId: string | null,
+  ) => void;
   /** Head/Member both true — controls the column ⋯ menu + add-column tile. */
   canManage?: boolean;
   /** Column ids treated as "done" for overdue suppression. */
@@ -31,12 +40,16 @@ export function BoardCanvas({
   onAddColumn,
   onRenameColumn,
   onDeleteColumn,
+  onMoveCard,
   canManage = false,
   doneColumnIds = [],
   emptyState,
   now,
   className,
 }: BoardCanvasProps) {
+  const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
+  const dndEnabled = canManage && Boolean(onMoveCard);
+
   if (columns.length === 0 && emptyState) {
     return <>{emptyState}</>;
   }
@@ -52,8 +65,22 @@ export function BoardCanvas({
           cards={cardsByColumn[column.id] ?? []}
           canManage={canManage}
           isDoneColumn={doneColumnIds.includes(column.id)}
+          draggable={dndEnabled}
+          draggingCardId={draggingCardId}
           onAddCard={() => onAddCard(column.id)}
           onOpenCard={onOpenCard}
+          {...(dndEnabled
+            ? {
+                onCardDragStart: (cardId: string) => setDraggingCardId(cardId),
+                onCardDragEnd: () => setDraggingCardId(null),
+                onCardDrop: ({ beforeCardId }: { beforeCardId: string | null }) => {
+                  if (draggingCardId && draggingCardId !== beforeCardId) {
+                    onMoveCard?.(draggingCardId, column.id, beforeCardId);
+                  }
+                  setDraggingCardId(null);
+                },
+              }
+            : {})}
           {...(canManage && onRenameColumn
             ? { onRenameColumn: () => onRenameColumn(column.id) }
             : {})}

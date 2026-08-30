@@ -38,8 +38,6 @@ describe("composites barrel", () => {
       "CommentComposer",
       "CommentItem",
       "CommentList",
-      "AttachmentItem",
-      "AttachmentList",
       "LabelPicker",
       "AssigneePicker",
       "CardDetailModal",

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal } from "../../primitives/Modal/Modal";
 import { IconButton } from "../../primitives/IconButton/IconButton";
 import { Menu, type MenuItem } from "../../primitives/Menu/Menu";
+import { Input } from "../../primitives/Input/Input";
 import { Textarea } from "../../primitives/Textarea/Textarea";
 import { Select } from "../../primitives/Select/Select";
 import { RichTextToolbar } from "../RichTextToolbar/RichTextToolbar";
@@ -11,7 +12,6 @@ import { AssigneePicker } from "../AssigneePicker/AssigneePicker";
 import { LabelPicker } from "../LabelPicker/LabelPicker";
 import { DateField } from "../DateField/DateField";
 import { PriorityBadge } from "../PriorityBadge/PriorityBadge";
-import { AttachmentList } from "../AttachmentList/AttachmentList";
 import { canWorkOnBoard, type ViewerContext } from "../../../lib/permissions";
 import type {
   CardDetail,
@@ -41,8 +41,6 @@ export interface CardDetailModalProps {
   onDeleteSubtask?: (id: Id) => void;
   onAddComment: (body: string) => void;
   onDeleteComment?: (id: Id) => void;
-  onUploadAttachment: (file: File) => void;
-  onDeleteAttachment?: (id: Id) => void;
   onDeleteCard?: () => void;
   now?: Date;
 }
@@ -63,13 +61,29 @@ export function CardDetailModal({
   onDeleteSubtask,
   onAddComment,
   onDeleteComment,
-  onUploadAttachment,
-  onDeleteAttachment,
   onDeleteCard,
   now,
 }: CardDetailModalProps) {
   const canEdit = canWorkOnBoard(viewer);
   const [desc, setDesc] = useState(card.description ?? "");
+
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(card.title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTitleDraft(card.title);
+  }, [card.title]);
+  useEffect(() => {
+    if (editingTitle) titleInputRef.current?.select();
+  }, [editingTitle]);
+
+  const commitTitle = () => {
+    const next = titleDraft.trim();
+    setEditingTitle(false);
+    if (next && next !== card.title) onUpdateCard({ title: next });
+    else setTitleDraft(card.title);
+  };
 
   const menuItems: MenuItem[] = [];
   if (canEdit && onDeleteCard)
@@ -91,7 +105,39 @@ export function CardDetailModal({
           <div className={styles.header}>
             <div className={styles.headerMain}>
               <span className={styles.eyebrow}>{breadcrumb}</span>
-              <h2 className={styles.title}>{card.title}</h2>
+              <h2 className={styles.title}>
+                {editingTitle ? (
+                  <Input
+                    ref={titleInputRef}
+                    className={styles.titleInput}
+                    aria-label="Card title"
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    onBlur={commitTitle}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        commitTitle();
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        setTitleDraft(card.title);
+                        setEditingTitle(false);
+                      }
+                    }}
+                  />
+                ) : canEdit ? (
+                  <button
+                    type="button"
+                    className={styles.titleButton}
+                    onClick={() => setEditingTitle(true)}
+                    title="Click to rename"
+                  >
+                    {card.title}
+                  </button>
+                ) : (
+                  card.title
+                )}
+              </h2>
             </div>
             <div className={styles.headerActions}>
               {menuItems.length > 0 && (
@@ -212,17 +258,6 @@ export function CardDetailModal({
             ) : card.priority ? (
               <PriorityBadge priority={card.priority} />
             ) : null}
-          </div>
-
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Attachments</span>
-            <AttachmentList
-              attachments={card.attachments}
-              currentUserId={currentUserId}
-              viewer={viewer}
-              onUpload={onUploadAttachment}
-              {...(onDeleteAttachment ? { onDelete: onDeleteAttachment } : {})}
-            />
           </div>
         </aside>
       </div>

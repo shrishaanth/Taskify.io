@@ -1,8 +1,20 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BoardCanvas } from "./BoardCanvas";
 import type { CardSummary, Column } from "../../../types/domain";
+
+function dt() {
+  const store: Record<string, string> = {};
+  return {
+    setData: (k: string, v: string) => {
+      store[k] = v;
+    },
+    getData: (k: string) => store[k] ?? "",
+    effectAllowed: "",
+    dropEffect: "",
+  };
+}
 
 const columns: Column[] = [
   { id: "todo", name: "To Do", order: 0 },
@@ -95,6 +107,51 @@ describe("BoardCanvas", () => {
     );
     expect(screen.getByText("This board is empty")).toBeInTheDocument();
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
+  });
+
+  it("moves a card to another column via drag and drop (canManage + onMoveCard)", () => {
+    const onMoveCard = vi.fn();
+    render(
+      <BoardCanvas
+        columns={columns}
+        cardsByColumn={{
+          todo: [card("1", "todo")],
+          doing: [card("2", "doing")],
+          done: [],
+        }}
+        canManage
+        onMoveCard={onMoveCard}
+        onAddCard={() => {}}
+        onOpenCard={() => {}}
+      />,
+    );
+
+    const cardEl = screen.getByRole("button", { name: "Card 1" });
+    const dataTransfer = dt();
+    fireEvent.dragStart(cardEl, { dataTransfer });
+
+    const doneRegion = screen.getByRole("region", { name: "Done" });
+    const dropZone = within(doneRegion).getByTestId("kanban-column-list");
+    fireEvent.dragOver(dropZone, { dataTransfer });
+    fireEvent.drop(dropZone, { dataTransfer });
+
+    expect(onMoveCard).toHaveBeenCalledWith("1", "done", null);
+  });
+
+  it("does not enable drag-and-drop without canManage", () => {
+    render(
+      <BoardCanvas
+        columns={columns}
+        cardsByColumn={{ todo: [card("1", "todo")], doing: [], done: [] }}
+        onMoveCard={vi.fn()}
+        onAddCard={() => {}}
+        onOpenCard={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Card 1" })).toHaveAttribute(
+      "draggable",
+      "false",
+    );
   });
 
   it("suppresses overdue styling for cards in done columns", () => {

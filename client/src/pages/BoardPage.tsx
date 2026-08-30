@@ -83,6 +83,25 @@ export function BoardPage() {
       .sort((a, b) => a.order - b.order);
   }
 
+  const handleMoveCard = (
+    cardId: string,
+    toColumnId: string,
+    beforeCardId: string | null,
+  ) => {
+    const target = (cardsByColumn[toColumnId] ?? []).filter(
+      (c) => c.id !== cardId,
+    );
+    const idx = beforeCardId
+      ? target.findIndex((c) => c.id === beforeCardId)
+      : -1;
+    const order = idx === -1 ? target.length : idx;
+    const current = cards.find((c) => c.id === cardId);
+    if (current && current.columnId === toColumnId && current.order === order) {
+      return;
+    }
+    m.moveCard.mutate({ cardId, columnId: toColumnId, order });
+  };
+
   const breadcrumbs = [
     { label: org.name, href: `/orgs/${orgId}/projects` },
     { label: project.name, href: `/orgs/${orgId}/projects/${projectId}` },
@@ -107,6 +126,7 @@ export function BoardPage() {
         cardsByColumn={cardsByColumn}
         doneColumnIds={doneColumnIds}
         canManage={canManage}
+        onMoveCard={handleMoveCard}
         onAddCard={(columnId) =>
           m.createCard.mutate({ title: "Untitled card", columnId })
         }
@@ -179,20 +199,6 @@ export function BoardPage() {
           }
           onDeleteComment={(id) =>
             m.deleteComment.mutate({ cardId: detail.id, commentId: id })
-          }
-          onUploadAttachment={(file) =>
-            m.addAttachment.mutate({
-              cardId: detail.id,
-              meta: {
-                fileName: file.name,
-                fileUrl: `blob:${file.name}`,
-                mimeType: file.type || "application/octet-stream",
-                sizeBytes: file.size,
-              },
-            })
-          }
-          onDeleteAttachment={(id) =>
-            m.deleteAttachment.mutate({ cardId: detail.id, attachmentId: id })
           }
           onDeleteCard={() =>
             m.deleteCard.mutate(detail.id, {

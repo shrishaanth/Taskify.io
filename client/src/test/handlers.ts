@@ -711,9 +711,6 @@ export const handlers = [
             body: c.body,
             createdAt: c.createdAt,
           })),
-        attachments: db.attachments
-          .filter((a) => a.cardId === cardId)
-          .map((a) => ({ ...a })),
       });
     },
   ),
@@ -849,38 +846,6 @@ export const handlers = [
     db.comments = db.comments.filter((c) => c.id !== params.commentId);
     return new HttpResponse(null, { status: 204 });
   }),
-  http.post(
-    `${BASE}/cards/:cardId/attachments`,
-    async ({ request, params }) => {
-      const uid = callerId(request)!;
-      const cardId = params.cardId as string;
-      const b = (await request.json()) as {
-        fileName: string;
-        fileUrl: string;
-        mimeType: string;
-        sizeBytes: number;
-      };
-      const id = nextId("att");
-      const rec = {
-        id,
-        cardId,
-        uploadedById: uid,
-        ...b,
-        createdAt: new Date().toISOString(),
-      };
-      db.attachments.push(rec);
-      return HttpResponse.json(rec, { status: 201 });
-    },
-  ),
-  http.delete(
-    `${BASE}/cards/:cardId/attachments/:attachmentId`,
-    ({ params }) => {
-      db.attachments = db.attachments.filter(
-        (a) => a.id !== params.attachmentId,
-      );
-      return new HttpResponse(null, { status: 204 });
-    },
-  ),
 
   /* ---------------- notifications ---------------- */
   http.get(`${BASE}/notifications`, ({ request }) => {
