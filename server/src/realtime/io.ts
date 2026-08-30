@@ -15,10 +15,17 @@ import {
  * token as REST calls and join rooms scoped to `user:<id>`, `org:<id>` and
  * (on demand) `board:<id>` — never a global broadcast room.
  *
- * NOTE: multi-instance fan-out (the `@socket.io/redis-adapter`) is intentionally
- * out of scope. Behind the nginx load balancer, `ip_hash` keeps each client
- * pinned to one app instance, so events a client cares about are emitted by the
- * instance it is connected to. Cross-instance broadcast needs the Redis adapter.
+ * SINGLE-INSTANCE ONLY. Multi-instance fan-out is intentionally not wired yet.
+ * If this app is ever scaled to a pool of instances, add the Redis adapter
+ * right after `new Server(...)` below:
+ *
+ *   import { createAdapter } from "@socket.io/redis-adapter";
+ *   const pub = createRedisClient(); const sub = pub.duplicate();
+ *   io.adapter(createAdapter(pub, sub));
+ *
+ * With that, `io.to("board:<id>").emit(...)` fans out across every instance.
+ * Until then, `ip_hash` at the nginx LB keeps each client pinned to the one
+ * instance that emits the events it cares about.
  */
 
 let io: Server | null = null;

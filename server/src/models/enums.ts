@@ -11,5 +11,6 @@ export const NOTIFICATION_TYPES = [
   "card_assigned",
   "comment_mention",
   "role_changed",
+  "invite_accepted",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

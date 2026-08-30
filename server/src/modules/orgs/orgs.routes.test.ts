@@ -5,6 +5,7 @@ import { asUser } from "../../test/api.js";
 import {
   BoardModel,
   CardModel,
+  NotificationModel,
   OrgMembershipModel,
   OrganizationModel,
   ProjectModel,
@@ -186,6 +187,75 @@ describe("invites (UC-2)", () => {
     expect(
       await OrgMembershipModel.exists({ organizationId: org._id, userId: invitee._id }),
     ).toBeTruthy();
+  });
+
+  it("accepting an invite notifies the inviter — and no one else", async () => {
+    const org = await makeOrg({ name: "Acme Co" });
+    const owner = await makeUser({ name: "Olivia Owner" });
+    const admin = await makeUser({ name: "Adam Admin" });
+    await addOrgMember(org._id, owner._id, "owner");
+    await addOrgMember(org._id, admin._id, "admin");
+    const invitee = await makeUser({ email: "joins@acme.com", name: "Ivy Invitee" });
+
+    // the ADMIN sends the invite
+    const inv = await asUser(app, admin)
+      .post(`/api/v1/orgs/${org._id}/invites`)
+      .send({ email: "joins@acme.com", role: "member" });
+
+    await asUser(app, invitee)
+      .post(`/api/v1/orgs/invites/${inv.body.token}/accept`)
+      .send();
+
+    // the inviter (admin) gets exactly one invite_accepted notification
+    const forAdmin = await NotificationModel.find({
+      userId: admin._id,
+      type: "invite_accepted",
+    });
+    expect(forAdmin).toHaveLength(1);
+    expect(forAdmin[0]!.payload).toMatchObject({
+      organizationId: org._id.toString(),
+      contextName: "Acme Co",
+      acceptedById: invitee._id.toString(),
+      acceptedByName: "Ivy Invitee",
+    });
+
+    // nobody else is notified
+    expect(
+      await NotificationModel.countDocuments({
+        userId: owner._id,
+        type: "invite_accepted",
+      }),
+    ).toBe(0);
+    expect(
+      await NotificationModel.countDocuments({
+        userId: invitee._id,
+        type: "invite_accepted",
+      }),
+    ).toBe(0);
+  });
+
+  it("a brand-new invitee (account created on accept) still notifies the inviter", async () => {
+    const org = await makeOrg({ name: "Fresh Org" });
+    const owner = await makeUser({ name: "Owen" });
+    await addOrgMember(org._id, owner._id, "owner");
+
+    const inv = await asUser(app, owner)
+      .post(`/api/v1/orgs/${org._id}/invites`)
+      .send({ email: "newbie@fresh.com", role: "member" });
+
+    await request(app)
+      .post(`/api/v1/orgs/invites/${inv.body.token}/accept`)
+      .send({ name: "Nora Newbie", password: "supersecret1" });
+
+    const forOwner = await NotificationModel.find({
+      userId: owner._id,
+      type: "invite_accepted",
+    });
+    expect(forOwner).toHaveLength(1);
+    expect(forOwner[0]!.payload).toMatchObject({
+      contextName: "Fresh Org",
+      acceptedByName: "Nora Newbie",
+    });
   });
 
   it("a brand-new invitee accepts with name+password → account created + logged in (UC-2 3a)", async () => {

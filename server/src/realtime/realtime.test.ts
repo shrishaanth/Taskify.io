@@ -92,30 +92,103 @@ describe("realtime — notification:new", () => {
   });
 });
 
-describe("realtime — board:changed", () => {
-  it("notifies board subscribers when a card is created", async () => {
+describe("realtime — board room events (§6 catalog)", () => {
+  async function subscribedSocket(userId: string, boardId: string) {
+    const socket = await connect(signAccessToken(userId));
+    socket.emit("subscribe:board", boardId);
+    await new Promise((r) => setTimeout(r, 150)); // let the join round-trip
+    return socket;
+  }
+
+  it("card:created — full card object to board subscribers", async () => {
     const { head, member, project } = await makeScenario();
     const board = await makeBoard(project.organizationId, project._id);
+    const socket = await subscribedSocket(member._id.toString(), board._id.toString());
 
-    const socket = await connect(signAccessToken(member._id.toString()));
-    socket.emit("subscribe:board", board._id.toString());
-    await new Promise((r) => setTimeout(r, 150)); // let the join round-trip
-
-    const changed = nextEvent<{ boardId: string; reason: string }>(
+    const evt = nextEvent<{ id: string; title: string; columnId: string }>(
       socket,
-      "board:changed",
+      "card:created",
     );
-
     await asUser(app, head)
       .post(`/api/v1/boards/${board._id}/cards`)
       .send({ title: "Live card", columnId: "c1" });
 
-    const evt = await changed;
-    expect(evt.boardId).toBe(board._id.toString());
-    expect(evt.reason).toContain("card");
+    const card = await evt;
+    expect(card.title).toBe("Live card");
+    expect(card.columnId).toBe("c1");
+    expect(card.id).toEqual(expect.any(String));
   });
 
-  it("does not join a board the user has no access to", async () => {
+  it("card:updated on edit, card:moved on move, card:deleted on delete", async () => {
+    const { head, member, project } = await makeScenario();
+    const board = await makeBoard(project.organizationId, project._id);
+    const socket = await subscribedSocket(member._id.toString(), board._id.toString());
+    const asHead = asUser(app, head);
+
+    const created = (
+      await asHead.post(`/api/v1/boards/${board._id}/cards`).send({ title: "T", columnId: "c1" })
+    ).body;
+
+    const updated = nextEvent<{ id: string; title: string }>(socket, "card:updated");
+    await asHead.patch(`/api/v1/boards/${board._id}/cards/${created.id}`).send({ title: "T2" });
+    expect((await updated).title).toBe("T2");
+
+    const moved = nextEvent<{ id: string; columnId: string; order: number }>(
+      socket,
+      "card:moved",
+    );
+    await asHead
+      .patch(`/api/v1/boards/${board._id}/cards/${created.id}/move`)
+      .send({ columnId: "c1", order: 0 });
+    const m = await moved;
+    expect(m.id).toBe(created.id);
+    expect(m).toMatchObject({ columnId: "c1", order: 0 });
+
+    const deleted = nextEvent<{ id: string }>(socket, "card:deleted");
+    await asHead.delete(`/api/v1/boards/${board._id}/cards/${created.id}`);
+    expect((await deleted).id).toBe(created.id);
+  });
+
+  it("comment:new — { cardId, comment } to board subscribers", async () => {
+    const { head, member, project } = await makeScenario();
+    const board = await makeBoard(project.organizationId, project._id);
+    const socket = await subscribedSocket(member._id.toString(), board._id.toString());
+
+    const card = (
+      await asUser(app, head)
+        .post(`/api/v1/boards/${board._id}/cards`)
+        .send({ title: "C", columnId: "c1" })
+    ).body;
+
+    const evt = nextEvent<{ cardId: string; comment: { body: string } }>(
+      socket,
+      "comment:new",
+    );
+    await asUser(app, member)
+      .post(`/api/v1/cards/${card.id}/comments`)
+      .send({ body: "first!" });
+
+    const payload = await evt;
+    expect(payload.cardId).toBe(card.id);
+    expect(payload.comment.body).toBe("first!");
+  });
+
+  it("room-scoping — a user who never joined the board gets nothing", async () => {
+    const { head, member, project } = await makeScenario();
+    const board = await makeBoard(project.organizationId, project._id);
+
+    // member connects but does NOT subscribe to the board room
+    const socket = await connect(signAccessToken(member._id.toString()));
+    const leaked = nextEvent(socket, "card:created", 1200);
+
+    await asUser(app, head)
+      .post(`/api/v1/boards/${board._id}/cards`)
+      .send({ title: "not for you", columnId: "c1" });
+
+    await expect(leaked).rejects.toThrow(/timed out/);
+  });
+
+  it("room-scoping — subscribe is rejected for a board the user can't access", async () => {
     const { head, outsider, project } = await makeScenario();
     const board = await makeBoard(project.organizationId, project._id);
 
@@ -123,12 +196,11 @@ describe("realtime — board:changed", () => {
     socket.emit("subscribe:board", board._id.toString());
     await new Promise((r) => setTimeout(r, 150));
 
-    const changed = nextEvent(socket, "board:changed", 1200);
+    const leaked = nextEvent(socket, "card:created", 1200);
     await asUser(app, head)
       .post(`/api/v1/boards/${board._id}/cards`)
-      .send({ title: "Not for outsider", columnId: "c1" });
+      .send({ title: "still not for you", columnId: "c1" });
 
-    // the subscribe was rejected, so the outsider is not in the board room
-    await expect(changed).rejects.toThrow(/timed out/);
+    await expect(leaked).rejects.toThrow(/timed out/);
   });
 });

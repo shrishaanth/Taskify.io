@@ -7,10 +7,20 @@ import { requireAuth } from "../../middleware/requireAuth.js";
 import { requireProjectRole } from "../../middleware/requireProjectRole.js";
 import { resolveProjectFromCard } from "../../middleware/resolveScope.js";
 import { validate } from "../../middleware/validate.js";
-import { SubtaskModel } from "../../models/index.js";
-import { emitBoardChanged } from "../../realtime/emit.js";
+import { CardModel, SubtaskModel } from "../../models/index.js";
+import { emitCardUpdated } from "../../realtime/emit.js";
+import { serializeCard } from "./cards.service.js";
 
 const objectId = z.string().regex(/^[a-f0-9]{24}$/i);
+
+/** A subtask changed → the parent card's progress changed. Re-broadcast it. */
+async function broadcastParentCard(
+  cardId: string,
+  boardId: string | undefined,
+): Promise<void> {
+  const card = await CardModel.findById(cardId).lean();
+  if (card) emitCardUpdated(boardId, await serializeCard(card));
+}
 
 // Mounted at /api/v1/cards/:cardId/subtasks
 export const subtasksRouter: Router = Router({ mergeParams: true });
@@ -43,7 +53,7 @@ subtasksRouter.post(
       done: false,
       ...(req.body.assigneeId ? { assigneeId: req.body.assigneeId } : {}),
     });
-    emitBoardChanged(req.resolvedBoardId, "subtask:create");
+    await broadcastParentCard(req.params.cardId, req.resolvedBoardId);
     res.status(201).json(subtaskDto(doc));
   }),
 );
@@ -73,7 +83,7 @@ subtasksRouter.patch(
       else doc.assigneeId = req.body.assigneeId;
     }
     await doc.save();
-    emitBoardChanged(req.resolvedBoardId, "subtask:update");
+    await broadcastParentCard(req.params.cardId, req.resolvedBoardId);
     res.json(subtaskDto(doc));
   }),
 );
@@ -87,7 +97,7 @@ subtasksRouter.delete(
       cardId: req.params.cardId,
     });
     if (r.deletedCount === 0) throw AppError.notFound();
-    emitBoardChanged(req.resolvedBoardId, "subtask:delete");
+    await broadcastParentCard(req.params.cardId, req.resolvedBoardId);
     res.status(204).end();
   }),
 );

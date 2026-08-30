@@ -56,3 +56,26 @@ export function notifyRoleChanged(
 ) {
   return create([userId], "role_changed", { scope, contextName });
 }
+
+/** UC-2 — tell the inviter(s) that someone accepted their org invite. */
+export function notifyInviteAccepted(
+  recipientIds: string[],
+  info: {
+    organizationId: string;
+    orgName: string;
+    acceptedById: string;
+    acceptedByName: string;
+  },
+) {
+  return create(
+    recipientIds,
+    "invite_accepted",
+    {
+      organizationId: info.organizationId,
+      contextName: info.orgName,
+      acceptedById: info.acceptedById,
+      acceptedByName: info.acceptedByName,
+    },
+    info.acceptedById,
+  );
+}

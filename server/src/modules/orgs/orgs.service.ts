@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { AppError } from "../../lib/errors.js";
 import { deleteProjectCascade } from "../../lib/cascade.js";
+import { notifyInviteAccepted } from "../../lib/notify.js";
 import { uniqueSlug } from "../../lib/slug.js";
 import { hashPassword } from "../../lib/tokens.js";
 import {
@@ -187,6 +188,7 @@ export async function acceptInvite(token: string, ctx: AcceptContext) {
   }
 
   let userId: string;
+  let acceptedByName = invite.email;
   let createdUser: UserDoc | null = null;
 
   if (ctx.authUserId) {
@@ -197,6 +199,7 @@ export async function acceptInvite(token: string, ctx: AcceptContext) {
       throw AppError.forbidden("This invite is for a different email address");
     }
     userId = user._id.toString();
+    acceptedByName = user.name;
   } else {
     // UC-2 3a — new account created in one step.
     const existing = await UserModel.findOne({ email: invite.email });
@@ -212,6 +215,7 @@ export async function acceptInvite(token: string, ctx: AcceptContext) {
       passwordHash: await hashPassword(ctx.password),
     });
     userId = createdUser._id.toString();
+    acceptedByName = createdUser.name;
   }
 
   await OrgMembershipModel.updateOne(
@@ -222,6 +226,17 @@ export async function acceptInvite(token: string, ctx: AcceptContext) {
 
   invite.acceptedAt = new Date();
   await invite.save();
+
+  // Confirm to whoever sent the invite that it was accepted (UC-2).
+  const org = await OrganizationModel.findById(invite.organizationId)
+    .select("name")
+    .lean();
+  await notifyInviteAccepted([String(invite.invitedById)], {
+    organizationId: String(invite.organizationId),
+    orgName: org?.name ?? "your organization",
+    acceptedById: userId,
+    acceptedByName,
+  });
 
   return {
     organizationId: String(invite.organizationId),

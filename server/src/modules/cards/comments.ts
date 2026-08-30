@@ -13,7 +13,8 @@ import { resolveProjectFromCard } from "../../middleware/resolveScope.js";
 import { validate } from "../../middleware/validate.js";
 import { CardModel, CommentModel, UserModel } from "../../models/index.js";
 import { userDto } from "../../lib/serialize.js";
-import { emitBoardChanged } from "../../realtime/emit.js";
+import { emitCardUpdated, emitCommentNew } from "../../realtime/emit.js";
+import { serializeCard } from "./cards.service.js";
 import { canDeleteAuthored } from "./childScope.js";
 
 const objectId = z.string().regex(/^[a-f0-9]{24}$/i);
@@ -72,8 +73,9 @@ commentsRouter.post(
       );
     }
 
-    emitBoardChanged(req.resolvedBoardId, "comment:create");
-    res.status(201).json(commentDto(comment, author ? userDto(author) : undefined));
+    const dto = commentDto(comment, author ? userDto(author) : undefined);
+    emitCommentNew(req.resolvedBoardId, { cardId: req.params.cardId, comment: dto });
+    res.status(201).json(dto);
   }),
 );
 
@@ -91,7 +93,10 @@ commentsRouter.delete(
       throw AppError.forbidden("Only the author, a Project Head, or an Org Owner/Admin can delete this comment");
     }
     await comment.deleteOne();
-    emitBoardChanged(req.resolvedBoardId, "comment:delete");
+    // No catalog event for comment deletion; the card's commentCount changed,
+    // so re-broadcast the card so open boards/detail update live.
+    const card = await CardModel.findById(req.params.cardId).lean();
+    if (card) emitCardUpdated(req.resolvedBoardId, await serializeCard(card));
     res.status(204).end();
   }),
 );

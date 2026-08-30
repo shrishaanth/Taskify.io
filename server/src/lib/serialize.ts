@@ -183,6 +183,8 @@ function notificationTitle(type: string, payload: unknown): string {
   const card = typeof p.cardTitle === "string" ? p.cardTitle : "a card";
   const ctx =
     typeof p.contextName === "string" ? p.contextName : "your workspace";
+  const who =
+    typeof p.acceptedByName === "string" ? p.acceptedByName : "Someone";
   switch (type) {
     case "card_assigned":
       return `You were assigned to "${card}"`;
@@ -190,6 +192,8 @@ function notificationTitle(type: string, payload: unknown): string {
       return `New comment on "${card}"`;
     case "role_changed":
       return `Your role changed in ${ctx}`;
+    case "invite_accepted":
+      return `${who} accepted your invitation to ${ctx}`;
     default:
       return "You have a new notification";
   }
