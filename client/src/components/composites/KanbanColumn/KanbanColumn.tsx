@@ -44,7 +44,11 @@ export function KanbanColumn({
     });
 
   return (
-    <section className={cn(styles.root, className)} aria-label={column.name}>
+    <section
+      className={cn(styles.root, className)}
+      aria-label={column.name}
+      data-testid="kanban-column"
+    >
       <div className={styles.header}>
         <h3 className={styles.name}>{column.name}</h3>
         <span className={styles.count}>{cards.length}</span>
