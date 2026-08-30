@@ -1,0 +1,67 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.composer {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+.composerMain {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.comment {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+.commentBody {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.author {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+.time {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+.text {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+.delete {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+}
+.delete:hover {
+  color: var(--danger);
+}

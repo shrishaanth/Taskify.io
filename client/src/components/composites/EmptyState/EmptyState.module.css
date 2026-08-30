@@ -1,0 +1,57 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-1);
+}
+.iconWrap svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.root[data-tone="sky"] .iconWrap {
+  background-color: var(--primary-subtle);
+  color: var(--primary);
+}
+.root[data-tone="red"] .iconWrap {
+  background-color: var(--danger-subtle);
+  color: var(--danger);
+}
+.root[data-tone="slate"] .iconWrap {
+  background-color: var(--bg-surface-muted);
+  color: var(--text-secondary);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.description {
+  margin: 0;
+  max-width: 28rem;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}

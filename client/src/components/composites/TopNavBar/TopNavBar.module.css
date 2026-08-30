@@ -1,0 +1,43 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 3.5rem;
+  padding: 0 var(--space-5);
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+.logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-md);
+  background-color: var(--primary);
+  color: var(--primary-fg);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.search {
+  width: min(20rem, 32vw);
+}
+
+.right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}

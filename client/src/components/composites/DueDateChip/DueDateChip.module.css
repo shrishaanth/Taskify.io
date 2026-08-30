@@ -1,0 +1,35 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.125rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-medium);
+  background-color: var(--bg-surface-muted);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.root[data-size="md"] {
+  font-size: var(--font-size-xs);
+  padding: 0.2rem 0.5rem;
+}
+
+.root[data-overdue="true"] {
+  background-color: var(--tone-red-soft-bg);
+  color: var(--tone-red-soft-fg);
+}
+
+.root[data-empty="true"] {
+  background-color: transparent;
+  color: var(--text-muted);
+  border: 1px dashed var(--border-strong);
+}
+
+.icon {
+  width: 0.85em;
+  height: 0.85em;
+  flex-shrink: 0;
+}

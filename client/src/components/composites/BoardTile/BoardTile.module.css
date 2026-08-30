@@ -1,0 +1,67 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 7rem;
+  padding: var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+.root:hover {
+  box-shadow: var(--shadow-md);
+}
+.root:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.root[data-color="green"] { background-color: var(--board-green-bg); }
+.root[data-color="purple"] { background-color: var(--board-purple-bg); }
+.root[data-color="red"] { background-color: var(--board-red-bg); }
+.root[data-color="amber"] { background-color: var(--board-amber-bg); }
+.root[data-color="sky"] { background-color: var(--board-sky-bg); }
+.root[data-color="pink"] { background-color: var(--board-pink-bg); }
+
+.name {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+}
+.root[data-color="green"] .name,
+.root[data-color="green"] .link { color: var(--board-green-heading); }
+.root[data-color="purple"] .name,
+.root[data-color="purple"] .link { color: var(--board-purple-heading); }
+.root[data-color="red"] .name,
+.root[data-color="red"] .link { color: var(--board-red-heading); }
+.root[data-color="amber"] .name,
+.root[data-color="amber"] .link { color: var(--board-amber-heading); }
+.root[data-color="sky"] .name,
+.root[data-color="sky"] .link { color: var(--board-sky-heading); }
+.root[data-color="pink"] .name,
+.root[data-color="pink"] .link { color: var(--board-pink-heading); }
+
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+.icon {
+  width: 0.9em;
+  height: 0.9em;
+}
+
+.link {
+  margin-top: auto;
+  align-self: flex-end;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}

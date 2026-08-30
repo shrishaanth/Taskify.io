@@ -1,0 +1,86 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+.progressText {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-link);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+.itemTitle {
+  flex: 1 1 auto;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  padding: var(--space-1) var(--space-1-5);
+  border-radius: var(--radius-sm);
+}
+.itemTitle:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.item[data-done="true"] .itemTitle {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.remove {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+}
+.remove:hover {
+  color: var(--danger);
+}
+
+.addRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.addButton {
+  border: 0;
+  background: none;
+  color: var(--text-link);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  padding: var(--space-1) 0;
+}
+.addButton:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}

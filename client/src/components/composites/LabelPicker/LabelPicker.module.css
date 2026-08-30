@@ -1,0 +1,18 @@
+.root {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+.input {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  padding: 0.125rem 0.5rem;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  width: 7rem;
+}
+.input:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}

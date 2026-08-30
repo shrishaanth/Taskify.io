@@ -1,0 +1,26 @@
+.root {
+  padding: var(--space-4);
+  border: 1px solid var(--tone-red-soft-bg);
+  border-radius: var(--radius-md);
+  background-color: var(--danger-subtle);
+}
+
+.title {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--danger);
+}
+
+.description {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.helper {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
