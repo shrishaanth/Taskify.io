@@ -1,0 +1,36 @@
+.root {
+  display: inline-block;
+  border-radius: var(--radius-full);
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: spin var(--duration-slow) linear infinite;
+  vertical-align: -0.125em;
+}
+
+.root[data-size="sm"] {
+  width: 0.875rem;
+  height: 0.875rem;
+  border-width: 2px;
+}
+.root[data-size="md"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-width: 2px;
+}
+.root[data-size="lg"] {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-width: 3px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    animation-duration: 1.2s;
+  }
+}

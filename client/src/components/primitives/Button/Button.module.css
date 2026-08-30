@@ -1,0 +1,94 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.root:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.root[data-size="sm"] {
+  height: 2rem;
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-sm);
+}
+.root[data-size="md"] {
+  height: 2.5rem;
+  padding: 0 var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.root[data-full-width="true"] {
+  width: 100%;
+}
+
+.root[data-variant="primary"] {
+  background-color: var(--primary);
+  color: var(--primary-fg);
+}
+.root[data-variant="primary"]:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+.root[data-variant="primary"]:active:not(:disabled) {
+  background-color: var(--primary-active);
+}
+
+.root[data-variant="secondary"] {
+  background-color: var(--bg-surface);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.root[data-variant="secondary"]:hover:not(:disabled) {
+  background-color: var(--bg-surface-muted);
+}
+
+.root[data-variant="danger"] {
+  background-color: var(--danger);
+  color: var(--danger-fg);
+}
+.root[data-variant="danger"]:hover:not(:disabled) {
+  background-color: var(--danger-hover);
+}
+.root[data-variant="danger"]:active:not(:disabled) {
+  background-color: var(--danger-active);
+}
+
+.root:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.label[data-hidden="true"] {
+  visibility: hidden;
+}
+
+.spinner {
+  position: absolute;
+  display: inline-flex;
+}
+
+.root {
+  position: relative;
+}

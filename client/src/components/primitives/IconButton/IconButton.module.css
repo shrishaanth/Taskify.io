@@ -1,0 +1,58 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background-color: transparent;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.root:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.root[data-size="sm"] {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.root[data-size="md"] {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.root[data-variant="ghost"] {
+  border-radius: var(--radius-md);
+}
+.root[data-variant="ghost"]:hover:not(:disabled) {
+  background-color: var(--bg-surface-muted);
+  color: var(--text-primary);
+}
+
+.root[data-variant="circle"] {
+  border-radius: var(--radius-full);
+  background-color: var(--bg-surface);
+  border-color: var(--border-subtle);
+}
+.root[data-variant="circle"]:hover:not(:disabled) {
+  background-color: var(--bg-surface-muted);
+  color: var(--text-primary);
+}
+
+.root:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon {
+  display: inline-flex;
+  width: 1rem;
+  height: 1rem;
+  align-items: center;
+  justify-content: center;
+}
