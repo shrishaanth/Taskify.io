@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { auth } from "../../lib/http.js";
 import { orgDto, orgInviteDto, userDto } from "../../lib/serialize.js";
 import { signAccessToken, verifyAccessToken } from "../../lib/tokens.js";
+import { emitOrgMemberChanged } from "../../realtime/emit.js";
 import * as service from "./orgs.service.js";
 
 export async function create(req: Request, res: Response) {
@@ -104,6 +105,10 @@ export async function changeRole(req: Request, res: Response) {
     req.params.userId,
     req.body.role,
   );
+  emitOrgMemberChanged(req.params.orgId, {
+    userId: String(m.userId),
+    role: m.role,
+  });
   res.json({ userId: String(m.userId), role: m.role });
 }
 

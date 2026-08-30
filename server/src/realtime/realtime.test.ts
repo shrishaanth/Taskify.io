@@ -5,7 +5,7 @@ import { io as ioc, type Socket as ClientSocket } from "socket.io-client";
 import { createApp } from "../app.js";
 import { initRealtime, shutdownRealtime } from "./io.js";
 import { signAccessToken } from "../lib/tokens.js";
-import { makeBoard, makeScenario } from "../test/factories.js";
+import { addOrgMember, makeBoard, makeScenario } from "../test/factories.js";
 import { asUser } from "../test/api.js";
 
 const app = createApp();
@@ -202,5 +202,113 @@ describe("realtime — board room events (§6 catalog)", () => {
       .send({ title: "still not for you", columnId: "c1" });
 
     await expect(leaked).rejects.toThrow(/timed out/);
+  });
+});
+
+describe("realtime — project rooms (joined on connect, no subscribe)", () => {
+  const boards = (projectId: string) => `/api/v1/projects/${projectId}/boards`;
+  const projMembers = (orgId: string, projectId: string, userId: string) =>
+    `/api/v1/orgs/${orgId}/projects/${projectId}/members/${userId}`;
+
+  it("board:created / board:updated / board:deleted reach project members", async () => {
+    const { head, member, project } = await makeScenario();
+    // member connects and does NOT subscribe to anything
+    const socket = await connect(signAccessToken(member._id.toString()));
+    await new Promise((r) => setTimeout(r, 150)); // let joinProjectRooms run
+
+    const created = nextEvent<{ id: string; name: string; projectId: string }>(
+      socket,
+      "board:created",
+    );
+    const res = await asUser(app, head)
+      .post(boards(project._id.toString()))
+      .send({ name: "Sprint 1" });
+    expect(res.status).toBe(201);
+    const board = await created;
+    expect(board.name).toBe("Sprint 1");
+    expect(board.projectId).toBe(project._id.toString());
+
+    const updated = nextEvent<{ id: string; name: string }>(socket, "board:updated");
+    await asUser(app, head)
+      .patch(`${boards(project._id.toString())}/${board.id}`)
+      .send({ name: "Sprint One" });
+    expect((await updated).name).toBe("Sprint One");
+
+    const deleted = nextEvent<{ id: string }>(socket, "board:deleted");
+    await asUser(app, head).delete(`${boards(project._id.toString())}/${board.id}`);
+    expect((await deleted).id).toBe(board.id);
+  });
+
+  it("project:memberChanged and project:memberRemoved reach project members", async () => {
+    const { head, member, outsider, org, project } = await makeScenario();
+    await addOrgMember(org._id, outsider._id, "member"); // eligible to be added
+
+    const socket = await connect(signAccessToken(member._id.toString()));
+    await new Promise((r) => setTimeout(r, 150));
+
+    const changed = nextEvent<{ userId: string; role: string }>(
+      socket,
+      "project:memberChanged",
+    );
+    await asUser(app, head)
+      .put(projMembers(org._id.toString(), project._id.toString(), outsider._id.toString()))
+      .send({ role: "member" });
+    expect(await changed).toEqual({
+      userId: outsider._id.toString(),
+      role: "member",
+    });
+
+    const removed = nextEvent<{ userId: string }>(socket, "project:memberRemoved");
+    await asUser(app, head).delete(
+      projMembers(org._id.toString(), project._id.toString(), outsider._id.toString()),
+    );
+    expect(await removed).toEqual({ userId: outsider._id.toString() });
+  });
+
+  it("setting a project role also persists a role_changed notification (FR-6.1)", async () => {
+    const { head, outsider, org, project } = await makeScenario();
+    await addOrgMember(org._id, outsider._id, "member");
+    const socket = await connect(signAccessToken(outsider._id.toString()));
+
+    const notif = nextEvent<{ type: string }>(socket, "notification:new");
+    await asUser(app, head)
+      .put(projMembers(org._id.toString(), project._id.toString(), outsider._id.toString()))
+      .send({ role: "head" });
+    expect((await notif).type).toBe("role_changed");
+  });
+
+  it("room-scoping — a user with no ProjectMembership never gets project events", async () => {
+    const { head, outsider, project } = await makeScenario();
+    // outsider is neither an org nor a project member -> in no relevant room
+    const socket = await connect(signAccessToken(outsider._id.toString()));
+    await new Promise((r) => setTimeout(r, 150));
+
+    const leaked = nextEvent(socket, "board:created", 1200);
+    await asUser(app, head)
+      .post(boards(project._id.toString()))
+      .send({ name: "Private board" });
+
+    await expect(leaked).rejects.toThrow(/timed out/);
+  });
+});
+
+describe("realtime — org rooms", () => {
+  it("org:memberChanged reaches org members on PATCH /orgs/:orgId/members/:userId", async () => {
+    const { owner, head, member, org } = await makeScenario();
+    // head is an org member -> joined org:<id> on connect
+    const socket = await connect(signAccessToken(head._id.toString()));
+    await new Promise((r) => setTimeout(r, 150));
+
+    const changed = nextEvent<{ userId: string; role: string }>(
+      socket,
+      "org:memberChanged",
+    );
+    await asUser(app, owner)
+      .patch(`/api/v1/orgs/${org._id}/members/${member._id}`)
+      .send({ role: "admin" });
+    expect(await changed).toEqual({
+      userId: member._id.toString(),
+      role: "admin",
+    });
   });
 });

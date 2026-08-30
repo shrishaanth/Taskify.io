@@ -1,5 +1,10 @@
 import type { Request, Response } from "express";
 import { boardDto } from "../../lib/serialize.js";
+import {
+  emitBoardCreated,
+  emitBoardDeleted,
+  emitBoardUpdated,
+} from "../../realtime/emit.js";
 import * as service from "./boards.service.js";
 
 export async function list(req: Request, res: Response) {
@@ -13,7 +18,9 @@ export async function create(req: Request, res: Response) {
     name: req.body.name,
     ...(req.body.columns ? { columns: req.body.columns } : {}),
   });
-  res.status(201).json(boardDto(board));
+  const dto = boardDto(board);
+  emitBoardCreated(req.params.projectId, dto);
+  res.status(201).json(dto);
 }
 
 export async function get(req: Request, res: Response) {
@@ -27,10 +34,13 @@ export async function update(req: Request, res: Response) {
     req.params.boardId,
     req.body,
   );
-  res.json(boardDto(board));
+  const dto = boardDto(board);
+  emitBoardUpdated(req.params.projectId, dto);
+  res.json(dto);
 }
 
 export async function remove(req: Request, res: Response) {
   await service.deleteBoard(req.params.projectId, req.params.boardId);
+  emitBoardDeleted(req.params.projectId, req.params.boardId);
   res.status(204).end();
 }

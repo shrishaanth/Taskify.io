@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { createApp } from "../../app.js";
 import { asUser } from "../../test/api.js";
 import { CardModel, SubtaskModel } from "../../models/index.js";
+import * as emit from "../../realtime/emit.js";
 import {
   addOrgMember,
   addProjectMember,
@@ -130,5 +131,50 @@ describe("boards access control", () => {
     const { project } = await projectWith("head");
     const supertest = (await import("supertest")).default;
     expect((await supertest(app).get(boards(project._id.toString()))).status).toBe(401);
+  });
+});
+
+describe("boards controller — real-time emits", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("POST emits board:created (project id + board dto)", async () => {
+    const spy = vi.spyOn(emit, "emitBoardCreated").mockImplementation(() => {});
+    const { user, project } = await projectWith("member");
+    const res = await asUser(app, user)
+      .post(boards(project._id.toString()))
+      .send({ name: "RT Board" });
+    expect(res.status).toBe(201);
+    expect(spy).toHaveBeenCalledWith(
+      project._id.toString(),
+      expect.objectContaining({ id: res.body.id, name: "RT Board" }),
+    );
+  });
+
+  it("PATCH emits board:updated", async () => {
+    const spy = vi.spyOn(emit, "emitBoardUpdated").mockImplementation(() => {});
+    const { user, project, org } = await projectWith("head");
+    const board = await makeBoard(org._id, project._id, "Before");
+    const res = await asUser(app, user)
+      .patch(`${boards(project._id.toString())}/${board._id}`)
+      .send({ name: "After" });
+    expect(res.status).toBe(200);
+    expect(spy).toHaveBeenCalledWith(
+      project._id.toString(),
+      expect.objectContaining({ id: board._id.toString(), name: "After" }),
+    );
+  });
+
+  it("DELETE emits board:deleted (project id + board id)", async () => {
+    const spy = vi.spyOn(emit, "emitBoardDeleted").mockImplementation(() => {});
+    const { user, project, org } = await projectWith("head");
+    const board = await makeBoard(org._id, project._id);
+    const res = await asUser(app, user).delete(
+      `${boards(project._id.toString())}/${board._id}`,
+    );
+    expect(res.status).toBe(204);
+    expect(spy).toHaveBeenCalledWith(
+      project._id.toString(),
+      board._id.toString(),
+    );
   });
 });

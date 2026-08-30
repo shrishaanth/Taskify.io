@@ -1,14 +1,16 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { createApp } from "../../app.js";
 import { asUser } from "../../test/api.js";
 import {
   BoardModel,
   CardModel,
   CommentModel,
+  NotificationModel,
   ProjectMembershipModel,
   ProjectModel,
   SubtaskModel,
 } from "../../models/index.js";
+import * as emit from "../../realtime/emit.js";
 import {
   addOrgMember,
   addProjectMember,
@@ -260,5 +262,63 @@ describe("PUT / DELETE /orgs/:orgId/projects/:projectId/members/:userId", () => 
         )
       ).status,
     ).toBe(404);
+  });
+});
+
+describe("projects controller — real-time emits + notification", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  async function headAnd(orgMate = true) {
+    const org = await makeOrg({ name: "Emit Co" });
+    const head = await makeUser();
+    const target = await makeUser({ name: "Target User" });
+    await addOrgMember(org._id, head._id, "member");
+    if (orgMate) await addOrgMember(org._id, target._id, "member");
+    const project = await makeProject(org._id, "Emit Project");
+    await addProjectMember(project._id, head._id, "head");
+    return { org, head, target, project };
+  }
+
+  it("PUT emits project:memberChanged AND persists a role_changed notification", async () => {
+    const spy = vi
+      .spyOn(emit, "emitProjectMemberChanged")
+      .mockImplementation(() => {});
+    const { org, head, target, project } = await headAnd();
+
+    const res = await asUser(app, head)
+      .put(`${base(org._id.toString())}/${project._id}/members/${target._id}`)
+      .send({ role: "member" });
+    expect(res.status).toBe(200);
+
+    expect(spy).toHaveBeenCalledWith(
+      project._id.toString(),
+      { userId: target._id.toString(), role: "member" },
+    );
+    const notif = await NotificationModel.findOne({
+      userId: target._id,
+      type: "role_changed",
+    });
+    expect(notif).not.toBeNull();
+    expect(notif!.payload).toMatchObject({
+      scope: "project",
+      contextName: "Emit Project",
+    });
+  });
+
+  it("DELETE emits project:memberRemoved (project id + user id)", async () => {
+    const spy = vi
+      .spyOn(emit, "emitProjectMemberRemoved")
+      .mockImplementation(() => {});
+    const { org, head, target, project } = await headAnd();
+    await addProjectMember(project._id, target._id, "member");
+
+    const res = await asUser(app, head).delete(
+      `${base(org._id.toString())}/${project._id}/members/${target._id}`,
+    );
+    expect(res.status).toBe(204);
+    expect(spy).toHaveBeenCalledWith(
+      project._id.toString(),
+      target._id.toString(),
+    );
   });
 });

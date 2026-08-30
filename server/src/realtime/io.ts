@@ -12,8 +12,11 @@ import {
 /**
  * FR-6 / UC-9 real-time layer. A single Socket.IO server sharing the HTTP
  * listener with Express. Clients authenticate with the same short-lived access
- * token as REST calls and join rooms scoped to `user:<id>`, `org:<id>` and
- * (on demand) `board:<id>` — never a global broadcast room.
+ * token as REST calls. On connect they are joined to `user:<id>`, `org:<id>`
+ * for every org they belong to, and `project:<id>` for every project they have
+ * a ProjectMembership on. `board:<id>` is joined on demand (`subscribe:board`)
+ * since board-viewing changes far more often than project membership. Never a
+ * global broadcast room.
  *
  * SINGLE-INSTANCE ONLY. Multi-instance fan-out is intentionally not wired yet.
  * If this app is ever scaled to a pool of instances, add the Redis adapter
@@ -46,6 +49,7 @@ export function initRealtime(httpServer: HttpServer): Server {
     const userId = socket.data.userId as string;
     void socket.join(`user:${userId}`);
     void joinOrgRooms(socket, userId);
+    void joinProjectRooms(socket, userId);
 
     socket.on("subscribe:board", (boardId: unknown) => {
       if (typeof boardId !== "string") return;
@@ -90,6 +94,15 @@ async function joinOrgRooms(socket: Socket, userId: string): Promise<void> {
     .lean();
   for (const m of memberships) {
     void socket.join(`org:${String(m.organizationId)}`);
+  }
+}
+
+async function joinProjectRooms(socket: Socket, userId: string): Promise<void> {
+  const memberships = await ProjectMembershipModel.find({ userId })
+    .select("projectId")
+    .lean();
+  for (const m of memberships) {
+    void socket.join(`project:${String(m.projectId)}`);
   }
 }
 

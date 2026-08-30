@@ -244,7 +244,8 @@ single source; do not fork schema definitions between client and server.
   Mongo `ref` behaviour. No soft-delete / trash in this scope.
 
 ### 6.1 Real-time event catalog (software-spec §6)
-Rooms: `org:<id>`, `board:<id>`, `user:<id>` — **never a global broadcast**.
+Rooms: `org:<id>`, `project:<id>`, `board:<id>`, `user:<id>` — **never a global
+broadcast**.
 
 | Event | Room | Payload |
 |---|---|---|
@@ -255,6 +256,21 @@ Rooms: `org:<id>`, `board:<id>`, `user:<id>` — **never a global broadcast**.
 | `comment:new` | `board:<id>` | comment + card id |
 | `notification:new` | `user:<id>` | notification object |
 | `presence:update` | `board:<id>` | user id, online/offline |
+| `board:created` | `project:<id>` | full board dto |
+| `board:updated` | `project:<id>` | full board dto |
+| `board:deleted` | `project:<id>` | board id |
+| `project:memberChanged` | `project:<id>` | `{ userId, role }` |
+| `project:memberRemoved` | `project:<id>` | `{ userId }` |
+| `org:memberChanged` | `org:<id>` | `{ userId, role }` |
+
+The rows below the `presence:update` line are a **deliberate extension beyond
+software-spec §6**: the SRS catalog only covered Cards/Comments/Notifications, so
+Projects, Organizations and Boards had no live updates at all. They follow the
+exact same pattern (one room per event, minimal payload, `realtime/emit.ts`
+helpers) — no new mechanism. The `project:<id>` room is new for the same reason;
+it is joined on connect from every `ProjectMembership` (`joinProjectRooms` in
+`realtime/io.ts`, alongside `joinOrgRooms`), so there is **no `subscribe:project`
+client event** — unlike `board:<id>`, which stays on-demand via `subscribe:board`.
 
 A user is only ever joined to rooms for boards/orgs they can access (FR-5.2).
 Board mutations are optimistic on the client with the event as confirmation
@@ -355,18 +371,30 @@ email service (which is out of scope):
 
 ### 9.2 Real-time layer (`server/src/realtime/`)
 
-Socket.IO shares the HTTP listener. Auth = the same access token; rooms
-`user:<id>`, `org:<id>`, `board:<id>` (never a global broadcast; client joins a
-board room via `subscribe:board` after an access check). Emits exactly the §6.1
-catalog: `card:created` / `card:updated` / `card:moved` / `card:deleted` /
-`comment:new` → `board:<id>` (from the card + comment + subtask controllers —
-subtask changes re-broadcast the parent card since there is no `subtask:*`
-event), and `notification:new` → `user:<id>` (from `lib/notify.ts`). The board
-has no catalog event, so board name / column edits still need a refetch.
+Socket.IO shares the HTTP listener. Auth = the same access token. Rooms
+`user:<id>`, `org:<id>`, `project:<id>` are all joined on connect (from the
+caller's Org/Project memberships — `joinOrgRooms` + `joinProjectRooms` in
+`io.ts`); `board:<id>` is on-demand (client `subscribe:board` after an access
+check — never a global broadcast). Emits the §6.1 catalog:
+- `card:*` / `comment:new` → `board:<id>` (card + comment + subtask controllers —
+  subtask changes re-broadcast the parent card since there is no `subtask:*`
+  event);
+- `notification:new` → `user:<id>` (from `lib/notify.ts`);
+- `board:created` / `board:updated` / `board:deleted` → `project:<id>`
+  (`boards.controller.ts`);
+- `project:memberChanged` / `project:memberRemoved` → `project:<id>`
+  (`projects.controller.ts`; `setMember` also fires `notifyRoleChanged` per
+  FR-6.1);
+- `org:memberChanged` → `org:<id>` (`orgs.controller.ts` `changeRole`).
+
+All emit helpers live in `realtime/emit.ts` and target exactly one room.
 
 The client (`features/realtime.ts`) connects on login and, on each event, nudges
 React Query to refetch the affected slice — it never trusts the payload to be
-complete. Card moves are **optimistic** (`applyCardMove` in `features/cards.ts`)
+complete. `useAppRealtime` (mounted once in `AppShell`) handles the app-wide
+events (`notification:new`, `board:*`, `project:member*`, `org:memberChanged`);
+`useBoardRealtime` handles the per-board `card:*` / `comment:new` and owns the
+`subscribe:board` / `unsubscribe:board` lifecycle. Card moves are **optimistic** (`applyCardMove` in `features/cards.ts`)
 and FLIP-animated (`BoardCanvas/useFlipCards.ts`, ~180ms ease-out); because FLIP
 keys off the measured DOM position, the confirming event lands the card in the
 same spot → it animates exactly once.

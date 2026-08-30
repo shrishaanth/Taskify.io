@@ -1,6 +1,12 @@
 import type { Request, Response } from "express";
 import { auth } from "../../lib/http.js";
+import { notifyRoleChanged } from "../../lib/notify.js";
 import { projectDto, userDto } from "../../lib/serialize.js";
+import { ProjectModel } from "../../models/index.js";
+import {
+  emitProjectMemberChanged,
+  emitProjectMemberRemoved,
+} from "../../realtime/emit.js";
 import * as service from "./projects.service.js";
 
 const memberRows = (rows: { user: Parameters<typeof userDto>[0]; role: string }[]) =>
@@ -67,6 +73,22 @@ export async function setMember(req: Request, res: Response) {
     userId: req.params.userId,
     role: req.body.role,
   });
+
+  // Live to everyone viewing the project…
+  emitProjectMemberChanged(req.params.projectId, {
+    userId: String(doc.userId),
+    role: doc.role,
+  });
+  // …and a persisted role-change notification for the affected user (FR-6.1).
+  const project = await ProjectModel.findById(req.params.projectId)
+    .select("name")
+    .lean();
+  await notifyRoleChanged(
+    String(doc.userId),
+    "project",
+    project?.name ?? "the project",
+  );
+
   res.json({ userId: String(doc.userId), role: doc.role });
 }
 
@@ -76,5 +98,6 @@ export async function removeMember(req: Request, res: Response) {
     req.params.projectId,
     req.params.userId,
   );
+  emitProjectMemberRemoved(req.params.projectId, req.params.userId);
   res.status(204).end();
 }

@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../../app.js";
 import { asUser } from "../../test/api.js";
+import * as emit from "../../realtime/emit.js";
 import {
   BoardModel,
   CardModel,
@@ -411,6 +412,8 @@ describe("invites (UC-2)", () => {
 });
 
 describe("PATCH/DELETE /orgs/:orgId/members/:userId", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it("Owner/Admin changes a member's role", async () => {
     const org = await makeOrg();
     const owner = await makeUser();
@@ -423,6 +426,26 @@ describe("PATCH/DELETE /orgs/:orgId/members/:userId", () => {
       .send({ role: "admin" });
     expect(res.status).toBe(200);
     expect(res.body.role).toBe("admin");
+  });
+
+  it("emits org:memberChanged after a successful role change", async () => {
+    const spy = vi
+      .spyOn(emit, "emitOrgMemberChanged")
+      .mockImplementation(() => {});
+    const org = await makeOrg();
+    const owner = await makeUser();
+    const bob = await makeUser();
+    await addOrgMember(org._id, owner._id, "owner");
+    await addOrgMember(org._id, bob._id, "member");
+
+    await asUser(app, owner)
+      .patch(`/api/v1/orgs/${org._id}/members/${bob._id}`)
+      .send({ role: "admin" });
+
+    expect(spy).toHaveBeenCalledWith(org._id.toString(), {
+      userId: bob._id.toString(),
+      role: "admin",
+    });
   });
 
   it("blocks demoting or removing the last Owner (FR-1.6)", async () => {

@@ -4,7 +4,7 @@ import {
   useNotifications,
   useMarkAllNotificationsRead,
 } from "../features/notifications";
-import { useRealtimeNotifications } from "../features/realtime";
+import { useAppRealtime } from "../features/realtime";
 import { useSession } from "../stores/sessionStore";
 
 /** Authenticated layout: top nav + routed page content. */
@@ -16,7 +16,7 @@ export function AppShell() {
 
   const notificationsQuery = useNotifications();
   const markAllRead = useMarkAllNotificationsRead();
-  useRealtimeNotifications();
+  useAppRealtime();
 
   const orgs = session?.orgs ?? [];
   const currentOrgId = orgId ?? orgs[0]?.id ?? "";

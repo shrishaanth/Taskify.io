@@ -4,27 +4,60 @@ import { getSocket } from "../api/socket";
 import { qk } from "./queryClient";
 
 /**
- * Real-time wiring for the events in software-spec §6. The client never trusts
- * a payload to be complete — every handler nudges React Query to refetch the
- * affected slice, so the socket only decides *when* to refresh, not *what* the
- * data is.
+ * Real-time wiring. The client never trusts a payload to be complete — every
+ * handler just nudges React Query to refetch the affected slice, so the socket
+ * only decides *when* to refresh, not *what* the data is.
  */
 
 /**
- * App-wide: `notification:new` (room `user:<id>`) refreshes the bell.
- * Mounted once, in the authenticated shell.
+ * App-wide listeners, registered once in the authenticated shell. The server
+ * joins the connecting user to `user:<id>`, `org:<id>` and `project:<id>`
+ * rooms on connect, so no explicit subscribe is needed here.
+ *
+ *   notification:new                          -> refetch the bell
+ *   board:created | board:updated | board:deleted
+ *                                             -> refetch the project's Boards list
+ *   project:memberChanged | project:memberRemoved
+ *                                             -> refetch Project Members
+ *   org:memberChanged                         -> refetch Org Members
  */
-export function useRealtimeNotifications(): void {
+export function useAppRealtime(): void {
   const qc = useQueryClient();
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
-    const onNew = () => {
+
+    const refetchNotifications = () => {
       void qc.invalidateQueries({ queryKey: qk.notifications });
     };
-    socket.on("notification:new", onNew);
+    const refetchBoards = () => {
+      void qc.invalidateQueries({ queryKey: ["boards"] }); // qk.boards(projectId)
+      void qc.invalidateQueries({ queryKey: ["board"] }); // open board detail
+    };
+    const refetchProjectMembers = () => {
+      // qk.projectMembers(projectId) + qk.project(orgId, projectId)
+      void qc.invalidateQueries({ queryKey: ["project"] });
+    };
+    const refetchOrgMembers = () => {
+      void qc.invalidateQueries({ queryKey: ["orgs"] }); // qk.orgMembers(orgId)
+    };
+
+    socket.on("notification:new", refetchNotifications);
+    socket.on("board:created", refetchBoards);
+    socket.on("board:updated", refetchBoards);
+    socket.on("board:deleted", refetchBoards);
+    socket.on("project:memberChanged", refetchProjectMembers);
+    socket.on("project:memberRemoved", refetchProjectMembers);
+    socket.on("org:memberChanged", refetchOrgMembers);
+
     return () => {
-      socket.off("notification:new", onNew);
+      socket.off("notification:new", refetchNotifications);
+      socket.off("board:created", refetchBoards);
+      socket.off("board:updated", refetchBoards);
+      socket.off("board:deleted", refetchBoards);
+      socket.off("project:memberChanged", refetchProjectMembers);
+      socket.off("project:memberRemoved", refetchProjectMembers);
+      socket.off("org:memberChanged", refetchOrgMembers);
     };
   }, [qc]);
 }
