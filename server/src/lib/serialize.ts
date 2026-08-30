@@ -194,3 +194,26 @@ export function notificationDto(n: {
     createdAt: iso(n.createdAt),
   };
 }
+
+export function orgInviteDto(
+  i: {
+    _id: Id;
+    organizationId: Id;
+    email: string;
+    role: string;
+    token: string;
+    expiresAt: Date;
+  } & WithTimestamps,
+  extra?: { invitedBy?: UserDto },
+) {
+  return {
+    id: String(i._id),
+    organizationId: String(i.organizationId),
+    email: i.email,
+    role: i.role,
+    token: i.token,
+    ...(extra?.invitedBy ? { invitedBy: extra.invitedBy } : {}),
+    expiresAt: i.expiresAt.toISOString(),
+    createdAt: iso(i.createdAt),
+  };
+}

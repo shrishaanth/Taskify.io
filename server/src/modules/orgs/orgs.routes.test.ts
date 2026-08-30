@@ -173,6 +173,119 @@ describe("invites (UC-2)", () => {
       .send();
     expect(res.status).toBe(403);
   });
+
+  it("lists pending invites for Owner/Admin; a Member is 403", async () => {
+    const org = await makeOrg();
+    const owner = await makeUser();
+    const plain = await makeUser();
+    await addOrgMember(org._id, owner._id, "owner");
+    await addOrgMember(org._id, plain._id, "member");
+
+    await asUser(app, owner)
+      .post(`/api/v1/orgs/${org._id}/invites`)
+      .send({ email: "pending@acme.com", role: "member" });
+
+    const list = await asUser(app, owner).get(`/api/v1/orgs/${org._id}/invites`);
+    expect(list.status).toBe(200);
+    expect(list.body).toHaveLength(1);
+    expect(list.body[0]).toMatchObject({
+      email: "pending@acme.com",
+      role: "member",
+    });
+    expect(list.body[0].token).toEqual(expect.any(String));
+    expect(list.body[0].invitedBy.id).toBe(owner._id.toString());
+
+    expect(
+      (await asUser(app, plain).get(`/api/v1/orgs/${org._id}/invites`)).status,
+    ).toBe(403);
+  });
+
+  it("an accepted invite drops out of the pending list", async () => {
+    const org = await makeOrg();
+    const owner = await makeUser();
+    await addOrgMember(org._id, owner._id, "owner");
+    const invitee = await makeUser({ email: "joiner@acme.com" });
+
+    const inv = await asUser(app, owner)
+      .post(`/api/v1/orgs/${org._id}/invites`)
+      .send({ email: "joiner@acme.com", role: "member" });
+    await asUser(app, invitee)
+      .post(`/api/v1/orgs/invites/${inv.body.token}/accept`)
+      .send();
+
+    const list = await asUser(app, owner).get(`/api/v1/orgs/${org._id}/invites`);
+    expect(list.body).toHaveLength(0);
+  });
+
+  it("GET /orgs/invites/mine returns my pending invites with org info", async () => {
+    const org = await makeOrg();
+    const owner = await makeUser();
+    await addOrgMember(org._id, owner._id, "owner");
+    const invitee = await makeUser({ email: "wants-in@acme.com" });
+    const other = await makeUser({ email: "not-me@acme.com" });
+
+    await asUser(app, owner)
+      .post(`/api/v1/orgs/${org._id}/invites`)
+      .send({ email: "wants-in@acme.com", role: "member" });
+    await asUser(app, owner)
+      .post(`/api/v1/orgs/${org._id}/invites`)
+      .send({ email: "not-me@acme.com", role: "admin" });
+
+    const mine = await asUser(app, invitee).get("/api/v1/orgs/invites/mine");
+    expect(mine.status).toBe(200);
+    expect(mine.body).toHaveLength(1);
+    expect(mine.body[0]).toMatchObject({
+      email: "wants-in@acme.com",
+      role: "member",
+      organization: { id: org._id.toString(), name: org.name },
+    });
+    expect(mine.body[0].token).toEqual(expect.any(String));
+
+    // the other invitee only sees their own
+    const theirs = await asUser(app, other).get("/api/v1/orgs/invites/mine");
+    expect(theirs.body.map((i: { role: string }) => i.role)).toEqual(["admin"]);
+  });
+
+  it("GET /orgs/invites/mine omits accepted invites", async () => {
+    const org = await makeOrg();
+    const owner = await makeUser();
+    await addOrgMember(org._id, owner._id, "owner");
+    const invitee = await makeUser({ email: "joining@acme.com" });
+
+    const inv = await asUser(app, owner)
+      .post(`/api/v1/orgs/${org._id}/invites`)
+      .send({ email: "joining@acme.com", role: "member" });
+    await asUser(app, invitee)
+      .post(`/api/v1/orgs/invites/${inv.body.token}/accept`)
+      .send();
+
+    const mine = await asUser(app, invitee).get("/api/v1/orgs/invites/mine");
+    expect(mine.body).toHaveLength(0);
+  });
+
+  it("Owner/Admin revokes a pending invite (then it cannot be accepted)", async () => {
+    const org = await makeOrg();
+    const owner = await makeUser();
+    await addOrgMember(org._id, owner._id, "owner");
+
+    const inv = await asUser(app, owner)
+      .post(`/api/v1/orgs/${org._id}/invites`)
+      .send({ email: "revoke-me@acme.com", role: "member" });
+
+    const del = await asUser(app, owner).delete(
+      `/api/v1/orgs/${org._id}/invites/${inv.body.id}`,
+    );
+    expect(del.status).toBe(204);
+
+    expect(
+      (await asUser(app, owner).get(`/api/v1/orgs/${org._id}/invites`)).body,
+    ).toHaveLength(0);
+
+    const accept = await request(app)
+      .post(`/api/v1/orgs/invites/${inv.body.token}/accept`)
+      .send({ name: "Too Late", password: "supersecret1" });
+    expect(accept.status).toBe(404);
+  });
 });
 
 describe("PATCH/DELETE /orgs/:orgId/members/:userId", () => {

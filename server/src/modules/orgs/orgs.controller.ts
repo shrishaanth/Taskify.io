@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { auth } from "../../lib/http.js";
-import { orgDto, userDto } from "../../lib/serialize.js";
+import { orgDto, orgInviteDto, userDto } from "../../lib/serialize.js";
 import { signAccessToken, verifyAccessToken } from "../../lib/tokens.js";
 import * as service from "./orgs.service.js";
 
@@ -38,6 +38,30 @@ export async function invite(req: Request, res: Response) {
     token: inv.token,
     expiresAt: inv.expiresAt.toISOString(),
   });
+}
+
+export async function listInvites(req: Request, res: Response) {
+  const rows = await service.listPendingInvites(req.params.orgId);
+  res.json(
+    rows.map(({ invite, invitedBy }) =>
+      orgInviteDto(invite, invitedBy ? { invitedBy: userDto(invitedBy) } : {}),
+    ),
+  );
+}
+
+export async function revokeInvite(req: Request, res: Response) {
+  await service.revokeInvite(req.params.orgId, req.params.inviteId);
+  res.status(204).end();
+}
+
+export async function myInvites(req: Request, res: Response) {
+  const rows = await service.listInvitesForUser(auth(req).userId);
+  res.json(
+    rows.map(({ invite, org }) => ({
+      ...orgInviteDto(invite),
+      organization: orgDto(org),
+    })),
+  );
 }
 
 export async function acceptInvite(req: Request, res: Response) {

@@ -11,6 +11,8 @@ export interface TopNavBarProps {
   currentOrgId: Id;
   onSwitchOrg: (id: Id) => void;
   onCreateOrg?: () => void;
+  onOpenOrgMembers?: () => void;
+  onOpenOrgSettings?: () => void;
   notifications: AppNotification[];
   onMarkAllNotificationsRead: () => void;
   onNotificationClick?: (id: string) => void;
@@ -35,6 +37,8 @@ export function TopNavBar({
   currentOrgId,
   onSwitchOrg,
   onCreateOrg,
+  onOpenOrgMembers,
+  onOpenOrgSettings,
   notifications,
   onMarkAllNotificationsRead,
   onNotificationClick,
@@ -61,6 +65,8 @@ export function TopNavBar({
         currentOrgId={currentOrgId}
         onSwitch={onSwitchOrg}
         {...(onCreateOrg ? { onCreate: onCreateOrg } : {})}
+        {...(onOpenOrgMembers ? { onOpenMembers: onOpenOrgMembers } : {})}
+        {...(onOpenOrgSettings ? { onOpenSettings: onOpenOrgSettings } : {})}
       />
 
       <span className={styles.spacer} />

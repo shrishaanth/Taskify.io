@@ -28,6 +28,10 @@ export const inviteSchema = {
   }),
 };
 
+export const inviteIdParams = {
+  params: z.object({ orgId: objectId, inviteId: objectId }),
+};
+
 export const acceptInviteSchema = {
   params: z.object({ inviteToken: z.string().min(10).max(200) }),
   body: z

@@ -56,6 +56,17 @@ describe("TopNavBar", () => {
     expect(screen.getByRole("dialog", { name: "Notifications" })).toBeInTheDocument();
   });
 
+  it("exposes org Members / Settings through the org switcher", async () => {
+    const onOpenOrgMembers = vi.fn();
+    const onOpenOrgSettings = vi.fn();
+    setup({ onOpenOrgMembers, onOpenOrgSettings });
+    await userEvent.click(
+      screen.getByRole("button", { name: /acme design studio/i }),
+    );
+    await userEvent.click(screen.getByRole("menuitem", { name: "Members" }));
+    expect(onOpenOrgMembers).toHaveBeenCalledTimes(1);
+  });
+
   it("uses a context-specific search placeholder", () => {
     setup({ searchPlaceholder: "Search boards, tasks…" });
     expect(screen.getByPlaceholderText("Search boards, tasks…")).toBeInTheDocument();

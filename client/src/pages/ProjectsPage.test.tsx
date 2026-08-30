@@ -64,4 +64,18 @@ describe("ProjectsPage", () => {
       screen.getByRole("button", { name: /Acme Design Studio/ }),
     ).toBeInTheDocument();
   });
+
+  it("navigates to org Members from the org switcher menu", async () => {
+    renderRoute("/orgs/org-acme/projects");
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Acme Design Studio/ }),
+    );
+    await userEvent.click(screen.getByRole("menuitem", { name: "Members" }));
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Members" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("cell", { name: "u-sarah@acme.test" }),
+    ).toBeInTheDocument();
+  });
 });

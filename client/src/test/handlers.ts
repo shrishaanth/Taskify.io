@@ -129,37 +129,173 @@ export const handlers = [
         .map((m) => ({ user: userRef(m.userId), role: m.role })),
     );
   }),
+  http.get(`${BASE}/orgs/invites/mine`, ({ request }) => {
+    const uid = callerId(request);
+    const me = uid ? db.users[uid] : undefined;
+    if (!me) return unauth();
+    return HttpResponse.json(
+      db.invites
+        .filter(
+          (i) =>
+            i.email === me.email &&
+            !i.acceptedAt &&
+            Date.parse(i.expiresAt) > Date.now(),
+        )
+        .map((i) => {
+          const org = db.orgs.find((o) => o.id === i.orgId)!;
+          return {
+            id: i.id,
+            organizationId: i.orgId,
+            email: i.email,
+            role: i.role,
+            token: i.token,
+            invitedBy: userRef(i.invitedById),
+            expiresAt: i.expiresAt,
+            organization: { id: org.id, name: org.name, slug: org.slug },
+          };
+        }),
+    );
+  }),
+  http.get(`${BASE}/orgs/:orgId/invites`, ({ request, params }) => {
+    const uid = callerId(request);
+    const orgId = params.orgId as string;
+    const role = uid ? orgRoleOf(orgId, uid) : null;
+    if (!role) return notFound();
+    if (role !== "owner" && role !== "admin") return forbidden();
+    return HttpResponse.json(
+      db.invites
+        .filter(
+          (i) =>
+            i.orgId === orgId &&
+            !i.acceptedAt &&
+            Date.parse(i.expiresAt) > Date.now(),
+        )
+        .map((i) => ({
+          id: i.id,
+          organizationId: i.orgId,
+          email: i.email,
+          role: i.role,
+          token: i.token,
+          invitedBy: userRef(i.invitedById),
+          expiresAt: i.expiresAt,
+        })),
+    );
+  }),
   http.post(`${BASE}/orgs/:orgId/invites`, async ({ request, params }) => {
     const uid = callerId(request);
     const orgId = params.orgId as string;
     const role = uid ? orgRoleOf(orgId, uid) : null;
     if (!role) return notFound();
     if (role !== "owner" && role !== "admin") return forbidden();
-    const b = (await request.json()) as { email: string; role: string };
-    // simulate: create the user + add them to the org
-    let u = Object.values(db.users).find((x) => x.email === b.email);
-    if (!u) {
-      const id = nextId("u");
-      db.users[id] = {
-        id,
-        name: b.email.split("@")[0],
-        email: b.email,
-        password: "x",
-      };
-      u = db.users[id];
+    const b = (await request.json()) as {
+      email: string;
+      role: "admin" | "member";
+    };
+    const email = b.email.toLowerCase().trim();
+    const existing = Object.values(db.users).find((x) => x.email === email);
+    if (existing && orgRoleOf(orgId, existing.id)) {
+      return err(409, "CONFLICT", "That user is already a member");
     }
-    if (!db.orgMembers.some((m) => m.orgId === orgId && m.userId === u!.id)) {
-      db.orgMembers.push({
-        orgId,
-        userId: u.id,
-        role: b.role as "admin" | "member",
-      });
-    }
+    const id = nextId("inv");
+    const token = `tok-${id}`;
+    db.invites.push({
+      id,
+      orgId,
+      email,
+      role: b.role,
+      token,
+      invitedById: uid!,
+      expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+    });
     return HttpResponse.json(
-      { id: nextId("inv"), email: b.email, role: b.role, token: "tok" },
+      {
+        id,
+        organizationId: orgId,
+        email,
+        role: b.role,
+        token,
+        expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+      },
       { status: 201 },
     );
   }),
+  http.delete(
+    `${BASE}/orgs/:orgId/invites/:inviteId`,
+    ({ request, params }) => {
+      const uid = callerId(request);
+      const orgId = params.orgId as string;
+      const role = uid ? orgRoleOf(orgId, uid) : null;
+      if (!role) return notFound();
+      if (role !== "owner" && role !== "admin") return forbidden();
+      const before = db.invites.length;
+      db.invites = db.invites.filter(
+        (i) => !(i.id === params.inviteId && i.orgId === orgId && !i.acceptedAt),
+      );
+      if (db.invites.length === before) return notFound();
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
+  http.post(
+    `${BASE}/orgs/invites/:token/accept`,
+    async ({ request, params }) => {
+      const token = params.token as string;
+      const inv = db.invites.find((i) => i.token === token);
+      if (!inv || inv.acceptedAt || Date.parse(inv.expiresAt) < Date.now()) {
+        return notFound();
+      }
+      const uid = callerId(request);
+      const body = (await request.json().catch(() => ({}))) as {
+        name?: string;
+        password?: string;
+      };
+
+      let userId: string;
+      let createdUser: (typeof db.users)[string] | null = null;
+
+      if (uid) {
+        const u = db.users[uid];
+        if (!u) return unauth();
+        if (u.email !== inv.email) return forbidden();
+        userId = u.id;
+      } else {
+        const clash = Object.values(db.users).find(
+          (x) => x.email === inv.email,
+        );
+        if (clash) {
+          return err(409, "CONFLICT", "An account exists — log in first");
+        }
+        if (!body.name || !body.password) {
+          return err(400, "VALIDATION_ERROR", "name and password required");
+        }
+        const id = nextId("u");
+        db.users[id] = {
+          id,
+          name: body.name,
+          email: inv.email,
+          password: body.password,
+        };
+        createdUser = db.users[id];
+        userId = id;
+      }
+
+      if (!db.orgMembers.some((m) => m.orgId === inv.orgId && m.userId === userId)) {
+        db.orgMembers.push({ orgId: inv.orgId, userId, role: inv.role });
+      }
+      inv.acceptedAt = new Date().toISOString();
+
+      const payload: Record<string, unknown> = {
+        organizationId: inv.orgId,
+        role: inv.role,
+      };
+      if (createdUser) {
+        payload.user = userRef(createdUser.id);
+        payload.accessToken = `test:${createdUser.id}`;
+      }
+      return HttpResponse.json(payload, {
+        status: createdUser ? 201 : 200,
+      });
+    },
+  ),
   http.patch(
     `${BASE}/orgs/:orgId/members/:userId`,
     async ({ request, params }) => {

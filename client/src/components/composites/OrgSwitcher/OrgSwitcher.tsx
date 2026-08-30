@@ -7,6 +7,10 @@ export interface OrgSwitcherProps {
   currentOrgId: Id;
   onSwitch: (orgId: Id) => void;
   onCreate?: () => void;
+  /** Navigate to the current org's Members screen. */
+  onOpenMembers?: () => void;
+  /** Navigate to the current org's Settings screen. */
+  onOpenSettings?: () => void;
 }
 
 export function OrgSwitcher({
@@ -14,6 +18,8 @@ export function OrgSwitcher({
   currentOrgId,
   onSwitch,
   onCreate,
+  onOpenMembers,
+  onOpenSettings,
 }: OrgSwitcherProps) {
   const current = orgs.find((o) => o.id === currentOrgId) ?? orgs[0];
   const initial = current?.name.charAt(0).toUpperCase() ?? "?";
@@ -33,6 +39,26 @@ export function OrgSwitcher({
       ),
       onSelect: () => onSwitch(o.id),
     })),
+    ...(onOpenMembers
+      ? [
+          {
+            id: "__members__",
+            label: "Members",
+            icon: <span aria-hidden="true">👥</span>,
+            onSelect: onOpenMembers,
+          } satisfies MenuItem,
+        ]
+      : []),
+    ...(onOpenSettings
+      ? [
+          {
+            id: "__settings__",
+            label: "Settings",
+            icon: <span aria-hidden="true">⚙</span>,
+            onSelect: onOpenSettings,
+          } satisfies MenuItem,
+        ]
+      : []),
     ...(onCreate
       ? [
           {

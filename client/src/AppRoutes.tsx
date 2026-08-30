@@ -10,6 +10,7 @@ import { ProjectPage } from "./pages/ProjectPage";
 import { BoardPage } from "./pages/BoardPage";
 import { OrgMembersPage } from "./pages/OrgMembersPage";
 import { OrgSettingsPage } from "./pages/OrgSettingsPage";
+import { AcceptInvitePage } from "./pages/AcceptInvitePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { Spinner } from "./components/primitives/Spinner/Spinner";
 import { useSession } from "./stores/sessionStore";
@@ -59,6 +60,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/invite/:token" element={<AcceptInvitePage />} />
       <Route
         path="/welcome"
         element={

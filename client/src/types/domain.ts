@@ -129,6 +129,20 @@ export interface OrgMemberRow {
   role: OrgRole;
 }
 
+/**
+ * A pending organization invite (UC-2). `OrgInvite` is not in
+ * srs/05-data-model.md — see server models/OrgInvite.ts and PROJECT_RULES.md §9.
+ */
+export interface OrgInvite {
+  id: Id;
+  email: string;
+  role: Exclude<OrgRole, "owner">;
+  token: string;
+  invitedBy?: UserRef;
+  expiresAt: IsoDate;
+  createdAt?: IsoDate;
+}
+
 export interface AppNotification {
   id: Id;
   type: NotificationType;

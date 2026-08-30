@@ -94,6 +94,59 @@ export async function createInvite(input: {
   return invite;
 }
 
+/** Outstanding (unaccepted, unexpired) invites for an org, newest first. */
+export async function listPendingInvites(orgId: string) {
+  const invites = await OrgInviteModel.find({
+    organizationId: orgId,
+    acceptedAt: null,
+    expiresAt: { $gt: new Date() },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const inviterIds = [...new Set(invites.map((i) => String(i.invitedById)))];
+  const inviters = await UserModel.find({ _id: { $in: inviterIds } }).lean();
+  const byId = new Map(inviters.map((u) => [String(u._id), u]));
+  return invites.map((i) => ({
+    invite: i,
+    invitedBy: byId.get(String(i.invitedById)) ?? null,
+  }));
+}
+
+/** Pending invites addressed to a given user's email, newest first. */
+export async function listInvitesForUser(userId: string) {
+  const user = await UserModel.findById(userId);
+  if (!user) throw AppError.unauthenticated();
+
+  const invites = await OrgInviteModel.find({
+    email: user.email,
+    acceptedAt: null,
+    expiresAt: { $gt: new Date() },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const orgIds = [...new Set(invites.map((i) => String(i.organizationId)))];
+  const orgs = await OrganizationModel.find({ _id: { $in: orgIds } }).lean();
+  const byId = new Map(orgs.map((o) => [String(o._id), o]));
+
+  const rows = [];
+  for (const invite of invites) {
+    const org = byId.get(String(invite.organizationId));
+    if (org) rows.push({ invite, org });
+  }
+  return rows;
+}
+
+export async function revokeInvite(orgId: string, inviteId: string) {
+  const invite = await OrgInviteModel.findOne({
+    _id: inviteId,
+    organizationId: orgId,
+  });
+  if (!invite || invite.acceptedAt) throw AppError.notFound();
+  await invite.deleteOne();
+}
+
 interface AcceptContext {
   /** Set when the caller is already authenticated. */
   authUserId?: string;

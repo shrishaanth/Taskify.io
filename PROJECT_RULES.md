@@ -331,6 +331,21 @@ SRS (full detail + resolutions in `COMPONENT_INVENTORY.md` §4):
 - Rich-text description is stored in the plain `Card.description: string`
   (markdown), not a new field.
 
+### 9.1 Deliberate additions beyond the API contract
+
+Kept minimal, each required to make a *documented* use case usable without an
+email service (which is out of scope):
+
+- `GET /orgs/:orgId/invites` (Owner/Admin) — list outstanding invites so the
+  UI has something to show; the contract only has POST invite + POST accept.
+- `DELETE /orgs/:orgId/invites/:inviteId` (Owner/Admin) — revoke a pending
+  invite from that list.
+- Client route `/invite/:token` (`AcceptInvitePage`) — UC-2's accept flow;
+  calls the contracted `POST /orgs/invites/:inviteToken/accept`. Since no email
+  is sent, the inviter copies the link from the Members page.
+- Server DTO enrichment (`orgInviteDto`, plus the Phase 7 `cardDto`/`boardDto`
+  extras) — the contract does not specify response bodies.
+
 ## 10. Out of scope (vision §"out of scope", requirements §3)
 
 Epics / Sprints / Scrum ceremonies; multiple issue *types* with distinct

@@ -24,6 +24,39 @@ describe("OrgSwitcher", () => {
     expect(onSwitch).toHaveBeenCalledWith("o2");
   });
 
+  it("offers Members / Settings entries only when their handlers are given", async () => {
+    const onOpenMembers = vi.fn();
+    const onOpenSettings = vi.fn();
+    const { rerender } = render(
+      <OrgSwitcher orgs={orgs} currentOrgId="o1" onSwitch={() => {}} />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: /acme/i }));
+    expect(
+      screen.queryByRole("menuitem", { name: "Members" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "Settings" }),
+    ).not.toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
+
+    rerender(
+      <OrgSwitcher
+        orgs={orgs}
+        currentOrgId="o1"
+        onSwitch={() => {}}
+        onOpenMembers={onOpenMembers}
+        onOpenSettings={onOpenSettings}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: /acme/i }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Members" }));
+    expect(onOpenMembers).toHaveBeenCalledTimes(1);
+
+    await userEvent.click(screen.getByRole("button", { name: /acme/i }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Settings" }));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+  });
+
   it("offers Create Organization only when onCreate is given", async () => {
     const onCreate = vi.fn();
     const { rerender } = render(

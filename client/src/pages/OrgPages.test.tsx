@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderRoute } from "../test/renderRoute";
 
@@ -38,7 +38,7 @@ describe("OrgMembersPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("invites a new member through the modal", async () => {
+  it("creates a pending invite through the modal (no immediate membership)", async () => {
     renderRoute("/orgs/org-acme/members");
     await userEvent.click(
       await screen.findByRole("button", { name: "+ Invite Member" }),
@@ -48,9 +48,48 @@ describe("OrgMembersPage", () => {
       "new.hire@acme.com",
     );
     await userEvent.click(screen.getByRole("button", { name: "Send Invite" }));
+
+    // shows up under Pending Invitations, not as a full member row
+    const pending = await screen.findByRole("region", {
+      name: "Pending invitations",
+    });
     expect(
-      await screen.findByRole("cell", { name: "new.hire@acme.com" }),
+      await within(pending).findByText("new.hire@acme.com"),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("cell", { name: "new.hire@acme.com" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("lists seeded pending invites and can revoke one", async () => {
+    renderRoute("/orgs/org-acme/members");
+    const pending = await screen.findByRole("region", {
+      name: "Pending invitations",
+    });
+    expect(
+      within(pending).getByText("pending.hire@acme.test"),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      within(pending).getByRole("button", {
+        name: "Revoke pending.hire@acme.test",
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByText("pending.hire@acme.test"),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it("hides the invite controls from a plain member", async () => {
+    renderRoute("/orgs/org-acme/members", { as: "u-marcus" });
+    await screen.findByRole("heading", { level: 1, name: "Members" });
+    expect(
+      screen.queryByRole("button", { name: "+ Invite Member" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Pending invitations" }),
+    ).not.toBeInTheDocument();
   });
 });
 

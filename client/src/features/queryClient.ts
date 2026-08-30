@@ -21,6 +21,8 @@ export function makeQueryClient(): QueryClient {
 export const qk = {
   session: ["session"] as const,
   orgMembers: (orgId: string) => ["orgs", orgId, "members"] as const,
+  orgInvites: (orgId: string) => ["orgs", orgId, "invites"] as const,
+  myInvites: ["invites", "mine"] as const,
   projects: (orgId: string) => ["projects", orgId] as const,
   project: (orgId: string, projectId: string) =>
     ["project", orgId, projectId] as const,

@@ -79,6 +79,16 @@ interface Attachment {
   sizeBytes: number;
   createdAt: string;
 }
+interface OrgInviteRow {
+  id: string;
+  orgId: string;
+  email: string;
+  role: "admin" | "member";
+  token: string;
+  invitedById: string;
+  expiresAt: string;
+  acceptedAt?: string;
+}
 
 export interface FakeDb {
   users: Record<string, UserRef & { password: string }>;
@@ -91,6 +101,7 @@ export interface FakeDb {
   subtasks: Subtask[];
   comments: Comment[];
   attachments: Attachment[];
+  invites: OrgInviteRow[];
   notifications: AppNotification[];
 }
 
@@ -113,6 +124,8 @@ export function seedDb(): FakeDb {
     "u-emma": U("u-emma", "Emma Watson"),
     "u-david": U("u-david", "David Kim"),
     "u-anna": U("u-anna", "Anna Vance"),
+    // exists but belongs to no organization yet (has a pending invite)
+    "u-noorg": U("u-noorg", "Nadia Ortiz"),
   };
 
   const db: FakeDb = {
@@ -229,6 +242,37 @@ export function seedDb(): FakeDb {
       },
     ],
     attachments: [],
+    invites: [
+      {
+        id: "inv-seed",
+        orgId: "org-acme",
+        email: "pending.hire@acme.test",
+        role: "member",
+        token: "seed-invite-token",
+        invitedById: "u-alex",
+        expiresAt: new Date(Date.now() + 6 * 86_400_000).toISOString(),
+      },
+      {
+        // existing user (Sarah) invited into an org she's not a member of
+        id: "inv-bright",
+        orgId: "org-bright",
+        email: "u-sarah@acme.test",
+        role: "member",
+        token: "bright-invite-token",
+        invitedById: "u-alex",
+        expiresAt: new Date(Date.now() + 6 * 86_400_000).toISOString(),
+      },
+      {
+        // pending invite for the org-less user, surfaced on the Welcome page
+        id: "inv-welcome",
+        orgId: "org-acme",
+        email: "u-noorg@acme.test",
+        role: "member",
+        token: "welcome-invite-token",
+        invitedById: "u-alex",
+        expiresAt: new Date(Date.now() + 6 * 86_400_000).toISOString(),
+      },
+    ],
     notifications: [
       {
         id: "ntf-1",

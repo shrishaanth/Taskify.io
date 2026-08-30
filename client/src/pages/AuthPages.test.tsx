@@ -84,6 +84,23 @@ describe("WelcomePage", () => {
     ).toBeDisabled();
   });
 
+  it("shows a pending invite to an org-less user and accepts it", async () => {
+    // u-noorg belongs to no org but has a seeded pending invite to Acme.
+    renderRoute("/welcome", { as: "u-noorg" });
+
+    const inviteCard = await screen.findByRole("heading", {
+      name: "You have an invitation",
+    });
+    expect(inviteCard).toBeInTheDocument();
+    expect(screen.getByText("Acme Design Studio")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Accept" }));
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Projects" }),
+    ).toBeInTheDocument();
+  });
+
   it("creates an organization and routes into its (empty) projects", async () => {
     renderRoute("/signup", { anonymous: true });
     await userEvent.type(screen.getByLabelText("Your Name"), "Pat Lee");

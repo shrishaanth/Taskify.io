@@ -29,12 +29,52 @@ export function useUpdateOrg(orgId: Id) {
   });
 }
 
+export function useOrgInvites(orgId: Id, enabled = true) {
+  return useQuery({
+    queryKey: qk.orgInvites(orgId),
+    queryFn: () => orgsApi.listOrgInvites(orgId),
+    enabled: Boolean(orgId) && enabled,
+  });
+}
+
 export function useInviteOrgMember(orgId: Id) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { email: string; role: "admin" | "member" }) =>
       orgsApi.inviteOrgMember(orgId, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.orgMembers(orgId) }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.orgInvites(orgId) });
+      void qc.invalidateQueries({ queryKey: qk.orgMembers(orgId) });
+    },
+  });
+}
+
+export function useRevokeOrgInvite(orgId: Id) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: Id) => orgsApi.revokeOrgInvite(orgId, inviteId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.orgInvites(orgId) }),
+  });
+}
+
+export function useMyInvites() {
+  const status = useSession((s) => s.status);
+  return useQuery({
+    queryKey: qk.myInvites,
+    queryFn: () => orgsApi.listMyInvites(),
+    enabled: status === "authenticated",
+  });
+}
+
+export function useAcceptInvite() {
+  const qc = useQueryClient();
+  const refresh = useSession((s) => s.refresh);
+  return useMutation({
+    mutationFn: (token: string) => orgsApi.acceptInvite(token),
+    onSuccess: async () => {
+      await refresh();
+      void qc.invalidateQueries({ queryKey: qk.myInvites });
+    },
   });
 }
 

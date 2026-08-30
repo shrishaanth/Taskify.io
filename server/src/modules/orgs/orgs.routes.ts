@@ -9,6 +9,7 @@ import {
   acceptInviteSchema,
   changeRoleSchema,
   createOrgSchema,
+  inviteIdParams,
   inviteSchema,
   memberParams,
   orgIdParams,
@@ -24,6 +25,13 @@ orgsRouter.post(
   "/invites/:inviteToken/accept",
   validate(acceptInviteSchema),
   asyncHandler(controller.acceptInvite),
+);
+
+// Pending invites addressed to the authenticated user's own email.
+orgsRouter.get(
+  "/invites/mine",
+  requireAuth,
+  asyncHandler(controller.myInvites),
 );
 
 orgsRouter.post(
@@ -57,12 +65,28 @@ orgsRouter.get(
   asyncHandler(controller.members),
 );
 
+orgsRouter.get(
+  "/:orgId/invites",
+  requireAuth,
+  validate(orgIdParams),
+  requireOrgRole("owner", "admin"),
+  asyncHandler(controller.listInvites),
+);
+
 orgsRouter.post(
   "/:orgId/invites",
   requireAuth,
   validate(inviteSchema),
   requireOrgRole("owner", "admin"),
   asyncHandler(controller.invite),
+);
+
+orgsRouter.delete(
+  "/:orgId/invites/:inviteId",
+  requireAuth,
+  validate(inviteIdParams),
+  requireOrgRole("owner", "admin"),
+  asyncHandler(controller.revokeInvite),
 );
 
 orgsRouter.patch(

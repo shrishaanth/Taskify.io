@@ -111,6 +111,7 @@ describe("UC-10 — reads across tenants return 404", () => {
   const cases = () => [
     ["GET org", () => call().get(`/api/v1/orgs/${B.orgId}`)],
     ["GET org members", () => call().get(`/api/v1/orgs/${B.orgId}/members`)],
+    ["GET org invites", () => call().get(`/api/v1/orgs/${B.orgId}/invites`)],
     ["GET projects list", () => call().get(`/api/v1/orgs/${B.orgId}/projects`)],
     ["GET project detail", () =>
       call().get(`/api/v1/orgs/${B.orgId}/projects/${B.projectId}`)],
@@ -151,6 +152,13 @@ describe("UC-10 — writes across tenants return 404", () => {
         call()
           .post(`/api/v1/orgs/${B.orgId}/invites`)
           .send({ email: "x@x.com", role: "admin" }),
+    ],
+    [
+      "revoke org invite",
+      () =>
+        call().delete(
+          `/api/v1/orgs/${B.orgId}/invites/000000000000000000000abc`,
+        ),
     ],
     [
       "change org member role",

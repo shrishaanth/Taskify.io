@@ -29,6 +29,8 @@ export function AppShell() {
         currentOrgId={currentOrgId}
         onSwitchOrg={(id) => navigate(`/orgs/${id}/projects`)}
         onCreateOrg={() => navigate("/welcome")}
+        onOpenOrgMembers={() => navigate(`/orgs/${currentOrgId}/members`)}
+        onOpenOrgSettings={() => navigate(`/orgs/${currentOrgId}/settings`)}
         notifications={notifications}
         onMarkAllNotificationsRead={() => markAllRead.mutate()}
         user={session.user}
