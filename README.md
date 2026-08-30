@@ -5,6 +5,7 @@ boards and cards on top of Jira-grade access control, tenant isolation, and
 real-time collaboration.
 
 <p>
+  <a href="https://taskify-io.vercel.app"><img alt="Live demo" src="https://img.shields.io/badge/demo-live-brightgreen"></a>
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white">
   <img alt="React" src="https://img.shields.io/badge/React-18-149ECA?logo=react&logoColor=white">
   <img alt="Node.js" src="https://img.shields.io/badge/Node.js-%E2%89%A520.12-5FA04E?logo=nodedotjs&logoColor=white">
@@ -13,6 +14,11 @@ real-time collaboration.
   <img alt="Socket.IO" src="https://img.shields.io/badge/Socket.IO-4-010101?logo=socketdotio&logoColor=white">
   <img alt="Tests" src="https://img.shields.io/badge/tests-655_passing-success">
 </p>
+
+**[▶ Live demo](https://taskify-io.vercel.app)** — SPA on Vercel, API + Socket.IO
+on Render ([`taskify-io.onrender.com`](https://taskify-io.onrender.com/api/health)),
+MongoDB Atlas. The API is on Render's free tier, so the first request after a
+period of inactivity cold-starts (~30–50s); reload once and it's responsive.
 
 ---
 
@@ -179,6 +185,31 @@ docker compose -f deploy/docker-compose.yml up --build
 Open **http://localhost:8080**, then open the same board in two browsers and
 move a card — it updates live in the other. Details in
 [`deploy/README.md`](deploy/README.md).
+
+---
+
+## Deployment
+
+The [live demo](https://taskify-io.vercel.app) runs on managed platforms:
+
+| Piece | Host | Notes |
+|---|---|---|
+| SPA (`client/`) | **Vercel** | root dir `client`, Vite preset, `VITE_API_URL` → the Render origin + `/api/v1` |
+| API + Socket.IO (`server/`) | **Render** web service | root dir `server`, start `npm start` (`tsx src/index.ts`), `NODE_ENV=production`, health check `/api/health` |
+| Database | **MongoDB Atlas** | free M0; Render's free tier has no static egress IP, so Atlas network access is open |
+
+Two deployment-specific details:
+
+- The refresh-token cookie is `SameSite=None; Secure` in production (the SPA and
+  API are on different domains, so a `Lax` cookie would never be sent on the
+  cross-site `/auth/refresh` call).
+- `CLIENT_ORIGIN` on the API must be the exact Vercel production URL — it feeds
+  both the CORS allow-list and the Socket.IO CORS config.
+
+The Docker + nginx stack in [`deploy/`](deploy/) is a **separate** target — the
+self-hosted, load-balanced topology from the spec. It isn't used by the managed
+deploy above; run it locally with `docker compose` to exercise the app pool and
+sticky Socket.IO sessions.
 
 ---
 
