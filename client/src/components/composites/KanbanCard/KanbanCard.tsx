@@ -57,6 +57,7 @@ export function KanbanCard({
     <button
       type="button"
       className={cn(styles.root, className)}
+      data-card-id={card.id}
       data-dragging={isDragging ? "true" : "false"}
       data-drop-target={isDropTarget ? "true" : "false"}
       aria-roledescription="Card"

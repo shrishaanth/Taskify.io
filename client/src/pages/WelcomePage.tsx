@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/primitives/Button/Button";
 import { RoleBadge } from "../components/composites/RoleBadge/RoleBadge";
+import { TopNavBar } from "../components/composites/TopNavBar/TopNavBar";
 import { CreateOrganizationModal } from "../components/composites/CreateModals/CreateOrganizationModal";
 import { useAcceptInvite, useCreateOrg, useMyInvites } from "../features/orgs";
 import { useSession } from "../stores/sessionStore";
@@ -10,6 +11,8 @@ import styles from "./pages.module.css";
 export function WelcomePage() {
   const navigate = useNavigate();
   const user = useSession((s) => s.session?.user);
+  const orgs = useSession((s) => s.session?.orgs ?? []);
+  const signOut = useSession((s) => s.signOut);
   const createOrg = useCreateOrg();
   const invitesQuery = useMyInvites();
   const acceptInvite = useAcceptInvite();
@@ -24,7 +27,23 @@ export function WelcomePage() {
   };
 
   return (
-    <main className={styles.welcomeMain}>
+    <div>
+      {user && (
+        <TopNavBar
+          orgs={orgs}
+          currentOrgId={orgs[0]?.id ?? ""}
+          onSwitchOrg={(id) => navigate(`/orgs/${id}/projects`)}
+          onLogoClick={() => navigate("/")}
+          onCreateOrg={() => setModalOpen(true)}
+          notifications={[]}
+          onMarkAllNotificationsRead={() => {}}
+          user={user}
+          onLogout={() => {
+            void signOut().then(() => navigate("/login"));
+          }}
+        />
+      )}
+      <main className={styles.welcomeMain}>
       <h1>Welcome to Taskify! 🎉</h1>
       <p style={{ color: "var(--text-secondary)" }}>
         Let&rsquo;s get you set up to start organizing tasks, columns, and
@@ -87,19 +106,20 @@ export function WelcomePage() {
         )}
       </div>
 
-      <CreateOrganizationModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        pending={createOrg.isPending}
-        onCreate={(name) => {
-          createOrg.mutate(name, {
-            onSuccess: (org) => {
-              setModalOpen(false);
-              navigate(`/orgs/${org.id}/projects`);
-            },
-          });
-        }}
-      />
-    </main>
+        <CreateOrganizationModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          pending={createOrg.isPending}
+          onCreate={(name) => {
+            createOrg.mutate(name, {
+              onSuccess: (org) => {
+                setModalOpen(false);
+                navigate(`/orgs/${org.id}/projects`);
+              },
+            });
+          }}
+        />
+      </main>
+    </div>
   );
 }

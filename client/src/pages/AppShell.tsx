@@ -29,6 +29,7 @@ export function AppShell() {
         orgs={orgs}
         currentOrgId={currentOrgId}
         onSwitchOrg={(id) => navigate(`/orgs/${id}/projects`)}
+        onLogoClick={() => navigate("/")}
         onCreateOrg={() => navigate("/welcome")}
         onOpenOrgMembers={() => navigate(`/orgs/${currentOrgId}/members`)}
         onOpenOrgSettings={() => navigate(`/orgs/${currentOrgId}/settings`)}

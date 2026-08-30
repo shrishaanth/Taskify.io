@@ -38,6 +38,7 @@ describe("NotificationItem", () => {
     "card_assigned",
     "comment_mention",
     "role_changed",
+    "invite_accepted",
   ] as const)("renders an icon for %s", (type) => {
     render(<NotificationItem notification={make({ type })} now={NOW} />);
     expect(screen.getByRole("button")).toHaveAttribute("data-type", type);

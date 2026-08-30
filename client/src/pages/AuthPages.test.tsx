@@ -84,6 +84,27 @@ describe("WelcomePage", () => {
     ).toBeDisabled();
   });
 
+  it("renders the top nav in the zero-org state (no switcher, has account menu)", async () => {
+    renderRoute("/welcome", { as: "u-noorg" }); // belongs to no organization
+
+    // the nav is present…
+    expect(await screen.findByText("Taskify")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Account: Nadia Ortiz" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /notifications/i }),
+    ).toBeInTheDocument();
+    // …but there's no org to switch to
+    expect(screen.queryByText("Select organization")).not.toBeInTheDocument();
+
+    // the logo is a working link out
+    await userEvent.click(screen.getByRole("button", { name: "Taskify home" }));
+    expect(
+      await screen.findByRole("heading", { name: /Welcome to Taskify/ }),
+    ).toBeInTheDocument();
+  });
+
   it("shows a pending invite to an org-less user and accepts it", async () => {
     // u-noorg belongs to no org but has a seeded pending invite to Acme.
     renderRoute("/welcome", { as: "u-noorg" });

@@ -12,7 +12,7 @@
   cursor: pointer;
   transition:
     box-shadow var(--duration-fast) var(--ease-standard),
-    transform var(--duration-fast) var(--ease-standard);
+    transform var(--duration-base) var(--ease-out);
 }
 .root:hover {
   box-shadow: var(--shadow-sm);

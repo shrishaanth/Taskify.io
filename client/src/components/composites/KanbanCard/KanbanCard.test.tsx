@@ -71,6 +71,11 @@ describe("KanbanCard — dragging state", () => {
     render(<KanbanCard card={base} isDragging onOpen={() => {}} now={NOW} />);
     expect(screen.getByRole("button")).toHaveAttribute("data-dragging", "true");
   });
+
+  it("exposes data-card-id so the board can FLIP-animate it", () => {
+    render(<KanbanCard card={base} onOpen={() => {}} now={NOW} />);
+    expect(screen.getByRole("button")).toHaveAttribute("data-card-id", "c1");
+  });
 });
 
 describe("KanbanCard — edge cases", () => {

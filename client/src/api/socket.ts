@@ -4,7 +4,8 @@ import { API_BASE } from "./http";
 /**
  * Realtime channel (FR-6 / UC-9). Connects to the same origin as the REST API,
  * authenticating with the current access token. Emits/listens:
- *   - server → client: `notification:new`, `board:changed`
+ *   - server → client: `notification:new`, `card:created`, `card:updated`,
+ *     `card:moved`, `card:deleted`, `comment:new` (software-spec §6)
  *   - client → server: `subscribe:board`, `unsubscribe:board`
  *
  * Behind nginx the server is same-origin; in local dev the API runs on :4000,

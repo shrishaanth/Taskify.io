@@ -4,8 +4,15 @@ import { getSocket } from "../api/socket";
 import { qk } from "./queryClient";
 
 /**
- * App-wide realtime wiring. Mounted once (in the authenticated shell): when the
- * server pushes a new notification, refetch the bell.
+ * Real-time wiring for the events in software-spec §6. The client never trusts
+ * a payload to be complete — every handler nudges React Query to refetch the
+ * affected slice, so the socket only decides *when* to refresh, not *what* the
+ * data is.
+ */
+
+/**
+ * App-wide: `notification:new` (room `user:<id>`) refreshes the bell.
+ * Mounted once, in the authenticated shell.
  */
 export function useRealtimeNotifications(): void {
   const qc = useQueryClient();
@@ -23,13 +30,13 @@ export function useRealtimeNotifications(): void {
 }
 
 /**
- * Live board sync (UC-9). While mounted, subscribes to the board's room and
- * refetches its cards / columns whenever anyone changes them.
+ * Board view: while mounted, join `board:<id>` and react to the card / comment
+ * events for that board.
+ *   card:created | card:updated | card:moved | card:deleted -> refetch the
+ *     board's card list (+ any open card detail)
+ *   comment:new -> refetch that card's detail
  */
-export function useBoardRealtime(
-  projectId: string,
-  boardId: string,
-): void {
+export function useBoardRealtime(projectId: string, boardId: string): void {
   const qc = useQueryClient();
   useEffect(() => {
     const socket = getSocket();
@@ -39,17 +46,33 @@ export function useBoardRealtime(
     join();
     socket.on("connect", join);
 
-    const onChanged = (evt: { boardId?: string }) => {
-      if (evt?.boardId && evt.boardId !== boardId) return;
+    const refetchCards = () => {
       void qc.invalidateQueries({ queryKey: qk.cards(boardId) });
-      void qc.invalidateQueries({ queryKey: qk.board(projectId, boardId) });
+      // any open card-detail query for this board (["card", boardId, ...])
+      void qc.invalidateQueries({ queryKey: ["card", boardId] });
     };
-    socket.on("board:changed", onChanged);
+    const refetchComment = (evt: { cardId?: string }) => {
+      if (evt?.cardId) {
+        void qc.invalidateQueries({ queryKey: qk.card(boardId, evt.cardId) });
+      } else {
+        refetchCards();
+      }
+    };
+
+    socket.on("card:created", refetchCards);
+    socket.on("card:updated", refetchCards);
+    socket.on("card:moved", refetchCards);
+    socket.on("card:deleted", refetchCards);
+    socket.on("comment:new", refetchComment);
 
     return () => {
       socket.emit("unsubscribe:board", boardId);
       socket.off("connect", join);
-      socket.off("board:changed", onChanged);
+      socket.off("card:created", refetchCards);
+      socket.off("card:updated", refetchCards);
+      socket.off("card:moved", refetchCards);
+      socket.off("card:deleted", refetchCards);
+      socket.off("comment:new", refetchComment);
     };
   }, [qc, projectId, boardId]);
 }

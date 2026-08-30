@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { cn } from "../../utils/cn";
 import { AddTile } from "../AddTile/AddTile";
 import { KanbanColumn } from "../KanbanColumn/KanbanColumn";
 import type { CardSummary, Column } from "../../../types/domain";
+import { useFlipCards } from "./useFlipCards";
 import styles from "./BoardCanvas.module.css";
 
 export interface BoardCanvasProps {
@@ -49,15 +50,21 @@ export function BoardCanvas({
 }: BoardCanvasProps) {
   const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
   const dndEnabled = canManage && Boolean(onMoveCard);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const ordered = [...columns].sort((a, b) => a.order - b.order);
+  // changes whenever a card's column/position could have shifted
+  const flipSignature = ordered
+    .map((c) => (cardsByColumn[c.id] ?? []).map((x) => x.id).join(","))
+    .join("|");
+  useFlipCards(rootRef, flipSignature);
 
   if (columns.length === 0 && emptyState) {
     return <>{emptyState}</>;
   }
 
-  const ordered = [...columns].sort((a, b) => a.order - b.order);
-
   return (
-    <div className={cn(styles.root, className)}>
+    <div ref={rootRef} className={cn(styles.root, className)}>
       {ordered.map((column) => (
         <KanbanColumn
           key={column.id}

@@ -347,22 +347,35 @@ email service (which is out of scope):
 - `DELETE /orgs/:orgId` (Owner-only) — the SRS §4 has no soft-delete, but the
   UI's Danger Zone needs a real cascade delete (projects → boards → cards →
   subtasks/comments/attachments, plus memberships + invites). Added on request.
+- `invite_accepted` notification type — added to `NOTIFICATION_TYPES`; on
+  `acceptInvite` the **inviter** (`invite.invitedById`) gets one, nobody else.
 - Server DTO enrichment (`orgInviteDto`, plus the Phase 7 `cardDto`/`boardDto`
-  extras) — the contract does not specify response bodies.
+  extras, and `notification.title`) — the contract does not specify response
+  bodies.
 
 ### 9.2 Real-time layer (`server/src/realtime/`)
 
 Socket.IO shares the HTTP listener. Auth = the same access token; rooms
-`user:<id>`, `org:<id>`, `board:<id>` (never a global broadcast). Emits:
-`notification:new` (from `lib/notify.ts`) and `board:changed` (from every card /
-subtask / comment / board mutation). The client connects on login and refetches
-the affected query on each event.
+`user:<id>`, `org:<id>`, `board:<id>` (never a global broadcast; client joins a
+board room via `subscribe:board` after an access check). Emits exactly the §6.1
+catalog: `card:created` / `card:updated` / `card:moved` / `card:deleted` /
+`comment:new` → `board:<id>` (from the card + comment + subtask controllers —
+subtask changes re-broadcast the parent card since there is no `subtask:*`
+event), and `notification:new` → `user:<id>` (from `lib/notify.ts`). The board
+has no catalog event, so board name / column edits still need a refetch.
 
-**No Redis adapter** (`@socket.io/redis-adapter`) — deliberately deferred. Under
-the nginx load balancer, `ip_hash` pins each client to one app instance so it
-receives that instance's events; cross-instance fan-out needs the adapter.
-`deploy/` holds the nginx config + a docker-compose (`web` nginx → `app1`/`app2`
-→ `mongo`).
+The client (`features/realtime.ts`) connects on login and, on each event, nudges
+React Query to refetch the affected slice — it never trusts the payload to be
+complete. Card moves are **optimistic** (`applyCardMove` in `features/cards.ts`)
+and FLIP-animated (`BoardCanvas/useFlipCards.ts`, ~180ms ease-out); because FLIP
+keys off the measured DOM position, the confirming event lands the card in the
+same spot → it animates exactly once.
+
+**No Redis adapter** (`@socket.io/redis-adapter`) — deliberately deferred; the
+place to add it is commented in `realtime/io.ts`. Under the nginx load balancer,
+`ip_hash` pins each client to one app instance so it receives that instance's
+events; cross-instance fan-out needs the adapter. `deploy/` holds the nginx
+config + a docker-compose (`web` nginx → `app1`/`app2` → `mongo`).
 
 ## 10. Out of scope (vision §"out of scope", requirements §3)
 

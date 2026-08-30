@@ -59,4 +59,26 @@ describe("TopNavBar", () => {
     await userEvent.click(screen.getByRole("menuitem", { name: "Members" }));
     expect(onOpenOrgMembers).toHaveBeenCalledTimes(1);
   });
+
+  it("zero-org state: no org switcher, but logo + account menu still work", async () => {
+    const onLogoClick = vi.fn();
+    setup({ orgs: [], onLogoClick });
+
+    // no org switcher at all
+    expect(
+      screen.queryByRole("button", { name: /acme design studio/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Select organization")).not.toBeInTheDocument();
+
+    // logo is a working "home" link, account menu is present, nothing crashed
+    const home = screen.getByRole("button", { name: "Taskify home" });
+    await userEvent.click(home);
+    expect(onLogoClick).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByRole("button", { name: "Account: Alex Rivera" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /notifications/i }),
+    ).toBeInTheDocument();
+  });
 });

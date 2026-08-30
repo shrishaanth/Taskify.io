@@ -17,6 +17,17 @@
   font-weight: var(--font-weight-bold);
   color: var(--text-primary);
 }
+.brandButton {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+.brandButton:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-md);
+}
 .logo {
   display: inline-flex;
   align-items: center;
