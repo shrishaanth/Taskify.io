@@ -23,7 +23,6 @@ describe("BoardPage", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Sprint Backlog" }),
     ).toBeInTheDocument();
-    // no connection badge / presence row on the board header any more
     expect(screen.queryByText("Live")).not.toBeInTheDocument();
     const todo = await screen.findByRole("region", { name: "To Do" });
     expect(
@@ -148,8 +147,6 @@ describe("BoardPage", () => {
       ).toBeInTheDocument(),
     );
 
-    // every card in To Do is a direct child of the single vertical list
-    // container — a row-wrapping layout would reparent or add wrappers
     const list = within(
       screen.getByRole("region", { name: "To Do" }),
     ).getByTestId("kanban-column-list");

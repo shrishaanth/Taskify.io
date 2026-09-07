@@ -36,7 +36,6 @@ export const acceptInviteSchema = {
   params: z.object({ inviteToken: z.string().min(10).max(200) }),
   body: z
     .object({
-      // Present only when the invitee has no account yet (UC-2 3a).
       name: z.string().trim().min(1).max(120).optional(),
       password: z.string().min(8).max(200).optional(),
     })

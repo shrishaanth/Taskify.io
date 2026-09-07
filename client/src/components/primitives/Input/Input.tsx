@@ -8,9 +8,7 @@ export interface InputProps
   size?: "sm" | "md";
   invalid?: boolean;
   leadingIcon?: ReactNode;
-  /** Trailing content — e.g. a password show/hide toggle or a clear button. */
   trailingSlot?: ReactNode;
-  /** Class applied to the outer wrapper (the visible field box). */
   wrapperClassName?: string;
 }
 

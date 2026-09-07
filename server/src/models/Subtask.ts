@@ -1,6 +1,5 @@
 import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
 
-/** Subtask — lightweight checklist item on a Card (FR-4.4). */
 const subtaskSchema = new Schema(
   {
     cardId: {

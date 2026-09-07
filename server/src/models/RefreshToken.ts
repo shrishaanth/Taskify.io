@@ -1,10 +1,5 @@
 import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
 
-/**
- * RefreshToken — server-tracked, rotatable, revocable (spec §5, NFR-1.2).
- * Only the SHA-256 hash of the opaque token is stored. A TTL index on
- * `expiresAt` cleans expired rows automatically.
- */
 const refreshTokenSchema = new Schema(
   {
     userId: {
@@ -21,7 +16,6 @@ const refreshTokenSchema = new Schema(
   { timestamps: true },
 );
 
-// TTL: Mongo removes the doc once `expiresAt` is in the past.
 refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export type RefreshToken = InferSchemaType<typeof refreshTokenSchema>;

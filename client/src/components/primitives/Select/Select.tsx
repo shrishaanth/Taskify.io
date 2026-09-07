@@ -14,7 +14,6 @@ export interface SelectProps
   size?: "sm" | "md";
   invalid?: boolean;
   leadingIcon?: ReactNode;
-  /** Convenience: pass options instead of `<option>` children. */
   options?: SelectOption[];
 }
 

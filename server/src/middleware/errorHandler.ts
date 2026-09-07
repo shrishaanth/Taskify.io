@@ -2,12 +2,10 @@ import type { ErrorRequestHandler, RequestHandler } from "express";
 import { ZodError } from "zod";
 import { AppError, type ErrorBody } from "../lib/errors.js";
 
-/** Terminal 404 for unmatched routes. */
 export const notFoundHandler: RequestHandler = (_req, _res, next) => {
   next(AppError.notFound("Route not found"));
 };
 
-/** Central error → `{ message, code, details? }` translator (spec §8). */
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof AppError) {
     res.status(err.status).json(err.toBody());
@@ -24,7 +22,6 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
-  // Mongo duplicate-key.
   if (
     typeof err === "object" &&
     err !== null &&

@@ -151,7 +151,6 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
                 scope="project"
                 onSubmit={(values) => {
                   const role = values.role === "head" ? "head" : "member";
-                  // C6: a project invite grants a role to an existing ORG member.
                   const target = (orgMembersQuery.data ?? []).find(
                     (m) => m.user.email === values.email,
                   );

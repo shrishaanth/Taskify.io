@@ -1,10 +1,5 @@
 import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
 
-/**
- * Board — belongs to one Project, no access-control role of its own (FR-3.1).
- * Columns are embedded (small, board-scoped, always read/written with the
- * board). `organizationId` denormalized for tenant isolation.
- */
 const columnSchema = new Schema(
   {
     id: { type: String, required: true },

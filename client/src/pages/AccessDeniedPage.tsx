@@ -3,8 +3,6 @@ import { EmptyState } from "../components/composites/EmptyState/EmptyState";
 import { Button } from "../components/primitives/Button/Button";
 import styles from "./pages.module.css";
 
-/** Shown when a project exists in the caller's org but they have no
- *  ProjectMembership (403 per FR-2.3 / UC-10 contrast). */
 export function AccessDeniedPage() {
   const navigate = useNavigate();
   const { orgId } = useParams();

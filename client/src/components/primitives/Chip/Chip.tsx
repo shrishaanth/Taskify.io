@@ -10,7 +10,6 @@ export interface ChipProps extends HTMLAttributes<HTMLSpanElement> {
   size?: "sm" | "md";
   removable?: boolean;
   onRemove?: () => void;
-  /** Accessible label for the remove control when children aren't plain text. */
   removeLabel?: string;
   children: ReactNode;
 }
@@ -53,7 +52,6 @@ export function Chip({
 
 export interface AddChipProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
-  /** Optional text after the "+"; defaults to just the icon. */
   label?: ReactNode;
   size?: "sm" | "md";
 }

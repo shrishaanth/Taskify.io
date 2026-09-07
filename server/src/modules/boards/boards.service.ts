@@ -31,7 +31,6 @@ function normaliseColumns(input: ColumnInput[]) {
     });
 }
 
-/** The project's org id, or a 404 if the project doesn't exist. */
 async function projectOrgId(projectId: string) {
   const project = await ProjectModel.findById(projectId).select("organizationId").lean();
   if (!project) throw AppError.notFound();

@@ -79,7 +79,6 @@ export function makeCard(
   });
 }
 
-/** A full tenant: org + owner + head + member + one project with memberships. */
 export async function makeScenario() {
   const org = await makeOrg();
   const owner = await makeUser();

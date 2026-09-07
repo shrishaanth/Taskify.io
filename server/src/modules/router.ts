@@ -8,7 +8,6 @@ import { subtasksRouter } from "./cards/subtasks.js";
 import { notificationsRouter } from "./notifications/notifications.routes.js";
 import { orgsRouter } from "./orgs/orgs.routes.js";
 
-/** Everything under `/api/v1` (spec §7 — one versioned surface, no legacy routes). */
 export const apiV1Router: Router = Router();
 
 apiV1Router.use("/auth", authRouter);

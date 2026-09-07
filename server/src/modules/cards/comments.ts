@@ -20,7 +20,6 @@ import { canDeleteAuthored } from "./childScope.js";
 const objectId = z.string().regex(/^[a-f0-9]{24}$/i);
 const canWork = requireProjectRole("head", "member");
 
-// Mounted at /api/v1/cards/:cardId/comments
 export const commentsRouter: Router = Router({ mergeParams: true });
 commentsRouter.use(requireAuth, resolveProjectFromCard);
 
@@ -61,7 +60,6 @@ commentsRouter.post(
     });
     const author = await UserModel.findById(me).lean();
 
-    // UC-8 — notify the card's assignees, except the author.
     const card = await CardModel.findById(req.params.cardId)
       .select("title assigneeIds")
       .lean();
@@ -93,8 +91,6 @@ commentsRouter.delete(
       throw AppError.forbidden("Only the author, a Project Head, or an Org Owner/Admin can delete this comment");
     }
     await comment.deleteOne();
-    // No catalog event for comment deletion; the card's commentCount changed,
-    // so re-broadcast the card so open boards/detail update live.
     const card = await CardModel.findById(req.params.cardId).lean();
     if (card) emitCardUpdated(req.resolvedBoardId, await serializeCard(card));
     res.status(204).end();

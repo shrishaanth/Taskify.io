@@ -37,7 +37,6 @@ describe("POST /orgs (UC-1a — any authenticated user)", () => {
     });
     expect(m?.role).toBe("owner");
 
-    // second org with the same name → slug is de-duped
     const res2 = await asUser(app, u).post("/api/v1/orgs").send({ name: "Acme Studio!" });
     expect(res2.body.slug).toBe("acme-studio-2");
   });
@@ -99,7 +98,6 @@ describe("DELETE /orgs/:orgId", () => {
     expect(await CardModel.countDocuments({ boardId: board._id })).toBe(0);
     expect(await OrgMembershipModel.countDocuments({ organizationId: org._id })).toBe(0);
 
-    // the org is gone for the ex-owner too
     expect((await asUser(app, owner).get(`/api/v1/orgs/${org._id}`)).status).toBe(404);
   });
 
@@ -198,7 +196,6 @@ describe("invites (UC-2)", () => {
     await addOrgMember(org._id, admin._id, "admin");
     const invitee = await makeUser({ email: "joins@acme.com", name: "Ivy Invitee" });
 
-    // the ADMIN sends the invite
     const inv = await asUser(app, admin)
       .post(`/api/v1/orgs/${org._id}/invites`)
       .send({ email: "joins@acme.com", role: "member" });
@@ -207,7 +204,6 @@ describe("invites (UC-2)", () => {
       .post(`/api/v1/orgs/invites/${inv.body.token}/accept`)
       .send();
 
-    // the inviter (admin) gets exactly one invite_accepted notification
     const forAdmin = await NotificationModel.find({
       userId: admin._id,
       type: "invite_accepted",
@@ -220,7 +216,6 @@ describe("invites (UC-2)", () => {
       acceptedByName: "Ivy Invitee",
     });
 
-    // nobody else is notified
     expect(
       await NotificationModel.countDocuments({
         userId: owner._id,
@@ -364,7 +359,6 @@ describe("invites (UC-2)", () => {
     });
     expect(mine.body[0].token).toEqual(expect.any(String));
 
-    // the other invitee only sees their own
     const theirs = await asUser(app, other).get("/api/v1/orgs/invites/mine");
     expect(theirs.body.map((i: { role: string }) => i.role)).toEqual(["admin"]);
   });

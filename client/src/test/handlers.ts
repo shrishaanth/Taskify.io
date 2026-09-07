@@ -21,7 +21,6 @@ function callerId(request: Request): string | null {
   return m ? m[1] : null;
 }
 
-/** org ids the caller belongs to */
 const callerOrgIds = (uid: string) =>
   db.orgMembers.filter((m) => m.userId === uid).map((m) => m.orgId);
 
@@ -47,7 +46,6 @@ function cardDto(cardId: string) {
 }
 
 export const handlers = [
-  /* ---------------- auth ---------------- */
   http.post(`${BASE}/auth/signup`, async ({ request }) => {
     const b = (await request.json()) as {
       email: string;
@@ -96,7 +94,6 @@ export const handlers = [
     });
   }),
 
-  /* ---------------- orgs ---------------- */
   http.post(`${BASE}/orgs`, async ({ request }) => {
     const uid = callerId(request);
     if (!uid) return unauth();
@@ -372,7 +369,6 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  /* ---------------- projects ---------------- */
   http.get(`${BASE}/orgs/:orgId/projects`, ({ request, params }) => {
     const uid = callerId(request);
     const orgId = params.orgId as string;
@@ -534,7 +530,6 @@ export const handlers = [
     },
   ),
 
-  /* ---------------- boards ---------------- */
   http.get(`${BASE}/projects/:projectId/boards`, ({ request, params }) => {
     const uid = callerId(request);
     const projectId = params.projectId as string;
@@ -659,7 +654,6 @@ export const handlers = [
     },
   ),
 
-  /* ---------------- cards ---------------- */
   http.get(`${BASE}/boards/:boardId/cards`, ({ request, params }) => {
     const uid = callerId(request);
     const boardId = params.boardId as string;
@@ -800,7 +794,6 @@ export const handlers = [
     },
   ),
 
-  /* ---------------- card children ---------------- */
   http.post(
     `${BASE}/cards/:cardId/subtasks`,
     async ({ request, params }) => {
@@ -873,7 +866,6 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  /* ---------------- notifications ---------------- */
   http.get(`${BASE}/notifications`, ({ request }) => {
     if (!callerId(request)) return unauth();
     const url = new URL(request.url);

@@ -8,7 +8,6 @@ export interface SkeletonProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: SkeletonVariant;
   width?: string | number;
   height?: string | number;
-  /** Number of placeholder bars to render. */
   count?: number;
   radius?: string;
 }

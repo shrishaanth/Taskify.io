@@ -10,7 +10,6 @@ interface RawBoard {
   cardCount?: number;
 }
 
-/** `colorKey` is client-only and picked deterministically from the board id. */
 function toBoardSummary(b: RawBoard): BoardSummary & { columns: Column[] } {
   return {
     id: b.id,

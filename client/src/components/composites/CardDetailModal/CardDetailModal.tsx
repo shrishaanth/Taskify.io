@@ -27,7 +27,6 @@ export interface CardDetailModalProps {
   open: boolean;
   onClose: () => void;
   card: CardDetail;
-  /** e.g. "E-Commerce Redesign / Sprint Backlog". */
   breadcrumb: string;
   viewer: ViewerContext;
   currentUser: UserRef;

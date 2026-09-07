@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event";
 import { renderRoute } from "../test/renderRoute";
 import { db } from "../test/fakeApi";
 
-/** Push `n` extra unread notifications so the list spans multiple pages. */
 function seedManyNotifications(n: number) {
   for (let i = 0; i < n; i++) {
     db.notifications.push({
@@ -28,7 +27,6 @@ describe("Notification bell — infinite scroll", () => {
     );
     const panel = await screen.findByRole("dialog", { name: "Notifications" });
 
-    // page 1 = 20 items, so "Bulk notification 25" is not shown yet
     expect(within(panel).getByText("Bulk notification 0")).toBeInTheDocument();
     expect(
       within(panel).queryByText("Bulk notification 25"),
@@ -41,7 +39,6 @@ describe("Notification bell — infinite scroll", () => {
     expect(
       await within(panel).findByText("Bulk notification 25"),
     ).toBeInTheDocument();
-    // all pages loaded -> the control is gone
     expect(
       within(panel).queryByRole("button", { name: /Load more/ }),
     ).not.toBeInTheDocument();

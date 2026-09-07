@@ -16,7 +16,6 @@ export interface NotificationBellProps
     | "loadingMore"
     | "now"
   > {
-  /** True unread count from the server (may exceed what's loaded). */
   unreadCount?: number;
   className?: string;
 }

@@ -9,7 +9,6 @@ export interface NotificationPanelProps {
   notifications: AppNotification[];
   onMarkAllRead: () => void;
   onItemClick?: (id: string) => void;
-  /** Infinite scroll: pull the next page of notifications. */
   onLoadMore?: () => void;
   hasMore?: boolean;
   loadingMore?: boolean;

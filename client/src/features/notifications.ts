@@ -9,10 +9,6 @@ import { qk } from "./queryClient";
 
 const PAGE_SIZE = 20;
 
-/**
- * The notification bell, paginated as an infinite list. `fetchNextPage` pulls
- * the next page; `notification:new` socket events invalidate this query.
- */
 export function useNotifications() {
   const isAuthed = useSession((s) => s.isAuthenticated);
   const query = useInfiniteQuery({

@@ -5,7 +5,6 @@ import type { Id, UserRef } from "../../../types/domain";
 
 export interface AssigneePickerProps {
   assignees: UserRef[];
-  /** Users eligible to be assigned (project members — UC-5). */
   candidates: UserRef[];
   onChange: (userIds: Id[]) => void;
   canEdit?: boolean;

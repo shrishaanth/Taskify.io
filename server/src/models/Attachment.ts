@@ -1,6 +1,5 @@
 import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
 
-/** Attachment — a file on a Card (FR-4.6). */
 const attachmentSchema = new Schema(
   {
     cardId: {

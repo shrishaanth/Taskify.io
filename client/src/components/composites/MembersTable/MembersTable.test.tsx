@@ -88,7 +88,6 @@ describe("MembersTable — actions + last-owner guard", () => {
       />,
     );
     expect(screen.getByRole("button", { name: "Remove Anna Vance" })).toBeDisabled();
-    // the sole owner's role renders as a static badge, not an editable trigger
     const ownerCell = screen.getByText("OWNER").closest("td")!;
     expect(within(ownerCell).queryByRole("button")).not.toBeInTheDocument();
   });

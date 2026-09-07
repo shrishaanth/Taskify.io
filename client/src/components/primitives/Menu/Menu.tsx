@@ -42,7 +42,6 @@ export interface MenuProps {
   items: MenuItem[];
   placement?: MenuPlacement;
   menuLabel?: string;
-  /** Controlled open state. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   className?: string;
@@ -78,7 +77,6 @@ export function Menu({
     .map((it, i) => (it.disabled ? -1 : i))
     .filter((i) => i >= 0);
 
-  // Close on outside pointer + Escape.
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: MouseEvent) => {
@@ -98,7 +96,6 @@ export function Menu({
     };
   }, [open, setOpen]);
 
-  // Focus the first enabled item when the menu opens.
   useEffect(() => {
     if (!open) return;
     const firstEnabled = enabledIndexes[0] ?? 0;

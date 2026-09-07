@@ -1,23 +1,5 @@
-/**
- * Taskify design tokens — CSS custom properties.
- *
- * Source of truth: the Figma "Design System & Reference Sheet" in
- * srs/Taskify_UI_Mockups.pdf. The three named anchors from that sheet are:
- *   Primary Sky  #0284c7   (--color-sky-600)
- *   Ink Slate    #0f172a   (--color-slate-900)
- *   Cool BG      #f8fafc   (--color-slate-50)
- * The rest of each ramp is the matching Tailwind family (sky / slate / red /
- * amber / green / violet / purple / rose / pink), chosen so the anchors sit at
- * their natural positions. Label-chip colors follow the sheet's
- * "soft bg (-100) / strong text (-700)" pattern.
- *
- * Keep this file in exact sync with tokens.ts — tokens.test.ts fails otherwise.
- */
-
 :root {
-  /* ----------------------------------------------------------------------- */
-  /* Primitive color ramps                                                   */
-  /* ----------------------------------------------------------------------- */
+
   --color-white: #ffffff;
   --color-black: #000000;
 
@@ -120,22 +102,19 @@
   --color-pink-800: #9d174d;
   --color-pink-900: #831843;
 
-  /* ----------------------------------------------------------------------- */
-  /* Typography                                                              */
-  /* ----------------------------------------------------------------------- */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
 
-  --font-size-xs: 0.75rem; /* 12px — Caption */
-  --font-size-sm: 0.875rem; /* 14px */
-  --font-size-md: 1rem; /* 16px — Body */
-  --font-size-lg: 1.125rem; /* 18px */
-  --font-size-xl: 1.25rem; /* 20px */
-  --font-size-2xl: 1.5rem; /* 24px — H2 */
-  --font-size-3xl: 2rem; /* 32px */
-  --font-size-4xl: 2.5rem; /* 40px — H1 */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  --font-size-4xl: 2.5rem;
 
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -151,41 +130,32 @@
   --letter-spacing-normal: 0em;
   --letter-spacing-wide: 0.04em;
 
-  /* ----------------------------------------------------------------------- */
-  /* Spacing — 4px base grid                                                 */
-  /* ----------------------------------------------------------------------- */
   --space-0: 0;
   --space-px: 1px;
-  --space-0-5: 0.125rem; /* 2 */
-  --space-1: 0.25rem; /* 4 */
-  --space-1-5: 0.375rem; /* 6 */
-  --space-2: 0.5rem; /* 8 */
-  --space-2-5: 0.625rem; /* 10 */
-  --space-3: 0.75rem; /* 12 */
-  --space-4: 1rem; /* 16 */
-  --space-5: 1.25rem; /* 20 */
-  --space-6: 1.5rem; /* 24 */
-  --space-8: 2rem; /* 32 */
-  --space-10: 2.5rem; /* 40 */
-  --space-12: 3rem; /* 48 */
-  --space-16: 4rem; /* 64 */
-  --space-20: 5rem; /* 80 */
-  --space-24: 6rem; /* 96 */
+  --space-0-5: 0.125rem;
+  --space-1: 0.25rem;
+  --space-1-5: 0.375rem;
+  --space-2: 0.5rem;
+  --space-2-5: 0.625rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
 
-  /* ----------------------------------------------------------------------- */
-  /* Radius — modal 16px is the one value named in the Figma sheet           */
-  /* ----------------------------------------------------------------------- */
   --radius-none: 0;
   --radius-sm: 6px;
-  --radius-md: 8px; /* inputs, buttons */
-  --radius-lg: 12px; /* cards, tiles */
-  --radius-xl: 16px; /* modal shell (named in the sheet) */
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-2xl: 20px;
-  --radius-full: 9999px; /* chips, badges, avatars, pills */
+  --radius-full: 9999px;
 
-  /* ----------------------------------------------------------------------- */
-  /* Elevation                                                              */
-  /* ----------------------------------------------------------------------- */
   --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
   --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.06);
   --shadow-md: 0 4px 12px -2px rgb(15 23 42 / 0.1), 0 2px 6px -2px rgb(15 23 42 / 0.06);
@@ -194,9 +164,6 @@
   --shadow-dragging: 0 18px 40px -8px rgb(2 132 199 / 0.28), 0 6px 14px -6px rgb(15 23 42 / 0.12);
   --shadow-focus: 0 0 0 3px rgb(14 165 233 / 0.35);
 
-  /* ----------------------------------------------------------------------- */
-  /* Z-index scale                                                          */
-  /* ----------------------------------------------------------------------- */
   --z-base: 0;
   --z-raised: 10;
   --z-dropdown: 1000;
@@ -208,9 +175,6 @@
   --z-toast: 1060;
   --z-tooltip: 1070;
 
-  /* ----------------------------------------------------------------------- */
-  /* Motion                                                                 */
-  /* ----------------------------------------------------------------------- */
   --duration-fast: 120ms;
   --duration-base: 180ms;
   --duration-slow: 260ms;
@@ -219,18 +183,12 @@
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
 
-  /* ----------------------------------------------------------------------- */
-  /* Breakpoints (informational — for use in JS matchMedia)                  */
-  /* ----------------------------------------------------------------------- */
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1536px;
 
-  /* ======================================================================= */
-  /* Semantic tokens — the names components should reference                 */
-  /* ======================================================================= */
   --bg-app: var(--color-slate-50);
   --bg-surface: var(--color-white);
   --bg-surface-muted: var(--color-slate-100);
@@ -276,9 +234,6 @@
 
   --focus-ring: rgb(14 165 233 / 0.35);
 
-  /* ----------------------------------------------------------------------- */
-  /* Label / badge tones — soft (default) + solid                            */
-  /* ----------------------------------------------------------------------- */
   --tone-sky-soft-bg: var(--color-sky-100);
   --tone-sky-soft-fg: var(--color-sky-700);
   --tone-sky-solid-bg: var(--color-sky-600);
@@ -324,10 +279,6 @@
   --tone-pink-solid-bg: var(--color-pink-600);
   --tone-pink-solid-fg: var(--color-white);
 
-  /* ----------------------------------------------------------------------- */
-  /* Board tile palette (Create Board color picker — 6 pastel options)       */
-  /* colorKey is a client-only preference; see COMPONENT_INVENTORY.md §4 C1.  */
-  /* ----------------------------------------------------------------------- */
   --board-green-bg: var(--color-green-100);
   --board-green-heading: var(--color-green-800);
   --board-green-link: var(--color-green-600);

@@ -1,10 +1,5 @@
 import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
 
-/**
- * User — srs/05-data-model.md.
- * No global "role" field: all roles are relational, on the Membership models.
- * A freshly signed-up user has zero OrgMembership documents.
- */
 const userSchema = new Schema(
   {
     email: {
@@ -22,7 +17,6 @@ const userSchema = new Schema(
   { timestamps: true },
 );
 
-// Never leak the password hash through JSON serialisation.
 userSchema.set("toJSON", {
   transform: (_doc, ret: Record<string, unknown>) => {
     delete ret.passwordHash;

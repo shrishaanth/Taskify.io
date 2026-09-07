@@ -44,7 +44,6 @@ describe("Modal", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(dialog).toHaveAccessibleName("Create Project");
-    // portalled to body, not nested in the React root container
     expect(dialog.closest("body")).toBe(document.body);
   });
 

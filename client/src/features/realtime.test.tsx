@@ -4,7 +4,6 @@ import { renderHook } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAppRealtime, useBoardRealtime } from "./realtime";
 
-/** Minimal fake socket.io client — just the on/off/emit surface we use. */
 class FakeSocket {
   private handlers = new Map<string, Set<(p: unknown) => void>>();
   emitted: { event: string; payload: unknown }[] = [];
@@ -22,7 +21,6 @@ class FakeSocket {
   emit(event: string, payload?: unknown) {
     this.emitted.push({ event, payload });
   }
-  /** simulate the server pushing an event */
   server(event: string, payload?: unknown) {
     this.handlers.get(event)?.forEach((cb) => cb(payload));
   }

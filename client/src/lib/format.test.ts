@@ -21,7 +21,6 @@ describe("formatShortDate", () => {
 });
 
 describe("isOverdue", () => {
-  // Build dates in local time so the day-boundary check is timezone-robust.
   const now = new Date(2026, 7, 30, 12, 0, 0);
   const iso = (y: number, m: number, d: number, h = 12) =>
     new Date(y, m, d, h).toISOString();

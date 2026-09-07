@@ -48,7 +48,6 @@ const toSummary = (c: RawCard): CardSummary => ({
   commentCount: c.commentCount ?? 0,
 });
 
-/** Resolve the id-only refs on subtasks/comments against members. */
 function toDetail(c: RawCardDetail, members: UserRef[]): CardDetail {
   const byId = new Map(members.map((m) => [m.id, m]));
   const ref = (id?: string): UserRef =>
@@ -120,8 +119,6 @@ export function deleteCard(boardId: Id, cardId: Id) {
     method: "DELETE",
   });
 }
-
-/* ---- card children ---- */
 
 export function addSubtask(cardId: Id, title: string) {
   return apiFetch<RawSubtask>(`/cards/${cardId}/subtasks`, {

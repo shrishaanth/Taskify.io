@@ -1,18 +1,3 @@
-/**
- * Taskify design tokens — typed constants.
- *
- * This is the JS/TS mirror of tokens.css. Both files are generated from the
- * Figma "Design System & Reference Sheet" and MUST stay in exact sync —
- * tokens.test.ts cross-checks every value against tokens.css and fails on drift.
- *
- * Use `tokens.*` in TS where a raw value is needed (deterministic color maps in
- * Chip/Avatar, canvas math, tests). In component styling prefer the CSS custom
- * properties via `cssVar(...)` so theming stays in one place.
- */
-
-/* ------------------------------------------------------------------------- */
-/* Primitive color ramps                                                     */
-/* ------------------------------------------------------------------------- */
 export const color = {
   white: "#ffffff",
   black: "#000000",
@@ -127,23 +112,20 @@ export const color = {
   },
 } as const;
 
-/* ------------------------------------------------------------------------- */
-/* Typography                                                                */
-/* ------------------------------------------------------------------------- */
 export const fontFamily = {
   sans: '"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif',
   mono: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
 } as const;
 
 export const fontSize = {
-  xs: "0.75rem", // 12 — Caption
-  sm: "0.875rem", // 14
-  md: "1rem", // 16 — Body
-  lg: "1.125rem", // 18
-  xl: "1.25rem", // 20
-  "2xl": "1.5rem", // 24 — H2
-  "3xl": "2rem", // 32
-  "4xl": "2.5rem", // 40 — H1
+  xs: "0.75rem",
+  sm: "0.875rem",
+  md: "1rem",
+  lg: "1.125rem",
+  xl: "1.25rem",
+  "2xl": "1.5rem",
+  "3xl": "2rem",
+  "4xl": "2.5rem",
 } as const;
 
 export const fontWeight = {
@@ -166,11 +148,6 @@ export const letterSpacing = {
   wide: "0.04em",
 } as const;
 
-/**
- * The four type roles named explicitly in the Figma sheet:
- *   H1  Inter Bold 40px   ·   H2  Inter Bold 24px
- *   Body Inter Regular 16px   ·   Caption Inter Semibold 12px
- */
 export const textStyle = {
   h1: {
     fontFamily: fontFamily.sans,
@@ -202,9 +179,6 @@ export const textStyle = {
   },
 } as const;
 
-/* ------------------------------------------------------------------------- */
-/* Spacing — 4px base grid                                                   */
-/* ------------------------------------------------------------------------- */
 export const space = {
   "0": "0",
   px: "1px",
@@ -225,22 +199,16 @@ export const space = {
   "24": "6rem",
 } as const;
 
-/* ------------------------------------------------------------------------- */
-/* Radius                                                                    */
-/* ------------------------------------------------------------------------- */
 export const radius = {
   none: "0",
   sm: "6px",
   md: "8px",
   lg: "12px",
-  xl: "16px", // modal shell — the one radius named in the Figma sheet
+  xl: "16px",
   "2xl": "20px",
   full: "9999px",
 } as const;
 
-/* ------------------------------------------------------------------------- */
-/* Elevation                                                                 */
-/* ------------------------------------------------------------------------- */
 export const shadow = {
   xs: "0 1px 2px 0 rgb(15 23 42 / 0.04)",
   sm: "0 1px 3px 0 rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.06)",
@@ -253,9 +221,6 @@ export const shadow = {
   focus: "0 0 0 3px rgb(14 165 233 / 0.35)",
 } as const;
 
-/* ------------------------------------------------------------------------- */
-/* Z-index                                                                   */
-/* ------------------------------------------------------------------------- */
 export const zIndex = {
   base: 0,
   raised: 10,
@@ -269,9 +234,6 @@ export const zIndex = {
   tooltip: 1070,
 } as const;
 
-/* ------------------------------------------------------------------------- */
-/* Motion                                                                    */
-/* ------------------------------------------------------------------------- */
 export const duration = {
   fast: "120ms",
   base: "180ms",
@@ -285,9 +247,6 @@ export const easing = {
   out: "cubic-bezier(0, 0, 0.2, 1)",
 } as const;
 
-/* ------------------------------------------------------------------------- */
-/* Breakpoints                                                               */
-/* ------------------------------------------------------------------------- */
 export const breakpoint = {
   sm: "640px",
   md: "768px",
@@ -296,9 +255,6 @@ export const breakpoint = {
   "2xl": "1536px",
 } as const;
 
-/* ======================================================================= */
-/* Semantic tokens — reference primitives; components use these names       */
-/* ======================================================================= */
 export const semantic = {
   bg: {
     app: color.slate[50],
@@ -354,9 +310,6 @@ export const semantic = {
   focusRing: "rgb(14 165 233 / 0.35)",
 } as const;
 
-/* ------------------------------------------------------------------------- */
-/* Label / badge tones                                                       */
-/* ------------------------------------------------------------------------- */
 export type Tone =
   | "sky"
   | "slate"
@@ -412,10 +365,6 @@ export const labelTone: Record<Tone, ToneSet> = {
   },
 };
 
-/* ------------------------------------------------------------------------- */
-/* Board tile palette — the 6 options in the Create Board color picker.      */
-/* `colorKey` is a client-only preference (COMPONENT_INVENTORY.md §4 C1).    */
-/* ------------------------------------------------------------------------- */
 export type BoardColorKey = "green" | "purple" | "red" | "amber" | "sky" | "pink";
 
 export const boardPalette: Record<
@@ -434,10 +383,6 @@ export const boardPalette: Record<
   pink: { bg: color.pink[100], heading: color.pink[800], link: color.pink[600] },
 };
 
-/* ------------------------------------------------------------------------- */
-/* Semantic role → tone maps (single source of truth for RoleBadge etc.)    */
-/* Derived from the badges drawn on the Figma design-system sheet.           */
-/* ------------------------------------------------------------------------- */
 export const orgRoleTone: Record<"owner" | "admin" | "member", Tone> = {
   owner: "rose",
   admin: "violet",
@@ -461,17 +406,11 @@ export const priorityTone: Record<
   urgent: "red",
 };
 
-/* ------------------------------------------------------------------------- */
-/* Helpers                                                                   */
-/* ------------------------------------------------------------------------- */
-
-/** `cssVar("primary")` -> `"var(--primary)"`; `cssVar("--z-modal")` -> `"var(--z-modal)"`. */
 export function cssVar(name: string): string {
   const trimmed = name.startsWith("--") ? name.slice(2) : name;
   return `var(--${trimmed})`;
 }
 
-/** Aggregate export for ergonomic `import { tokens }` usage. */
 export const tokens = {
   color,
   fontFamily,

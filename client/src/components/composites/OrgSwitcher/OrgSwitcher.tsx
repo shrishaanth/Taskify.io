@@ -7,9 +7,7 @@ export interface OrgSwitcherProps {
   currentOrgId: Id;
   onSwitch: (orgId: Id) => void;
   onCreate?: () => void;
-  /** Navigate to the current org's Members screen. */
   onOpenMembers?: () => void;
-  /** Navigate to the current org's Settings screen. */
   onOpenSettings?: () => void;
 }
 

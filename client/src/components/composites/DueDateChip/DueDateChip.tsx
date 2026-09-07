@@ -4,12 +4,9 @@ import styles from "./DueDateChip.module.css";
 
 export interface DueDateChipProps {
   date?: string;
-  /** Card lives in a "done" column — never shows overdue styling. */
   done?: boolean;
-  /** Text to show when there is no date. Omit to render nothing. */
   emptyLabel?: string;
   size?: "sm" | "md";
-  /** Injectable clock for tests. */
   now?: Date;
   className?: string;
 }

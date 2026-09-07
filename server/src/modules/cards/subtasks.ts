@@ -13,7 +13,6 @@ import { serializeCard } from "./cards.service.js";
 
 const objectId = z.string().regex(/^[a-f0-9]{24}$/i);
 
-/** A subtask changed → the parent card's progress changed. Re-broadcast it. */
 async function broadcastParentCard(
   cardId: string,
   boardId: string | undefined,
@@ -22,7 +21,6 @@ async function broadcastParentCard(
   if (card) emitCardUpdated(boardId, await serializeCard(card));
 }
 
-// Mounted at /api/v1/cards/:cardId/subtasks
 export const subtasksRouter: Router = Router({ mergeParams: true });
 subtasksRouter.use(requireAuth, resolveProjectFromCard, requireProjectRole("head", "member"));
 

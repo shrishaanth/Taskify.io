@@ -166,7 +166,6 @@ describe("BoardCanvas", () => {
         now={new Date(2026, 7, 30)}
       />,
     );
-    // the due chip renders but not overdue
     const chip = screen.getByText(/Jan 1/);
     expect(chip).toHaveAttribute("data-overdue", "false");
   });

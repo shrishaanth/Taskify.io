@@ -7,7 +7,6 @@ export interface EmptyStateProps {
   tone?: "sky" | "red" | "slate";
   title: string;
   description?: string;
-  /** 0–2 action buttons. */
   actions?: ReactNode;
   className?: string;
 }

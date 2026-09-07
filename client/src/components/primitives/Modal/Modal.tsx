@@ -13,13 +13,10 @@ export interface ModalProps {
   size?: ModalSize;
   title?: ReactNode;
   titleIcon?: ReactNode;
-  /** Replaces the default title/close header entirely. */
   headerSlot?: ReactNode;
-  /** Right-aligned footer actions. */
   footer?: ReactNode;
   closeOnBackdrop?: boolean;
   closeOnEsc?: boolean;
-  /** Used as aria-label when there is no visible `title`. */
   "aria-label"?: string;
   className?: string;
   children?: ReactNode;
@@ -45,14 +42,12 @@ export function Modal({
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
-  // Body scroll lock + focus save/restore while open.
   useEffect(() => {
     if (!open) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // Move focus into the dialog.
     const panel = panelRef.current;
     const first = panel?.querySelector<HTMLElement>(FOCUSABLE);
     (first ?? panel)?.focus();
@@ -63,7 +58,6 @@ export function Modal({
     };
   }, [open]);
 
-  // Esc to close.
   useEffect(() => {
     if (!open || !closeOnEsc) return;
     const onKey = (e: globalThis.KeyboardEvent) => {

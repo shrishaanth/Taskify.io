@@ -6,7 +6,6 @@ export type SpinnerSize = "sm" | "md" | "lg";
 
 export interface SpinnerProps extends HTMLAttributes<HTMLSpanElement> {
   size?: SpinnerSize;
-  /** Accessible name announced to screen readers. */
   label?: string;
 }
 

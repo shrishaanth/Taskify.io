@@ -53,11 +53,6 @@ export async function updateOrg(
   return org;
 }
 
-/**
- * Delete an organization and everything under it (projects → boards → cards →
- * subtasks/comments/attachments), plus memberships and pending invites.
- * Owner-only; no soft-delete / trash in this scope.
- */
 export async function deleteOrg(orgId: string) {
   const org = await OrganizationModel.findById(orgId);
   if (!org) throw AppError.notFound();
@@ -94,8 +89,6 @@ export async function createInvite(input: {
 }) {
   const email = input.email.toLowerCase().trim();
 
-  // Already a member of THIS org? (membership is per-org — a member of another
-  // org is fine, UC-2.)
   const existingUser = await UserModel.findOne({ email });
   if (existingUser) {
     const already = await OrgMembershipModel.exists({
@@ -116,7 +109,6 @@ export async function createInvite(input: {
   return invite;
 }
 
-/** Outstanding (unaccepted, unexpired) invites for an org, newest first. */
 export async function listPendingInvites(orgId: string) {
   const invites = await OrgInviteModel.find({
     organizationId: orgId,
@@ -135,7 +127,6 @@ export async function listPendingInvites(orgId: string) {
   }));
 }
 
-/** Pending invites addressed to a given user's email, newest first. */
 export async function listInvitesForUser(userId: string) {
   const user = await UserModel.findById(userId);
   if (!user) throw AppError.unauthenticated();
@@ -170,9 +161,7 @@ export async function revokeInvite(orgId: string, inviteId: string) {
 }
 
 interface AcceptContext {
-  /** Set when the caller is already authenticated. */
   authUserId?: string;
-  /** Provided when creating a brand-new account as part of accepting. */
   name?: string;
   password?: string;
 }
@@ -194,14 +183,12 @@ export async function acceptInvite(token: string, ctx: AcceptContext) {
   if (ctx.authUserId) {
     const user = await UserModel.findById(ctx.authUserId);
     if (!user) throw AppError.unauthenticated();
-    // The link was mailed to a specific address.
     if (user.email !== invite.email) {
       throw AppError.forbidden("This invite is for a different email address");
     }
     userId = user._id.toString();
     acceptedByName = user.name;
   } else {
-    // UC-2 3a — new account created in one step.
     const existing = await UserModel.findOne({ email: invite.email });
     if (existing) {
       throw AppError.conflict("An account exists — log in, then accept the invite");
@@ -227,7 +214,6 @@ export async function acceptInvite(token: string, ctx: AcceptContext) {
   invite.acceptedAt = new Date();
   await invite.save();
 
-  // Confirm to whoever sent the invite that it was accepted (UC-2).
   const org = await OrganizationModel.findById(invite.organizationId)
     .select("name")
     .lean();
@@ -257,7 +243,6 @@ export async function changeMemberRole(
   });
   if (!membership) throw AppError.notFound();
 
-  // FR-1.6 — never leave the org without an Owner.
   if (membership.role === "owner" && role !== "owner") {
     const owners = await OrgMembershipModel.countDocuments({
       organizationId: orgId,

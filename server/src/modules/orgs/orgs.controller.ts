@@ -71,8 +71,6 @@ export async function myInvites(req: Request, res: Response) {
 }
 
 export async function acceptInvite(req: Request, res: Response) {
-  // Authenticated path if a valid bearer token is present; else the
-  // create-account path (UC-2 3a).
   let authUserId: string | undefined;
   const header = req.header("authorization");
   if (header?.startsWith("Bearer ")) {
@@ -90,7 +88,6 @@ export async function acceptInvite(req: Request, res: Response) {
     role: result.role,
   };
 
-  // A brand-new account is logged straight in.
   if (result.createdUser) {
     payload.user = userDto(result.createdUser);
     payload.accessToken = signAccessToken(result.userId);

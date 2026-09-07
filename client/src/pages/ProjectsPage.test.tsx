@@ -9,7 +9,6 @@ describe("ProjectsPage", () => {
     expect(
       await screen.findByRole("button", { name: /E-Commerce Redesign/ }),
     ).toBeInTheDocument();
-    // prj-audit: Alex has no ProjectMembership -> name-only, not a button
     expect(screen.getByText("Private Financial Audit")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Private Financial Audit/ }),

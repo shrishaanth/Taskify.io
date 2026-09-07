@@ -7,9 +7,7 @@ type SurfaceTag = "div" | "section" | "article" | "aside" | "li" | "ul" | "form"
 export interface SurfaceProps extends HTMLAttributes<HTMLElement> {
   as?: SurfaceTag;
   padding?: "none" | "sm" | "md" | "lg";
-  /** Hover elevation + pointer cursor. Ignored when `muted`. */
   interactive?: boolean;
-  /** Locked / no-access look: desaturated, no hover, not-allowed cursor. */
   muted?: boolean;
   elevated?: boolean;
   children?: ReactNode;

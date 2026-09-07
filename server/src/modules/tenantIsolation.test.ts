@@ -1,13 +1,3 @@
-/**
- * UC-10 — cross-tenant isolation. The single highest-priority suite.
- *
- * A fully authenticated user of Organization A must NOT be able to read, list,
- * or modify ANY resource that belongs to Organization B, through ANY endpoint.
- * Every such attempt returns **404** (never 403 — we don't confirm the
- * resource exists). The one contrast: a same-org user with no
- * ProjectMembership on an existing project gets **403** (the project's name is
- * legitimately visible in the org list — FR-2.3).
- */
 import { beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../app.js";
 import { asUser } from "../test/api.js";
@@ -50,7 +40,7 @@ async function buildTenant(): Promise<Tenant> {
   const project = await makeProject(org._id, "Secret Project");
   await addProjectMember(project._id, owner._id, "head");
 
-  const board = await makeBoard(org._id, project._id); // seeds column "c1"
+  const board = await makeBoard(org._id, project._id);
   const card = await CardModel.create({
     organizationId: org._id,
     boardId: board._id,
@@ -99,12 +89,11 @@ let B: Tenant;
 beforeEach(async () => {
   const orgA = await makeOrg();
   const attacker = await makeUser({ name: "Attacker" });
-  await addOrgMember(orgA._id, attacker._id, "owner"); // Owner of their OWN org
+  await addOrgMember(orgA._id, attacker._id, "owner");
   A = { attackerId: attacker._id.toString(), orgId: orgA._id.toString() };
   B = await buildTenant();
 });
 
-/** Every request is issued by the Org-A attacker with a valid token. */
 const call = () => asUser(app, A.attackerId);
 
 describe("UC-10 — reads across tenants return 404", () => {
@@ -334,12 +323,10 @@ describe("UC-10 contrast — same-org, no ProjectMembership is 403 (not 404)", (
 
     const client = asUser(app, insider._id.toString());
 
-    // The name IS visible in the org's project list…
     const list = await client.get(`/api/v1/orgs/${org._id}/projects`);
     expect(list.status).toBe(200);
     expect(list.body.find((p: { name: string }) => p.name === "Listed Project")).toBeTruthy();
 
-    // …but opening it, or its boards, is 403 — not 404.
     expect(
       (await client.get(`/api/v1/orgs/${org._id}/projects/${project._id}`)).status,
     ).toBe(403);

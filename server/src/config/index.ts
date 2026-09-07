@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// Load server/.env if present (Node >=20.12). Never throws when the file is
-// missing — CI and tests supply env vars directly.
 try {
   process.loadEnvFile();
 } catch {

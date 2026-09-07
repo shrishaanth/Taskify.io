@@ -11,11 +11,6 @@ function extractBearer(header: string | undefined): string | null {
   return token.trim();
 }
 
-/**
- * Verifies the access token, confirms the user still exists, and resolves the
- * caller's Org memberships **once per request** (spec §3). Downstream role
- * middleware reads `req.auth`, never a role claim from the token (§4).
- */
 export const requireAuth: RequestHandler = async (req, _res, next) => {
   try {
     const token = extractBearer(req.header("authorization"));

@@ -6,7 +6,6 @@ export function makeQueryClient(): QueryClient {
     defaultOptions: {
       queries: {
         retry: (failureCount, error) => {
-          // Don't retry auth/permission/not-found — only transient failures.
           if (error instanceof ApiError && error.status < 500) return false;
           return failureCount < 2;
         },

@@ -33,7 +33,6 @@ describe("primitives barrel", () => {
     for (const name of expected) {
       expect(primitives, name).toHaveProperty(name);
       const value = (primitives as Record<string, unknown>)[name];
-      // plain components are functions; forwardRef components are objects
       expect(["function", "object"], name).toContain(typeof value);
       expect(value, name).toBeTruthy();
     }

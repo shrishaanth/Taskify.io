@@ -1,6 +1,5 @@
 import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
 
-/** Comment — on a Card (FR-4.5). No read-only tier: anyone with board access can post. */
 const commentSchema = new Schema(
   {
     cardId: {

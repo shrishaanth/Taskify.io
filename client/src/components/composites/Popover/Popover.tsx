@@ -27,7 +27,6 @@ interface TriggerProps {
 export interface PopoverProps {
   trigger: ReactElement<TriggerProps>;
   children: ReactNode;
-  /** Accessible label for the popover content region. */
   label: string;
   placement?: PopoverPlacement;
   open?: boolean;

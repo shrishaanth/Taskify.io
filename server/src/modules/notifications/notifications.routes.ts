@@ -13,7 +13,6 @@ import { NotificationModel } from "../../models/index.js";
 
 const objectId = z.string().regex(/^[a-f0-9]{24}$/i);
 
-// Mounted at /api/v1/notifications — always self-scoped.
 export const notificationsRouter: Router = Router();
 notificationsRouter.use(requireAuth);
 
@@ -59,7 +58,6 @@ notificationsRouter.patch(
   "/:id/read",
   validate({ params: z.object({ id: objectId }) }),
   asyncHandler(async (req, res) => {
-    // Self-scoped: a notification for another user is simply "not found".
     const r = await NotificationModel.updateOne(
       { _id: req.params.id, userId: auth(req).userId },
       { $set: { read: true } },

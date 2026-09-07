@@ -12,7 +12,6 @@ export const AVATAR_TONES: BadgeTone[] = [
   "pink",
 ];
 
-/** First + last initial for multi-word names, first two letters otherwise. */
 export function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -20,7 +19,6 @@ export function initialsFromName(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-/** Deterministic tone from a name, so the same person keeps the same colour. */
 export function toneFromName(name: string): BadgeTone {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {

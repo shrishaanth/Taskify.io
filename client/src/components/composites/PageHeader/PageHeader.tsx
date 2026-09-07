@@ -10,7 +10,6 @@ export interface PageHeaderProps {
   title: ReactNode;
   subtitle?: ReactNode;
   breadcrumbs?: BreadcrumbItem[];
-  /** Right-aligned action, usually a <Button>. */
   action?: ReactNode;
   className?: string;
 }

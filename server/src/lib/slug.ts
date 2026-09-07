@@ -1,7 +1,6 @@
 import { randomBytes } from "node:crypto";
 import slugify from "slugify";
 
-/** Build a URL-safe slug from `name`, guaranteed unique via `exists`. */
 export async function uniqueSlug(
   name: string,
   exists: (slug: string) => Promise<boolean>,

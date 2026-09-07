@@ -26,7 +26,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   for (const c of clients) c.disconnect();
-  await shutdownRealtime(); // io.close() also closes the underlying HTTP server
+  await shutdownRealtime();
   if (httpServer.listening) {
     await new Promise<void>((resolve) => httpServer.close(() => resolve()));
   }
@@ -96,7 +96,7 @@ describe("realtime — board room events (§6 catalog)", () => {
   async function subscribedSocket(userId: string, boardId: string) {
     const socket = await connect(signAccessToken(userId));
     socket.emit("subscribe:board", boardId);
-    await new Promise((r) => setTimeout(r, 150)); // let the join round-trip
+    await new Promise((r) => setTimeout(r, 150));
     return socket;
   }
 
@@ -177,7 +177,6 @@ describe("realtime — board room events (§6 catalog)", () => {
     const { head, member, project } = await makeScenario();
     const board = await makeBoard(project.organizationId, project._id);
 
-    // member connects but does NOT subscribe to the board room
     const socket = await connect(signAccessToken(member._id.toString()));
     const leaked = nextEvent(socket, "card:created", 1200);
 
@@ -212,9 +211,8 @@ describe("realtime — project rooms (joined on connect, no subscribe)", () => {
 
   it("board:created / board:updated / board:deleted reach project members", async () => {
     const { head, member, project } = await makeScenario();
-    // member connects and does NOT subscribe to anything
     const socket = await connect(signAccessToken(member._id.toString()));
-    await new Promise((r) => setTimeout(r, 150)); // let joinProjectRooms run
+    await new Promise((r) => setTimeout(r, 150));
 
     const created = nextEvent<{ id: string; name: string; projectId: string }>(
       socket,
@@ -241,7 +239,7 @@ describe("realtime — project rooms (joined on connect, no subscribe)", () => {
 
   it("project:memberChanged and project:memberRemoved reach project members", async () => {
     const { head, member, outsider, org, project } = await makeScenario();
-    await addOrgMember(org._id, outsider._id, "member"); // eligible to be added
+    await addOrgMember(org._id, outsider._id, "member");
 
     const socket = await connect(signAccessToken(member._id.toString()));
     await new Promise((r) => setTimeout(r, 150));
@@ -279,7 +277,6 @@ describe("realtime — project rooms (joined on connect, no subscribe)", () => {
 
   it("room-scoping — a user with no ProjectMembership never gets project events", async () => {
     const { head, outsider, project } = await makeScenario();
-    // outsider is neither an org nor a project member -> in no relevant room
     const socket = await connect(signAccessToken(outsider._id.toString()));
     await new Promise((r) => setTimeout(r, 150));
 
@@ -295,7 +292,6 @@ describe("realtime — project rooms (joined on connect, no subscribe)", () => {
 describe("realtime — org rooms", () => {
   it("org:memberChanged reaches org members on PATCH /orgs/:orgId/members/:userId", async () => {
     const { owner, head, member, org } = await makeScenario();
-    // head is an org member -> joined org:<id> on connect
     const socket = await connect(signAccessToken(head._id.toString()));
     await new Promise((r) => setTimeout(r, 150));
 

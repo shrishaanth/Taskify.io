@@ -55,7 +55,6 @@ export async function signup(input: {
     name: input.name,
     passwordHash: await hashPassword(input.password),
   });
-  // UC-1: an account is created with NO OrgMembership.
   const tokens = await issueTokens(user._id.toString(), input.deviceInfo);
   return { user, tokens };
 }
@@ -76,7 +75,6 @@ export async function login(input: {
   return { user, tokens };
 }
 
-/** Validate a refresh token, rotate it, and mint a fresh access token. */
 export async function rotate(
   rawRefreshToken: string,
   deviceInfo?: string,

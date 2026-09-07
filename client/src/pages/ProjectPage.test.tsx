@@ -43,7 +43,6 @@ describe("ProjectPage — Boards tab", () => {
     expect(
       await screen.findByRole("cell", { name: "u-alex@acme.test" }),
     ).toBeInTheDocument();
-    // Alex is Head -> invite panel visible
     expect(screen.getByLabelText("Search by Email Address")).toBeInTheDocument();
   });
 });
@@ -71,7 +70,6 @@ describe("ProjectPage — access control", () => {
 
 describe("ProjectPage — Members tab permissions", () => {
   it("a plain Member (also a plain org member) does not get the invite panel", async () => {
-    // Marcus: org 'member' + project 'member' of prj-ecom — no manage rights.
     renderRoute("/orgs/org-acme/projects/prj-ecom/members", { as: "u-marcus" });
     await screen.findByRole("heading", { level: 1, name: "E-Commerce Redesign" });
     expect(
@@ -83,7 +81,6 @@ describe("ProjectPage — Members tab permissions", () => {
   });
 
   it("an Org Owner sees the invite panel even as a plain project member (FR-2.7)", async () => {
-    // Alex is org owner + plain project member of prj-q3.
     renderRoute("/orgs/org-acme/projects/prj-q3/members");
     await screen.findByRole("heading", { level: 1, name: "Q3 Marketing Strategy" });
     expect(

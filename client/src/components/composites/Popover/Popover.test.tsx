@@ -47,7 +47,6 @@ describe("Popover", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: "open" }));
     expect(onOpenChange).toHaveBeenCalledWith(true);
-    // still closed because parent didn't update the prop
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

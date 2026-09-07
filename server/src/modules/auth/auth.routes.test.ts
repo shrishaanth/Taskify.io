@@ -83,11 +83,9 @@ describe("POST /auth/refresh (rotation)", () => {
     expect(r1.body.accessToken).toEqual(expect.any(String));
     expect(r1.body.refreshToken).not.toBe(first);
 
-    // the old token no longer works
     const reuse = await request(app).post(`${V1}/refresh`).send({ refreshToken: first });
     expect(reuse.status).toBe(401);
 
-    // the new one does
     const r2 = await request(app)
       .post(`${V1}/refresh`)
       .send({ refreshToken: r1.body.refreshToken });

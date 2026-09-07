@@ -7,9 +7,7 @@ export interface OrgMembershipContext {
 
 export interface AuthContext {
   userId: string;
-  /** Every org the caller belongs to, resolved once per request from the DB. */
   orgMemberships: OrgMembershipContext[];
-  /** Convenience: just the org ids (for scoped queries). */
   orgIds: string[];
 }
 
@@ -21,9 +19,7 @@ export interface OrgContext {
 export interface ProjectContext {
   id: string;
   organizationId: string;
-  /** null when access is granted via an Org Owner/Admin override only. */
   role: ProjectRole | null;
-  /** true when the caller passed only because they are an Org Owner/Admin. */
   viaOrgOverride: boolean;
 }
 
@@ -33,11 +29,6 @@ declare global {
       auth?: AuthContext;
       org?: OrgContext;
       project?: ProjectContext;
-      /**
-       * Project id derived by resolveScope from a `:boardId` / `:cardId` route
-       * param. Kept off `req.params` because Express restores `req.params` per
-       * router layer when `mergeParams` is on, dropping injected keys.
-       */
       resolvedProjectId?: string;
       resolvedBoardId?: string;
     }

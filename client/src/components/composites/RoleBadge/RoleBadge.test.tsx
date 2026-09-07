@@ -37,7 +37,6 @@ describe("RoleBadge", () => {
     const onChange = vi.fn();
     render(<RoleBadge scope="org" role="member" editable onChange={onChange} />);
     await userEvent.click(screen.getByRole("button", { name: /change role/i }));
-    // current role excluded from the options
     expect(screen.queryByRole("menuitem", { name: "Member" })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("menuitem", { name: "Admin" }));
     expect(onChange).toHaveBeenCalledWith("admin");

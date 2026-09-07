@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { DueDateChip } from "./DueDateChip";
 
-const NOW = new Date(2026, 7, 30, 12); // local Aug 30 2026
+const NOW = new Date(2026, 7, 30, 12);
 const iso = (y: number, m: number, d: number) => new Date(y, m, d, 12).toISOString();
 
 describe("DueDateChip", () => {

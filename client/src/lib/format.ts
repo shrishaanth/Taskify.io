@@ -1,6 +1,3 @@
-/** Small pure formatting helpers used across composites. */
-
-/** "Oct 20" / "Oct 20, 2026" when the year differs from `ref`. */
 export function formatShortDate(iso: string, ref: Date = new Date()): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
@@ -11,10 +8,6 @@ export function formatShortDate(iso: string, ref: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-US", opts).format(d);
 }
 
-/**
- * A due date is overdue when it is strictly before the start of today.
- * `done` cards are never overdue regardless of date.
- */
 export function isOverdue(
   iso: string | undefined,
   opts: { done?: boolean; now?: Date } = {},
@@ -31,7 +24,6 @@ export function isOverdue(
   return due.getTime() < startOfToday;
 }
 
-/** "just now" / "2 hours ago" / "3 days ago" / falls back to a short date. */
 export function formatRelativeTime(iso: string, now: Date = new Date()): string {
   const then = new Date(iso);
   if (Number.isNaN(then.getTime())) return "";
@@ -47,7 +39,6 @@ export function formatRelativeTime(iso: string, now: Date = new Date()): string 
   return formatShortDate(iso, now);
 }
 
-/** "820 B" / "1.2 KB" / "3.4 MB". */
 export function formatFileSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) return "";
   if (bytes < 1024) return `${bytes} B`;

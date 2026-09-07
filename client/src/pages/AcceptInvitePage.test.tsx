@@ -19,18 +19,15 @@ describe("AcceptInvitePage", () => {
   });
 
   it("an existing user accepts an invite into a new org and is routed there", async () => {
-    // Sarah exists but is not a member of Bright Labs.
     renderRoute("/invite/bright-invite-token", { as: "u-sarah" });
 
     expect(
       await screen.findByRole("heading", { level: 1, name: "Projects" }),
     ).toBeInTheDocument();
-    // Bright Labs has no projects seeded
     expect(await screen.findByText("No projects yet")).toBeInTheDocument();
   });
 
   it("shows an error when the signed-in email does not match the invite", async () => {
-    // seed-invite-token is addressed to pending.hire@acme.test, not Alex.
     renderRoute("/invite/seed-invite-token", { as: "u-alex" });
 
     expect(

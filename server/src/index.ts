@@ -14,7 +14,6 @@ async function main() {
     console.log(`Taskify API + realtime listening on :${config.PORT}`);
   });
 
-  // Graceful shutdown for zero-downtime deploys (NFR-3.2).
   const shutdown = async (signal: string) => {
     console.log(`${signal} received — shutting down`);
     await shutdownRealtime();

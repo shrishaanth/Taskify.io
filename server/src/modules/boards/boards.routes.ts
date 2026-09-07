@@ -11,11 +11,9 @@ import {
   updateBoardSchema,
 } from "./boards.schema.js";
 
-// mergeParams for :projectId (mounted at /api/v1/projects/:projectId/boards).
 export const boardsRouter: Router = Router({ mergeParams: true });
 
 boardsRouter.use(requireAuth);
-// FR-3.3: Heads and Members have identical board permissions.
 const canWork = requireProjectRole("head", "member");
 
 boardsRouter.get("/", validate(projectScopeParams), canWork, asyncHandler(controller.list));

@@ -15,7 +15,6 @@ const card = (id: string, columnId: string, order: number): CardSummary => ({
   commentCount: 0,
 });
 
-/** group -> ordered ids, for terse assertions */
 function layout(cards: CardSummary[]): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const c of [...cards].sort((a, b) => a.order - b.order)) {
@@ -41,7 +40,6 @@ describe("applyCardMove (optimistic drag-and-drop)", () => {
   it("moves a card to another column at the given index", () => {
     const next = applyCardMove(base, "a", "doing", 0);
     expect(layout(next)).toEqual({ todo: ["b", "c"], doing: ["a", "x"] });
-    // source column renumbered from 0
     expect(next.find((c) => c.id === "b")!.order).toBe(0);
     expect(next.find((c) => c.id === "c")!.order).toBe(1);
   });

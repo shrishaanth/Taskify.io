@@ -13,7 +13,6 @@ const nextId = () => `toast-${++counter}`;
 
 export interface ToastProviderProps {
   children: ReactNode;
-  /** Default auto-dismiss delay in ms. */
   defaultDuration?: number;
 }
 

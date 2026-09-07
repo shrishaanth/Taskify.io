@@ -6,7 +6,6 @@ import { useCardMutations } from "./cards";
 import { qk } from "./queryClient";
 import type { CardSummary } from "../types/domain";
 
-// isolate from the network — this test is about optimistic-update timing
 vi.mock("../api/cards", () => ({
   moveCard: vi.fn().mockResolvedValue({}),
   createCard: vi.fn().mockResolvedValue({}),
@@ -70,7 +69,6 @@ describe("moveCard — optimistic timing (Issue 2)", () => {
       });
     });
 
-    // read the cache RIGHT NOW — before any microtask / network resolves
     expect(layout(qc)).toEqual({ todo: ["b"], doing: ["a", "x"] });
   });
 

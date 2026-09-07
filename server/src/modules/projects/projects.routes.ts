@@ -16,10 +16,8 @@ import {
   updateProjectSchema,
 } from "./projects.schema.js";
 
-// mergeParams so :orgId (and later :projectId) are visible here.
 export const projectsRouter: Router = Router({ mergeParams: true });
 
-// Every route below is org-scoped; `requireAuth` already ran on the parent.
 projectsRouter.get(
   "/",
   validate(orgScopeParams),
@@ -37,7 +35,7 @@ projectsRouter.post(
 projectsRouter.get(
   "/:projectId",
   validate(projectParams),
-  requireOrgRole(), // must be an org member; handler enforces the 403 (FR-2.3)
+  requireOrgRole(),
   asyncHandler(controller.detail),
 );
 

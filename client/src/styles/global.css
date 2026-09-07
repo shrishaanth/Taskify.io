@@ -1,8 +1,3 @@
-/**
- * Global base — applies the design tokens to the document.
- * Component styles live with their components; this file only sets the
- * app-wide baseline (reset + typography + surface colors from tokens.css).
- */
 @import "./tokens.css";
 
 *,

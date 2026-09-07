@@ -8,7 +8,6 @@ export type IconButtonVariant = "ghost" | "circle";
 export interface IconButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label"> {
   icon: ReactNode;
-  /** Required — becomes the button's accessible name. */
   label: string;
   variant?: IconButtonVariant;
   size?: "sm" | "md";

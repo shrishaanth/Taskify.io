@@ -9,28 +9,6 @@ import {
   UserModel,
 } from "../models/index.js";
 
-/**
- * FR-6 / UC-9 real-time layer. A single Socket.IO server sharing the HTTP
- * listener with Express. Clients authenticate with the same short-lived access
- * token as REST calls. On connect they are joined to `user:<id>`, `org:<id>`
- * for every org they belong to, and `project:<id>` for every project they have
- * a ProjectMembership on. `board:<id>` is joined on demand (`subscribe:board`)
- * since board-viewing changes far more often than project membership. Never a
- * global broadcast room.
- *
- * SINGLE-INSTANCE ONLY. Multi-instance fan-out is intentionally not wired yet.
- * If this app is ever scaled to a pool of instances, add the Redis adapter
- * right after `new Server(...)` below:
- *
- *   import { createAdapter } from "@socket.io/redis-adapter";
- *   const pub = createRedisClient(); const sub = pub.duplicate();
- *   io.adapter(createAdapter(pub, sub));
- *
- * With that, `io.to("board:<id>").emit(...)` fans out across every instance.
- * Until then, `ip_hash` at the nginx LB keeps each client pinned to the one
- * instance that emits the events it cares about.
- */
-
 let io: Server | null = null;
 
 export function initRealtime(httpServer: HttpServer): Server {

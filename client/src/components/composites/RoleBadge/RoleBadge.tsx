@@ -29,10 +29,8 @@ function toneFor(scope: "org" | "project", role: RoleValue) {
 export interface RoleBadgeProps {
   scope: "org" | "project";
   role: RoleValue;
-  /** Render an editable dropdown (ignored for `no-access`). */
   editable?: boolean;
   onChange?: (role: OrgRole | ProjectRole) => void;
-  /** Uppercase label (projects-list style); default is title case. */
   uppercase?: boolean;
   size?: "sm" | "md";
   className?: string;

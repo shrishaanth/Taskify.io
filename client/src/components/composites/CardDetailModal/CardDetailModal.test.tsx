@@ -112,7 +112,6 @@ describe("CardDetailModal — permission-driven rendering", () => {
     expect(screen.queryByRole("button", { name: "Add assignee" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "+ Add checklist subtask" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Card actions" })).not.toBeInTheDocument();
-    // priority shows as a static badge instead of a select
     expect(screen.getByText("High Priority")).toBeInTheDocument();
     expect(screen.queryByLabelText("Priority")).not.toBeInTheDocument();
   });

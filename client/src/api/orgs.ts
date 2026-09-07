@@ -59,7 +59,6 @@ export interface MyInvite extends OrgInvite {
   organization: { id: string; name: string; slug: string };
 }
 
-/** Pending invites addressed to the signed-in user's own email. */
 export function listMyInvites() {
   return apiFetch<MyInvite[]>(`/orgs/invites/mine`);
 }
@@ -73,7 +72,6 @@ export function revokeOrgInvite(orgId: Id, inviteId: Id) {
 export interface AcceptInviteResult {
   organizationId: string;
   role: OrgRole;
-  /** Present only when accepting created a brand-new account (UC-2 3a). */
   user?: UserRef;
   accessToken?: string;
 }
@@ -86,7 +84,6 @@ export async function acceptInvite(
     `/orgs/invites/${token}/accept`,
     { method: "POST", body: body ?? {}, noRetry: true },
   );
-  // A new account comes back with its own access token — start the session.
   if (res.accessToken) setAccessToken(res.accessToken);
   return res;
 }
@@ -102,5 +99,4 @@ export function removeOrgMember(orgId: Id, userId: Id) {
   return apiFetch<void>(`/orgs/${orgId}/members/${userId}`, { method: "DELETE" });
 }
 
-/** Convenience for the org-switcher: which orgs am I in? (from /auth/me) */
 export type { OrgSummary };

@@ -2,13 +2,6 @@ import type { RequestHandler } from "express";
 import { AppError } from "../lib/errors.js";
 import type { OrgRole } from "../models/enums.js";
 
-/**
- * Guards an org-scoped route by `:orgId`.
- *  - not a member of that org            → 404 (cross-tenant; never confirmed)
- *  - member but role not in `allowed`    → 403
- * With no `allowed` roles, any membership passes ("Org member" routes).
- * Requires `requireAuth` to have run first.
- */
 export function requireOrgRole(...allowed: OrgRole[]): RequestHandler {
   return (req, _res, next) => {
     if (!req.auth) return next(AppError.unauthenticated());

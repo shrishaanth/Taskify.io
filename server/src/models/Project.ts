@@ -1,10 +1,5 @@
 import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
 
-/**
- * Project — belongs to exactly one Organization.
- * `organizationId` is denormalized (spec §3) so every tenant-isolation check
- * is a single indexed equality filter.
- */
 const projectSchema = new Schema(
   {
     organizationId: {

@@ -23,14 +23,14 @@ async function scenario() {
   const org = await makeOrg();
   const head = await makeUser({ name: "Head" });
   const member = await makeUser({ name: "Member" });
-  const stranger = await makeUser({ name: "Stranger" }); // in org, not on project
+  const stranger = await makeUser({ name: "Stranger" });
   await addOrgMember(org._id, head._id, "member");
   await addOrgMember(org._id, member._id, "member");
   await addOrgMember(org._id, stranger._id, "member");
   const project = await makeProject(org._id);
   await addProjectMember(project._id, head._id, "head");
   await addProjectMember(project._id, member._id, "member");
-  const board = await makeBoard(org._id, project._id); // one column "c1"
+  const board = await makeBoard(org._id, project._id);
   return { org, head, member, stranger, project, board };
 }
 
@@ -55,7 +55,6 @@ describe("cards CRUD", () => {
       type: "card_assigned",
     });
     expect(notif).toBeTruthy();
-    // the actor is not notified
     expect(await NotificationModel.exists({ userId: head._id, type: "card_assigned" })).toBeFalsy();
   });
 
@@ -157,7 +156,6 @@ describe("cards CRUD", () => {
 describe("PATCH /:cardId/move (UC-6)", () => {
   it("moves a card between columns and renumbers both", async () => {
     const { head, board, project } = await scenario();
-    // give the board a second column
     await asUser(app, head)
       .patch(`/api/v1/projects/${project._id}/boards/${board._id}`)
       .send({

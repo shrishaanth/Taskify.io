@@ -89,20 +89,15 @@ describe("comments (UC-8)", () => {
     const byMember = (await asUser(app, member).post(url).send({ body: "m1" })).body;
     const byHead = (await asUser(app, head).post(url).send({ body: "h1" })).body;
 
-    // another member cannot delete the head's comment
     const other = await makeUser();
-    // (other is not even a project member → 403 at the guard, covered above;
-    //  use `member` deleting head's comment instead — same 403 semantics)
     expect(
       (await asUser(app, member).delete(`${url}/${byHead.id}`)).status,
     ).toBe(403);
 
-    // author deletes their own
     expect(
       (await asUser(app, member).delete(`${url}/${byMember.id}`)).status,
     ).toBe(204);
 
-    // Org Owner (no ProjectMembership) can delete via the override
     const byMember2 = (await asUser(app, member).post(url).send({ body: "m2" })).body;
     expect(
       (await asUser(app, owner).delete(`${url}/${byMember2.id}`)).status,
@@ -126,13 +121,10 @@ describe("attachments", () => {
     expect(up.status).toBe(201);
     expect(up.body).toMatchObject({ fileName: "spec.pdf", sizeBytes: 2048 });
 
-    // a different Member can't delete it
     const other = await makeUser();
     void other;
-    // uploader can
     expect((await asUser(app, member).delete(`${url}/${up.body.id}`)).status).toBe(204);
 
-    // Head can delete anyone's
     const up2 = await asUser(app, member).post(url).send({
       fileName: "x.png",
       fileUrl: "https://files.example.com/x.png",

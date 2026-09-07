@@ -91,7 +91,7 @@ describe("requireProjectRole", () => {
     const org = await makeOrg();
     const orgMemberOnly = await makeUser();
     await addOrgMember(org._id, orgMemberOnly._id, "member");
-    const project = await makeProject(org._id); // no ProjectMembership row
+    const project = await makeProject(org._id);
 
     const res = await request(appRole("head", "member"))
       .get(`/projects/${project._id}/x`)

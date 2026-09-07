@@ -2,7 +2,6 @@ import { useId } from "react";
 import { Input } from "../../primitives/Input/Input";
 
 export interface DateFieldProps {
-  /** ISO date-time or date string. */
   value?: string;
   onChange: (value: string | null) => void;
   label?: string;
@@ -17,8 +16,6 @@ const CalendarIcon = () => (
   </svg>
 );
 
-// Due dates are date-only; anchor everything at UTC midnight so the calendar
-// day never drifts across timezones.
 function toDateInput(value: string | undefined): string {
   if (!value) return "";
   const d = new Date(value);

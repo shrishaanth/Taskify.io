@@ -18,16 +18,12 @@ import {
 
 export const orgsRouter: Router = Router();
 
-// Accept an invite — intentionally NOT behind requireAuth: a brand-new invitee
-// has no account yet (UC-2 3a). The controller reads the bearer token itself
-// when the invitee already has an account.
 orgsRouter.post(
   "/invites/:inviteToken/accept",
   validate(acceptInviteSchema),
   asyncHandler(controller.acceptInvite),
 );
 
-// Pending invites addressed to the authenticated user's own email.
 orgsRouter.get(
   "/invites/mine",
   requireAuth,
@@ -113,5 +109,4 @@ orgsRouter.delete(
   asyncHandler(controller.remove),
 );
 
-// Nested: /api/v1/orgs/:orgId/projects/...
 orgsRouter.use("/:orgId/projects", requireAuth, projectsRouter);

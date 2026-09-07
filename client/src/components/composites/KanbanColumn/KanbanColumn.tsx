@@ -11,22 +11,14 @@ export interface KanbanColumnProps {
   cards: CardSummary[];
   onAddCard: () => void;
   onOpenCard: (cardId: string) => void;
-  /** Show the column ⋯ menu (rename / delete). */
   canManage?: boolean;
   onRenameColumn?: () => void;
   onDeleteColumn?: () => void;
-  /** This column represents "done" — cards never show as overdue. */
   isDoneColumn?: boolean;
-  /** Enables drag-to-reorder / move between columns. */
   draggable?: boolean;
-  /** Id of the card currently being dragged (from anywhere on the board). */
   draggingCardId?: string | null;
   onCardDragStart?: (cardId: string) => void;
   onCardDragEnd?: () => void;
-  /**
-   * A dragged card was dropped on this column. `beforeCardId` is the card it
-   * should land in front of, or null to append to the end.
-   */
   onCardDrop?: (payload: { beforeCardId: string | null }) => void;
   now?: Date;
   className?: string;

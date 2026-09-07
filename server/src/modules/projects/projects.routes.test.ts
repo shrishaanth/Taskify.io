@@ -80,7 +80,7 @@ describe("POST /orgs/:orgId/projects (UC-3)", () => {
     const res = await asUser(app, outsider)
       .post(base(org._id.toString()))
       .send({ name: "x" });
-    expect(res.status).toBe(404); // org membership check hides the org
+    expect(res.status).toBe(404);
   });
 });
 
@@ -206,7 +206,7 @@ describe("PUT / DELETE /orgs/:orgId/projects/:projectId/members/:userId", () => 
     const bad = await asUser(app, head)
       .put(`${base(org._id.toString())}/${project._id}/members/${stranger._id}`)
       .send({ role: "member" });
-    expect(bad.status).toBe(400); // not an org member
+    expect(bad.status).toBe(400);
   });
 
   it("an Org Owner/Admin with no ProjectMembership CAN manage members (FR-2.7 override)", async () => {

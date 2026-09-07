@@ -10,7 +10,7 @@
   width: 17rem;
   flex-shrink: 0;
   display: flex;
-  /* line up with the grey card container, not the column header above it */
+
   padding-top: 2.25rem;
 }
 .addColumn > * {

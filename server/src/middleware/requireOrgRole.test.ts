@@ -85,7 +85,7 @@ describe("requireOrgRole", () => {
 
     const denied = await request(app("owner"))
       .get(`/orgs/${org._id}/thing`)
-      .set(auth(token)); // same token
+      .set(auth(token));
     expect(denied.status).toBe(403);
   });
 

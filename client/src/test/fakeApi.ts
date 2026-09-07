@@ -1,7 +1,3 @@
-/**
- * In-memory backend used by the MSW handlers in tests. Shapes match the real
- * API responses (server DTOs), so the client api/ layer is exercised for real.
- */
 import type {
   AppNotification,
   OrgRole,
@@ -113,7 +109,6 @@ export function seedDb(): FakeDb {
     "u-emma": U("u-emma", "Emma Watson"),
     "u-david": U("u-david", "David Kim"),
     "u-anna": U("u-anna", "Anna Vance"),
-    // exists but belongs to no organization yet (has a pending invite)
     "u-noorg": U("u-noorg", "Nadia Ortiz"),
   };
 
@@ -150,7 +145,6 @@ export function seedDb(): FakeDb {
       { projectId: "prj-q3", userId: "u-sarah", role: "head" },
       { projectId: "prj-q3", userId: "u-alex", role: "member" },
       { projectId: "prj-tokens", userId: "u-alex", role: "head" },
-      // prj-audit: Alex has NO membership (403 case)
     ],
     boards: [
       {
@@ -241,7 +235,6 @@ export function seedDb(): FakeDb {
         expiresAt: new Date(Date.now() + 6 * 86_400_000).toISOString(),
       },
       {
-        // existing user (Sarah) invited into an org she's not a member of
         id: "inv-bright",
         orgId: "org-bright",
         email: "u-sarah@acme.test",
@@ -251,7 +244,6 @@ export function seedDb(): FakeDb {
         expiresAt: new Date(Date.now() + 6 * 86_400_000).toISOString(),
       },
       {
-        // pending invite for the org-less user, surfaced on the Welcome page
         id: "inv-welcome",
         orgId: "org-acme",
         email: "u-noorg@acme.test",
@@ -286,7 +278,6 @@ export function resetDb() {
   db = seedDb();
 }
 
-/* selectors */
 export const orgRoleOf = (orgId: string, userId: string) =>
   db.orgMembers.find((m) => m.orgId === orgId && m.userId === userId)?.role ??
   null;

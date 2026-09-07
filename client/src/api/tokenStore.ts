@@ -1,8 +1,3 @@
-/**
- * The access token lives in memory + localStorage (so a reload keeps you
- * signed in until it expires). The refresh token is an httpOnly cookie set by
- * the server — never touched by JS (PROJECT_RULES.md §4).
- */
 const STORAGE_KEY = "taskify.accessToken";
 
 let accessToken: string | null = readInitial();

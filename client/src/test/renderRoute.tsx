@@ -9,11 +9,6 @@ import { setAccessToken } from "../api/tokenStore";
 import { useSession } from "../stores/sessionStore";
 import { resetDb } from "./fakeApi";
 
-/**
- * Render the full route tree at `path`. By default the caller is "u-alex" with
- * a valid fake token; pass `{ anonymous: true }` for logged-out flows. `seed`
- * runs after the DB reset and before the first render, to add fixtures.
- */
 export function renderRoute(
   path: string,
   opts: { as?: string; anonymous?: boolean; seed?: () => void } = {},

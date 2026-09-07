@@ -9,12 +9,6 @@ import {
   SubtaskModel,
 } from "../models/index.js";
 
-/**
- * Explicit, tested cascade deletes (API contract — "not relied on implicitly
- * via Mongo `ref` behaviour"). Each level composes the one below it.
- * No soft-delete / trash in this scope.
- */
-
 export async function deleteCardCascade(cardId: Types.ObjectId | string) {
   await Promise.all([
     SubtaskModel.deleteMany({ cardId }),

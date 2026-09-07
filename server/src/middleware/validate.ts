@@ -8,11 +8,6 @@ export interface RequestSchemas {
   query?: z.ZodTypeAny;
 }
 
-/**
- * The single request validator (spec §1 — exactly one validation library).
- * Parsed (and coerced) values are written back onto the request so handlers
- * see clean, typed input. 400 `VALIDATION_ERROR` on failure.
- */
 export function validate(schemas: RequestSchemas): RequestHandler {
   const shape: Record<string, z.ZodTypeAny> = {};
   if (schemas.body) shape.body = schemas.body;
@@ -42,11 +37,8 @@ export function validate(schemas: RequestSchemas): RequestHandler {
       query?: Record<string, unknown>;
     };
     if (data.body !== undefined) req.body = data.body;
-    // Mutate params in place — upstream middleware (resolveScope) may have
-    // injected keys (e.g. projectId) that this schema doesn't declare.
     if (data.params !== undefined) Object.assign(req.params, data.params);
     if (data.query !== undefined) {
-      // express 5 makes req.query a getter; mutate in place to stay compatible.
       for (const key of Object.keys(req.query)) delete (req.query as Record<string, unknown>)[key];
       Object.assign(req.query, data.query);
     }

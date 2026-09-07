@@ -69,7 +69,6 @@ describe("Menu", () => {
     const spies = { rename: vi.fn(), reorder: vi.fn(), delete: vi.fn() };
     render(<Menu trigger={<button>Actions</button>} items={makeItems(spies)} />);
     await userEvent.click(screen.getByRole("button", { name: "Actions" }));
-    // opens focused on "Rename"; ArrowDown should skip disabled "Reorder" -> "Delete"
     await userEvent.keyboard("{ArrowDown}");
     expect(screen.getByRole("menuitem", { name: "Delete" })).toHaveFocus();
   });

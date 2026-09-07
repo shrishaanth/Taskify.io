@@ -56,7 +56,6 @@ describe("PATCH /notifications/:id/read", () => {
     ).toBe(204);
     expect((await NotificationModel.findById(mine!._id))!.read).toBe(true);
 
-    // another user's notification is "not found" from my perspective
     expect(
       (await asUser(app, me).patch(`/api/v1/notifications/${theirs!._id}/read`)).status,
     ).toBe(404);
@@ -74,7 +73,6 @@ describe("PATCH /notifications/read-all", () => {
     expect(
       await NotificationModel.countDocuments({ userId: me._id, read: false }),
     ).toBe(0);
-    // untouched for the other user
     expect(
       await NotificationModel.countDocuments({ userId: other._id, read: false }),
     ).toBe(2);

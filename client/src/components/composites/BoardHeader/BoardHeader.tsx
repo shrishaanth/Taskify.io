@@ -11,11 +11,6 @@ export interface BoardHeaderProps {
   className?: string;
 }
 
-/**
- * Board header — breadcrumbs + title. Boards inherit access from the parent
- * Project (FR-3.1), so there is no invite control. Live-sync happens silently
- * over the socket; there is no connection badge or presence row.
- */
 export function BoardHeader({ name, breadcrumbs, className }: BoardHeaderProps) {
   return (
     <header className={cn(styles.root, className)}>

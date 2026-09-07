@@ -4,9 +4,6 @@ import jwt from "jsonwebtoken";
 import { config } from "../config/index.js";
 import { AppError } from "./errors.js";
 
-/* ------------------------------------------------------------------ */
-/* Passwords — bcrypt (NFR-1.4)                                        */
-/* ------------------------------------------------------------------ */
 const BCRYPT_ROUNDS = 12;
 
 export async function hashPassword(plain: string): Promise<string> {
@@ -20,9 +17,6 @@ export async function verifyPassword(
   return bcrypt.compare(plain, hash);
 }
 
-/* ------------------------------------------------------------------ */
-/* Access tokens — short-lived JWT, `userId` claim only (spec §5)     */
-/* ------------------------------------------------------------------ */
 export interface AccessTokenClaims {
   userId: string;
 }
@@ -34,7 +28,6 @@ export function signAccessToken(userId: string): string {
   return jwt.sign({ userId }, config.JWT_ACCESS_SECRET, { expiresIn });
 }
 
-/** Verifies signature + expiry. Throws `AppError.unauthenticated` on failure. */
 export function verifyAccessToken(token: string): AccessTokenClaims {
   try {
     const decoded = jwt.verify(token, config.JWT_ACCESS_SECRET);
@@ -51,9 +44,6 @@ export function verifyAccessToken(token: string): AccessTokenClaims {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Refresh tokens — opaque random string, only the hash is stored     */
-/* ------------------------------------------------------------------ */
 export function generateRefreshToken(): { token: string; tokenHash: string } {
   const token = randomBytes(48).toString("base64url");
   return { token, tokenHash: hashRefreshToken(token) };

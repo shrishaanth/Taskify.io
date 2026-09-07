@@ -28,7 +28,6 @@ export function SignupPage() {
     setError(null);
     setPending(true);
     try {
-      // UC-1: creates an account only — no Organization.
       await authApi.signup({ name, email, password });
       await bootstrap();
       navigate("/welcome");

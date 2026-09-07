@@ -12,7 +12,6 @@ export interface AvatarGroupProps extends HTMLAttributes<HTMLDivElement> {
   avatars: AvatarGroupItem[];
   max?: number;
   size?: AvatarSize;
-  /** When provided, renders a trailing "+" button. */
   onAdd?: () => void;
   addLabel?: string;
 }

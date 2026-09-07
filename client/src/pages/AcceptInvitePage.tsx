@@ -12,11 +12,6 @@ import styles from "./pages.module.css";
 
 type Phase = "working" | "needAccount" | "error";
 
-/**
- * UC-2 — accept an organization invite. Reached at `/invite/:token`, outside the
- * authenticated shell. If the visitor is already signed in the invite is
- * accepted straight away; otherwise they create an account in one step (UC-2 3a).
- */
 export function AcceptInvitePage() {
   const { token = "" } = useParams();
   const navigate = useNavigate();
@@ -50,7 +45,6 @@ export function AcceptInvitePage() {
     navigate(`/orgs/${organizationId}/projects`, { replace: true });
   };
 
-  // Auto-accept for an already-authenticated visitor.
   useEffect(() => {
     if (attempted.current) return;
     if (status === "loading") return;

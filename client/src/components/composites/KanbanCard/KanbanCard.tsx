@@ -9,14 +9,11 @@ import styles from "./KanbanCard.module.css";
 
 export interface KanbanCardProps {
   card: CardSummary;
-  /** Column is a "done" column — suppresses overdue styling. */
   done?: boolean;
   isDragging?: boolean;
-  /** Enables HTML5 drag to move the card between columns. */
   draggable?: boolean;
   onDragStart?: () => void;
   onDragEnd?: () => void;
-  /** A drag is hovering over this card — show an insertion cue. */
   isDropTarget?: boolean;
   onDragOverCard?: () => void;
   onDropOnCard?: () => void;

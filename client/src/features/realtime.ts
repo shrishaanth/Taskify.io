@@ -3,24 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getSocket } from "../api/socket";
 import { qk } from "./queryClient";
 
-/**
- * Real-time wiring. The client never trusts a payload to be complete — every
- * handler just nudges React Query to refetch the affected slice, so the socket
- * only decides *when* to refresh, not *what* the data is.
- */
-
-/**
- * App-wide listeners, registered once in the authenticated shell. The server
- * joins the connecting user to `user:<id>`, `org:<id>` and `project:<id>`
- * rooms on connect, so no explicit subscribe is needed here.
- *
- *   notification:new                          -> refetch the bell
- *   board:created | board:updated | board:deleted
- *                                             -> refetch the project's Boards list
- *   project:memberChanged | project:memberRemoved
- *                                             -> refetch Project Members
- *   org:memberChanged                         -> refetch Org Members
- */
 export function useAppRealtime(): void {
   const qc = useQueryClient();
   useEffect(() => {
@@ -31,15 +13,14 @@ export function useAppRealtime(): void {
       void qc.invalidateQueries({ queryKey: qk.notifications });
     };
     const refetchBoards = () => {
-      void qc.invalidateQueries({ queryKey: ["boards"] }); // qk.boards(projectId)
-      void qc.invalidateQueries({ queryKey: ["board"] }); // open board detail
+      void qc.invalidateQueries({ queryKey: ["boards"] });
+      void qc.invalidateQueries({ queryKey: ["board"] });
     };
     const refetchProjectMembers = () => {
-      // qk.projectMembers(projectId) + qk.project(orgId, projectId)
       void qc.invalidateQueries({ queryKey: ["project"] });
     };
     const refetchOrgMembers = () => {
-      void qc.invalidateQueries({ queryKey: ["orgs"] }); // qk.orgMembers(orgId)
+      void qc.invalidateQueries({ queryKey: ["orgs"] });
     };
 
     socket.on("notification:new", refetchNotifications);
@@ -62,13 +43,6 @@ export function useAppRealtime(): void {
   }, [qc]);
 }
 
-/**
- * Board view: while mounted, join `board:<id>` and react to the card / comment
- * events for that board.
- *   card:created | card:updated | card:moved | card:deleted -> refetch the
- *     board's card list (+ any open card detail)
- *   comment:new -> refetch that card's detail
- */
 export function useBoardRealtime(projectId: string, boardId: string): void {
   const qc = useQueryClient();
   useEffect(() => {
@@ -81,7 +55,6 @@ export function useBoardRealtime(projectId: string, boardId: string): void {
 
     const refetchCards = () => {
       void qc.invalidateQueries({ queryKey: qk.cards(boardId) });
-      // any open card-detail query for this board (["card", boardId, ...])
       void qc.invalidateQueries({ queryKey: ["card", boardId] });
     };
     const refetchComment = (evt: { cardId?: string }) => {

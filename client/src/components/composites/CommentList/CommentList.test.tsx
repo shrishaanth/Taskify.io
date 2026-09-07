@@ -74,7 +74,6 @@ describe("CommentList — permission-driven delete", () => {
         now={NOW}
       />,
     );
-    // one delete button — for Sarah's own comment ("Thanks!")
     expect(screen.getAllByRole("button", { name: "Delete comment" })).toHaveLength(1);
   });
 

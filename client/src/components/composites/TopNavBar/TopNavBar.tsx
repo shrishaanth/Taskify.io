@@ -9,7 +9,6 @@ export interface TopNavBarProps {
   orgs: OrgSummary[];
   currentOrgId: Id;
   onSwitchOrg: (id: Id) => void;
-  /** Click the logo to go to a safe default landing page. */
   onLogoClick?: () => void;
   onCreateOrg?: () => void;
   onOpenOrgMembers?: () => void;

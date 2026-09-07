@@ -14,20 +14,13 @@ export interface BoardCanvasProps {
   onAddColumn?: () => void;
   onRenameColumn?: (columnId: string) => void;
   onDeleteColumn?: (columnId: string) => void;
-  /**
-   * Move a card via drag-and-drop. `beforeCardId` is the card to drop in front
-   * of, or null to append to the end of `toColumnId`.
-   */
   onMoveCard?: (
     cardId: string,
     toColumnId: string,
     beforeCardId: string | null,
   ) => void;
-  /** Head/Member both true — controls the column ⋯ menu + add-column tile. */
   canManage?: boolean;
-  /** Column ids treated as "done" for overdue suppression. */
   doneColumnIds?: string[];
-  /** Rendered instead of the board when there are no columns. */
   emptyState?: ReactNode;
   now?: Date;
   className?: string;
@@ -53,7 +46,6 @@ export function BoardCanvas({
   const rootRef = useRef<HTMLDivElement>(null);
 
   const ordered = [...columns].sort((a, b) => a.order - b.order);
-  // changes whenever a card's column/position could have shifted
   const flipSignature = ordered
     .map((c) => (cardsByColumn[c.id] ?? []).map((x) => x.id).join(","))
     .join("|");

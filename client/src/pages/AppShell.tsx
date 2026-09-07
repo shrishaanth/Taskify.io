@@ -7,7 +7,6 @@ import {
 import { useAppRealtime } from "../features/realtime";
 import { useSession } from "../stores/sessionStore";
 
-/** Authenticated layout: top nav + routed page content. */
 export function AppShell() {
   const navigate = useNavigate();
   const { orgId } = useParams();

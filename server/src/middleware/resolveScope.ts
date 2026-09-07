@@ -3,15 +3,6 @@ import { isValidObjectId } from "mongoose";
 import { AppError } from "../lib/errors.js";
 import { BoardModel, CardModel } from "../models/index.js";
 
-/**
- * For routes nested under `/boards/:boardId/...`: load the board, hide it as a
- * 404 if it belongs to another tenant, and expose its project id downstream
- * (`req.resolvedProjectId`) so `requireProjectRole` can run. Requires
- * `requireAuth` first.
- *
- * Note: we deliberately do NOT write to `req.params` — Express restores
- * `req.params` per router layer under `mergeParams`, dropping injected keys.
- */
 export const resolveProjectFromBoard: RequestHandler = async (req, _res, next) => {
   try {
     if (!req.auth) throw AppError.unauthenticated();
@@ -33,10 +24,6 @@ export const resolveProjectFromBoard: RequestHandler = async (req, _res, next) =
   }
 };
 
-/**
- * For routes nested under `/cards/:cardId/...`: load card → board, same 404
- * hiding, expose both project and board ids downstream.
- */
 export const resolveProjectFromCard: RequestHandler = async (req, _res, next) => {
   try {
     if (!req.auth) throw AppError.unauthenticated();

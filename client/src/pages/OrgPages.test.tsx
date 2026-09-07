@@ -49,7 +49,6 @@ describe("OrgMembersPage", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: "Send Invite" }));
 
-    // shows up under Pending Invitations, not as a full member row
     const pending = await screen.findByRole("region", {
       name: "Pending invitations",
     });
@@ -105,14 +104,13 @@ describe("OrgSettingsPage", () => {
     expect(screen.getByLabelText("Organization Name")).toHaveValue(
       "Acme Design Studio",
     );
-    // Alex is an Owner -> Delete is enabled
     expect(
       screen.getByRole("button", { name: "Delete Organization" }),
     ).toBeEnabled();
   });
 
   it("disables Delete Organization for a non-Owner", async () => {
-    renderRoute("/orgs/org-acme/settings", { as: "u-sarah" }); // admin
+    renderRoute("/orgs/org-acme/settings", { as: "u-sarah" });
     expect(
       await screen.findByRole("button", { name: "Delete Organization" }),
     ).toBeDisabled();

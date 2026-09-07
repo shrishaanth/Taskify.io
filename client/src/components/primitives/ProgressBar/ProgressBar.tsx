@@ -5,12 +5,10 @@ import styles from "./ProgressBar.module.css";
 
 export interface ProgressBarProps
   extends Omit<HTMLAttributes<HTMLDivElement>, "role"> {
-  /** Percentage 0–100. Ignored when `total` is provided. */
   value?: number;
   current?: number;
   total?: number;
   tone?: BadgeTone;
-  /** Accessible label for the progressbar. */
   label?: string;
 }
 

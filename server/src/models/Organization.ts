@@ -1,6 +1,5 @@
 import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
 
-/** Organization — the tenant boundary. */
 const organizationSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },

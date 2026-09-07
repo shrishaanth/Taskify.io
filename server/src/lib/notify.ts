@@ -2,11 +2,6 @@ import { NotificationModel, type NotificationType } from "../models/index.js";
 import { notificationDto } from "./serialize.js";
 import { emitNotificationNew } from "../realtime/emit.js";
 
-/**
- * FR-6.1 — create in-app notifications: persist the rows that
- * `GET /notifications` serves, then push each one to its recipient's socket
- * room so the bell updates live.
- */
 async function create(
   userIds: string[],
   type: NotificationType,
@@ -57,7 +52,6 @@ export function notifyRoleChanged(
   return create([userId], "role_changed", { scope, contextName });
 }
 
-/** UC-2 — tell the inviter(s) that someone accepted their org invite. */
 export function notifyInviteAccepted(
   recipientIds: string[],
   info: {

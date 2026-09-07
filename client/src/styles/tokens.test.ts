@@ -24,9 +24,6 @@ import {
   type Tone,
 } from "./tokens";
 
-/* ----------------------------------------------------------------------- */
-/* Parse tokens.css into a resolved name -> value map                       */
-/* ----------------------------------------------------------------------- */
 function parseCustomProperties(src: string): {
   raw: Map<string, string>;
   duplicates: string[];
@@ -46,7 +43,6 @@ function parseCustomProperties(src: string): {
 
 const { raw: cssVars, duplicates } = parseCustomProperties(cssText);
 
-/** Resolve `var(--x)` references (with fallbacks) down to a concrete value. */
 function resolve(value: string, seen = new Set<string>()): string {
   const varRe = /var\(\s*--([\w-]+)\s*(?:,\s*([^)]+))?\)/;
   let out = value;
@@ -67,8 +63,6 @@ function resolve(value: string, seen = new Set<string>()): string {
 const cssResolved = new Map(
   [...cssVars.keys()].map((k) => [k, resolve(cssVars.get(k)!)]),
 );
-
-/* ----------------------------------------------------------------------- */
 
 describe("tokens.css structural integrity", () => {
   it("declares no custom property twice", () => {
@@ -160,16 +154,12 @@ describe("typography", () => {
   });
 
   it("matches the four named Figma type roles", () => {
-    // H1 — Inter Bold 40px
     expect(textStyle.h1.fontSize).toBe("2.5rem");
     expect(textStyle.h1.fontWeight).toBe(700);
-    // H2 — Inter Bold 24px
     expect(textStyle.h2.fontSize).toBe("1.5rem");
     expect(textStyle.h2.fontWeight).toBe(700);
-    // Body — Inter Regular 16px
     expect(textStyle.body.fontSize).toBe("1rem");
     expect(textStyle.body.fontWeight).toBe(400);
-    // Caption — Inter Semibold 12px
     expect(textStyle.caption.fontSize).toBe("0.75rem");
     expect(textStyle.caption.fontWeight).toBe(600);
   });
@@ -181,8 +171,8 @@ describe("typography", () => {
     for (const [k, v] of Object.entries(fontWeight)) {
       expect(cssVars.get(`font-weight-${k}`), `font-weight-${k}`).toBe(String(v));
     }
-    expect(fontSize["4xl"]).toBe("2.5rem"); // 40px H1
-    expect(fontSize["2xl"]).toBe("1.5rem"); // 24px H2
+    expect(fontSize["4xl"]).toBe("2.5rem");
+    expect(fontSize["2xl"]).toBe("1.5rem");
   });
 });
 
@@ -293,7 +283,6 @@ describe("semantic tokens", () => {
   });
 
   it("primary / danger / text pairs meet a basic contrast bar", () => {
-    // crude WCAG-ish contrast; primary & danger fills carry white text.
     const rl = (hex: string) => {
       const c = [0, 1, 2].map((i) => {
         const v = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
@@ -336,8 +325,8 @@ describe("label / badge tones", () => {
   });
 
   it("soft tone = family-100 bg / family-700 fg (per the sheet)", () => {
-    expect(labelTone.purple.soft.bg).toBe(color.purple[100]); // #f3e8ff — sampled from the Figma chip
-    expect(labelTone.red.soft.bg).toBe(color.red[100]); // #fee2e2 — sampled from the Figma chip
+    expect(labelTone.purple.soft.bg).toBe(color.purple[100]);
+    expect(labelTone.red.soft.bg).toBe(color.red[100]);
     expect(labelTone.sky.soft.fg).toBe(color.sky[700]);
     expect(labelTone.green.soft.fg).toBe(color.green[700]);
   });
@@ -420,7 +409,7 @@ describe("cssVar helper", () => {
   });
   it("points at properties that actually exist", () => {
     for (const name of ["primary", "bg-app", "radius-xl", "z-modal", "shadow-modal"]) {
-      const ref = cssVar(name).slice(6, -1); // strip `var(` .. `)`
+      const ref = cssVar(name).slice(6, -1);
       expect(cssVars.has(ref.replace(/^--/, "")), name).toBe(true);
     }
   });

@@ -64,13 +64,11 @@ describe("TopNavBar", () => {
     const onLogoClick = vi.fn();
     setup({ orgs: [], onLogoClick });
 
-    // no org switcher at all
     expect(
       screen.queryByRole("button", { name: /acme design studio/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Select organization")).not.toBeInTheDocument();
 
-    // logo is a working "home" link, account menu is present, nothing crashed
     const home = screen.getByRole("button", { name: "Taskify home" });
     await userEvent.click(home);
     expect(onLogoClick).toHaveBeenCalledTimes(1);

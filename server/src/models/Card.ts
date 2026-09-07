@@ -1,11 +1,6 @@
 import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
 import { PRIORITIES } from "./enums.js";
 
-/**
- * Card — belongs to exactly one Board and one Column at a time (FR-4.1/4.2).
- * `organizationId` denormalized. Compound index (boardId, columnId, order) for
- * board-render queries; (organizationId) for org-wide "assigned to me" queries.
- */
 const cardSchema = new Schema(
   {
     organizationId: {

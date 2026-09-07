@@ -20,17 +20,16 @@
   font-size: var(--font-size-xs);
 }
 
-/* soft (default) */
 .root[data-variant="soft"] {
   background-color: var(--tone-bg);
   color: var(--tone-fg);
 }
-/* solid */
+
 .root[data-variant="solid"] {
   background-color: var(--tone-solid-bg);
   color: var(--tone-solid-fg);
 }
-/* outline */
+
 .root[data-variant="outline"] {
   background-color: transparent;
   color: var(--tone-fg);

@@ -7,7 +7,6 @@ export interface AddTileProps
   label: string;
 }
 
-/** Dashed "+ New X" placeholder tile (New Board, Add column, …). */
 export function AddTile({ label, className, type = "button", ...rest }: AddTileProps) {
   return (
     <button type={type} className={cn(styles.root, className)} {...rest}>

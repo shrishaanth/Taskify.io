@@ -13,7 +13,6 @@ import {
   updateCardSchema,
 } from "./cards.schema.js";
 
-// Mounted at /api/v1/boards/:boardId/cards
 export const cardsRouter: Router = Router({ mergeParams: true });
 
 cardsRouter.use(requireAuth, resolveProjectFromBoard);

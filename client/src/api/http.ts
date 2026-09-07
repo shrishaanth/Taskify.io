@@ -18,7 +18,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Called when a refresh attempt fails — lets the session store clear itself. */
 type OnAuthLost = () => void;
 let onAuthLost: OnAuthLost = () => {};
 export function setOnAuthLost(fn: OnAuthLost) {
@@ -29,7 +28,6 @@ export interface RequestOptions {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   body?: unknown;
   signal?: AbortSignal;
-  /** Skip the automatic 401→refresh→retry (used by the auth endpoints). */
   noRetry?: boolean;
 }
 
@@ -63,7 +61,6 @@ async function tryRefresh(): Promise<boolean> {
     } catch {
       return false;
     } finally {
-      // allow a fresh attempt next time
       setTimeout(() => {
         refreshInFlight = null;
       }, 0);

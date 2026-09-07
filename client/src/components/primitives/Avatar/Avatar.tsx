@@ -7,7 +7,6 @@ import styles from "./Avatar.module.css";
 export type AvatarSize = "xs" | "sm" | "md" | "lg";
 
 export interface AvatarProps extends HTMLAttributes<HTMLSpanElement> {
-  /** Used for the alt text, initials fallback and the deterministic colour. */
   name: string;
   src?: string;
   size?: AvatarSize;

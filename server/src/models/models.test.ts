@@ -18,7 +18,6 @@ import { makeOrg, makeUser } from "../test/factories.js";
 
 const oid = () => new Types.ObjectId();
 
-// Ensure every index (unique + TTL + compound) is built before assertions.
 beforeAll(async () => {
   await Promise.all(
     [
@@ -81,7 +80,6 @@ describe("OrgMembership", () => {
     await expect(
       OrgMembershipModel.create({ organizationId, userId, role: "admin" }),
     ).rejects.toThrow();
-    // a different user in the same org is fine
     await expect(
       OrgMembershipModel.create({ organizationId, userId: oid(), role: "member" }),
     ).resolves.toBeTruthy();

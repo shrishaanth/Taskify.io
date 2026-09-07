@@ -1,11 +1,6 @@
 import { Schema, model, type InferSchemaType, type HydratedDocument } from "mongoose";
 import { NOTIFICATION_TYPES } from "./enums.js";
 
-/**
- * Notification — in-app alert for a user (FR-6.1).
- * `payload` is a small denormalized snapshot (card title, etc.).
- * Index (userId, createdAt) serves the notification-list query.
- */
 const notificationSchema = new Schema(
   {
     userId: {

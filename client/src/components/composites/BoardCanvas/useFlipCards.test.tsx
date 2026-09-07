@@ -49,7 +49,6 @@ describe("useFlipCards", () => {
   });
 
   it("animates EVERY moved card in one synchronous pass (Issue 1 regression)", () => {
-    // a jumps columns (big −dx); b and c get pushed down (−dy)
     const p1: Pos = {
       a: { left: 0, top: 0 },
       b: { left: 300, top: 0 },
@@ -70,9 +69,6 @@ describe("useFlipCards", () => {
       />,
     );
 
-    // right after the layout change: ALL three are in the "play" state —
-    // released to their new spot with a transform transition. None frozen at a
-    // non-zero translate, none left with `transition: none`.
     for (const el of cards(container)) {
       expect(el.style.transform).toBe("translate(0px, 0px)");
       expect(el.style.transition).toMatch(/^transform 180ms /);

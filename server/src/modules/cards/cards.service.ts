@@ -16,7 +16,6 @@ import {
 
 type LeanCard = Parameters<typeof cardDto>[0];
 
-/** Attach assignee UserDtos + subtask/comment counts, then serialise. */
 export async function serializeCards(cards: LeanCard[]) {
   const cardIds = cards.map((c) => new Types.ObjectId(String(c._id)));
   const assigneeIds = [
@@ -78,7 +77,6 @@ function assertColumnExists(
   }
 }
 
-/** UC-5 — every assignee must have access to the board's project. */
 async function assertAssigneesHaveAccess(projectId: string, assigneeIds: string[]) {
   if (assigneeIds.length === 0) return;
   const members = await ProjectMembershipModel.find({
@@ -218,7 +216,6 @@ export async function updateCard(input: {
   return card;
 }
 
-/** UC-6 — move within/between columns, renumbering the affected columns. */
 export async function moveCard(input: {
   boardId: string;
   cardId: string;
@@ -232,7 +229,6 @@ export async function moveCard(input: {
   const fromColumn = card.columnId;
   const toColumn = input.columnId;
 
-  // Pull the card out of its current column ordering.
   const targetSiblings = (
     await CardModel.find({
       boardId: input.boardId,
@@ -250,14 +246,12 @@ export async function moveCard(input: {
   card.order = insertAt;
   await card.save();
 
-  // Renumber the target column.
   await Promise.all(
     targetSiblings.map((id, i) =>
       CardModel.updateOne({ _id: id }, { $set: { order: i } }),
     ),
   );
 
-  // Renumber the source column (if different) to close the gap.
   if (fromColumn !== toColumn) {
     const sourceSiblings = await CardModel.find({
       boardId: input.boardId,

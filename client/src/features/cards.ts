@@ -3,13 +3,6 @@ import * as cardsApi from "../api/cards";
 import type { CardPatch, CardSummary, Id, UserRef } from "../types/domain";
 import { qk } from "./queryClient";
 
-/**
- * Pure helper: return the card list with `cardId` moved to `toColumnId` at
- * `order`, with both the source and target columns renumbered. Used for the
- * optimistic drag-and-drop update so the card animates into place immediately;
- * the server response then reconciles (and, landing in the same spot, causes
- * no second animation — software-spec §6).
- */
 export function applyCardMove(
   cards: CardSummary[],
   cardId: Id,
@@ -66,7 +59,6 @@ export function useCardDetail(
   });
 }
 
-/** All card + child mutations for a board, invalidating the right keys. */
 export function useCardMutations(boardId: Id, openCardId?: Id | null) {
   const qc = useQueryClient();
   const invalidateBoard = () =>
@@ -95,18 +87,7 @@ export function useCardMutations(boardId: Id, openCardId?: Id | null) {
           columnId: args.columnId,
           order: args.order,
         }),
-      /**
-       * Optimistic: move the card in the cache *synchronously* so the board
-       * re-renders (and the FLIP animation starts) the instant the card is
-       * dropped — before the network request is even sent. `onMutate` must not
-       * be `async`/awaited or the update is deferred and the card visibly
-       * "sticks" before animating.
-       */
       onMutate: (args: { cardId: Id; columnId: string; order: number }) => {
-        // Abort any in-flight board refetch (e.g. from a socket event) so it
-        // can't land stale data on top of the optimistic write. Not awaited —
-        // cancellation is synchronous enough and awaiting would re-introduce
-        // the delay.
         void qc.cancelQueries({ queryKey: qk.cards(boardId) });
         const prev = qc.getQueryData<CardSummary[]>(qk.cards(boardId));
         if (prev) {

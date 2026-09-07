@@ -27,7 +27,6 @@ describe("access tokens", () => {
     const token = signAccessToken("user-123");
     const decoded = jwt.decode(token) as Record<string, unknown>;
     expect(decoded.userId).toBe("user-123");
-    // no role claims are embedded
     expect(decoded.role).toBeUndefined();
     expect(verifyAccessToken(token)).toEqual({ userId: "user-123" });
   });

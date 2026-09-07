@@ -1,17 +1,7 @@
-/**
- * Client-side view models, derived from srs/05-data-model.md.
- * These describe the shapes the UI renders; Phase 7 aligns them with the
- * server DTOs from the API contract. No field here that is absent from the
- * SRS data model — see COMPONENT_INVENTORY.md §4 for the decorative extras
- * (`ProjectSummary.category`, `BoardSummary.colorKey`) and why they are
- * client-only.
- */
-
 import type { BoardColorKey } from "../styles/tokens";
 
 export type Id = string;
 
-/** ISO-8601 date-time string. */
 export type IsoDate = string;
 
 export type OrgRole = "owner" | "admin" | "member";
@@ -72,7 +62,6 @@ export interface CardDetail extends CardSummary {
   comments: Comment[];
 }
 
-/** Editable card fields (PATCH /boards/:boardId/cards/:cardId). */
 export interface CardPatch {
   title?: string;
   description?: string;
@@ -82,7 +71,6 @@ export interface CardPatch {
   priority?: Priority;
 }
 
-/** `colorKey` is a client-only preference (COMPONENT_INVENTORY.md §4 C1). */
 export interface BoardSummary {
   id: Id;
   projectId: Id;
@@ -91,13 +79,11 @@ export interface BoardSummary {
   colorKey?: BoardColorKey;
 }
 
-/** `category` is decorative placeholder data (COMPONENT_INVENTORY.md §4 C11). */
 export interface ProjectSummary {
   id: Id;
   name: string;
   description?: string;
   category?: string;
-  /** null = the caller has no ProjectMembership (name-only, FR-2.3). */
   role: ProjectRole | null;
   members: UserRef[];
 }
@@ -119,10 +105,6 @@ export interface OrgMemberRow {
   role: OrgRole;
 }
 
-/**
- * A pending organization invite (UC-2). `OrgInvite` is not in
- * srs/05-data-model.md — see server models/OrgInvite.ts and PROJECT_RULES.md §9.
- */
 export interface OrgInvite {
   id: Id;
   email: string;

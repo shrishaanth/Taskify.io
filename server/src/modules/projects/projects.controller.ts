@@ -74,12 +74,10 @@ export async function setMember(req: Request, res: Response) {
     role: req.body.role,
   });
 
-  // Live to everyone viewing the project…
   emitProjectMemberChanged(req.params.projectId, {
     userId: String(doc.userId),
     role: doc.role,
   });
-  // …and a persisted role-change notification for the affected user (FR-6.1).
   const project = await ProjectModel.findById(req.params.projectId)
     .select("name")
     .lean();

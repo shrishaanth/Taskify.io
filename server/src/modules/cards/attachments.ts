@@ -16,11 +16,6 @@ import { canDeleteAuthored } from "./childScope.js";
 const objectId = z.string().regex(/^[a-f0-9]{24}$/i);
 const canWork = requireProjectRole("head", "member");
 
-/**
- * No pluggable file-storage backend in this scope (vision "out of scope").
- * The client uploads the file elsewhere and POSTs the resulting metadata here.
- */
-// Mounted at /api/v1/cards/:cardId/attachments
 export const attachmentsRouter: Router = Router({ mergeParams: true });
 attachmentsRouter.use(requireAuth, resolveProjectFromCard);
 

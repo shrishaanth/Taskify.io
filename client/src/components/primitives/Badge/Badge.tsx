@@ -19,7 +19,6 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: BadgeTone;
   variant?: BadgeVariant;
   size?: "sm" | "md";
-  /** Render a small leading status dot (e.g. "● Live"). */
   leadingDot?: boolean;
   children: ReactNode;
 }

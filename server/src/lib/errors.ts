@@ -1,14 +1,3 @@
-/**
- * Error convention — software-spec §8.
- * Every non-2xx response is `{ message, code, details? }`.
- *  400 VALIDATION_ERROR   — body/params/query failed the schema
- *  401 UNAUTHENTICATED    — missing / invalid / expired access token
- *  403 FORBIDDEN          — authenticated, in the right org, but lacks the
- *                           org- or project-level permission for this action
- *  404 NOT_FOUND          — resource missing OR belongs to another tenant
- *                           (deliberately indistinguishable — UC-10)
- *  409 CONFLICT           — uniqueness / state conflict (e.g. last owner)
- */
 export type ErrorCode =
   | "VALIDATION_ERROR"
   | "UNAUTHENTICATED"
@@ -57,7 +46,6 @@ export class AppError extends Error {
   static forbidden(message = "You do not have permission to do that") {
     return new AppError("FORBIDDEN", message);
   }
-  /** Use for both "missing" and "belongs to another tenant" (UC-10). */
   static notFound(message = "Not found") {
     return new AppError("NOT_FOUND", message);
   }

@@ -8,7 +8,6 @@ import {
   type ProjectRole,
 } from "../../models/index.js";
 
-/** All projects in the org, tagged with the caller's project role (null = name-only). */
 export async function listProjects(orgId: string, userId: string) {
   const projects = await ProjectModel.find({ organizationId: orgId })
     .sort({ createdAt: 1 })
@@ -42,7 +41,6 @@ export async function listProjects(orgId: string, userId: string) {
   return projects.map((p) => {
     const role = roleByProject.get(String(p._id)) ?? null;
     if (role === null) {
-      // Name-only (FR-2.3): no description, no boards/cards/members.
       return { id: String(p._id), name: p.name, role: null, members: [] as typeof users };
     }
     return {
@@ -83,7 +81,6 @@ async function findInOrg(orgId: string, projectId: string) {
   return project;
 }
 
-/** GET /:projectId — full detail only with a ProjectMembership, else 403 (FR-2.3). */
 export async function getProjectDetail(
   orgId: string,
   projectId: string,
@@ -132,7 +129,6 @@ export async function listProjectMembers(orgId: string, projectId: string) {
     .filter((x): x is { user: (typeof users)[number]; role: ProjectRole } => x !== null);
 }
 
-/** PUT member — grant/change a role. The user MUST already be an Org member. */
 export async function setProjectMember(input: {
   orgId: string;
   projectId: string;

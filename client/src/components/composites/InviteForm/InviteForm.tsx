@@ -12,7 +12,6 @@ export interface InviteFormValues {
 }
 
 export interface InviteFormHandle {
-  /** Validate + submit programmatically (used by an external footer button). */
   submit: () => void;
 }
 
@@ -20,7 +19,6 @@ export interface InviteFormProps {
   scope: "org" | "project";
   onSubmit: (values: InviteFormValues) => void;
   pending?: boolean;
-  /** Hide the built-in submit button (an external footer button drives it). */
   hideSubmit?: boolean;
   className?: string;
 }

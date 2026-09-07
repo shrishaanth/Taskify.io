@@ -5,7 +5,6 @@ export interface ToastOptions {
   tone?: ToastTone;
   title: string;
   description?: string;
-  /** ms before auto-dismiss; 0 disables auto-dismiss. Default 5000. */
   duration?: number;
 }
 

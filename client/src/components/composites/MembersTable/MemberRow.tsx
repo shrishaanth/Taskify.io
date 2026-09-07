@@ -15,7 +15,6 @@ export interface MemberRowProps {
   role: OrgRole | ProjectRole;
   scope: "org" | "project";
   canManage: boolean;
-  /** Block role/removal changes (e.g. the last remaining Owner — FR-1.6). */
   lockManage?: boolean;
   onChangeRole?: (role: OrgRole | ProjectRole) => void;
   onRemove?: () => void;

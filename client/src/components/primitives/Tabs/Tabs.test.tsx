@@ -56,7 +56,6 @@ describe("Tabs", () => {
     boards.focus();
     await userEvent.keyboard("{ArrowRight}");
     expect(onChange).toHaveBeenLastCalledWith("members");
-    // from members, ArrowRight skips disabled "settings" and wraps to "boards"
     render(<Tabs tabs={TABS} activeId="members" onChange={onChange} />);
     screen.getAllByRole("tab", { name: "Members" })[1].focus();
     await userEvent.keyboard("{ArrowRight}");
