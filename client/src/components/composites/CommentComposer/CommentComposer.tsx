@@ -20,8 +20,8 @@ export function CommentComposer({
   const [body, setBody] = useState("");
   const canSubmit = body.trim().length > 0 && !pending;
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
+  const submit = (e?: FormEvent) => {
+    e?.preventDefault();
     if (!canSubmit) return;
     onSubmit(body.trim());
     setBody("");
@@ -40,6 +40,14 @@ export function CommentComposer({
           placeholder="Write a comment or ask for feedback…"
           aria-label="Write a comment"
           onChange={(e) => setBody(e.target.value)}
+          onKeyDown={(e) => {
+            // Explicit rather than relying on implicit form submission, which
+            // a single-field form does not guarantee across browsers.
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              submit();
+            }
+          }}
         />
         <Button type="submit" size="sm" loading={pending} disabled={!canSubmit}>
           Comment

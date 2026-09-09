@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { screen, within, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderRoute } from "../test/renderRoute";
@@ -45,36 +45,50 @@ describe("BoardPage", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("adds a card to a column", async () => {
+  it("adds a card with the title the user typed", async () => {
     renderRoute(BOARD);
     const review = await screen.findByRole("region", { name: "In Review" });
     await userEvent.click(
       within(review).getByRole("button", { name: /add a card/i }),
     );
+    await userEvent.type(
+      within(review).getByLabelText(/new card in/i),
+      "Check the staging deploy{Enter}",
+    );
     expect(
-      await within(review).findByRole("heading", { name: "Untitled card" }),
+      await within(review).findByRole("heading", {
+        name: "Check the staging deploy",
+      }),
     ).toBeInTheDocument();
   });
 
-  it("adds a column via the add-column tile", async () => {
+  it("adds a column with the name the user typed", async () => {
     renderRoute(BOARD);
     await screen.findByRole("region", { name: "To Do" });
     expect(screen.getAllByTestId("kanban-column")).toHaveLength(4);
     await userEvent.click(screen.getByRole("button", { name: "Add column" }));
+    await userEvent.type(
+      screen.getByLabelText(/new column name/i),
+      "Blocked{Enter}",
+    );
     expect(await screen.findAllByTestId("kanban-column")).toHaveLength(5);
+    expect(
+      await screen.findByRole("region", { name: "Blocked" }),
+    ).toBeInTheDocument();
   });
 
-  it("renames a column through its menu (via prompt)", async () => {
-    const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("Blocked");
+  it("renames a column inline through its menu", async () => {
     renderRoute(BOARD);
     await userEvent.click(
       await screen.findByRole("button", { name: "To Do column actions" }),
     );
     await userEvent.click(screen.getByRole("menuitem", { name: "Rename column" }));
+    const field = await screen.findByLabelText("Rename To Do");
+    await userEvent.clear(field);
+    await userEvent.type(field, "Blocked{Enter}");
     expect(
       await screen.findByRole("region", { name: "Blocked" }),
     ).toBeInTheDocument();
-    promptSpy.mockRestore();
   });
 
   it("deletes a card from the detail modal", async () => {

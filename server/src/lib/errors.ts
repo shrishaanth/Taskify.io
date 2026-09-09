@@ -49,8 +49,8 @@ export class AppError extends Error {
   static notFound(message = "Not found") {
     return new AppError("NOT_FOUND", message);
   }
-  static conflict(message: string) {
-    return new AppError("CONFLICT", message);
+  static conflict(message: string, details?: unknown) {
+    return new AppError("CONFLICT", message, details);
   }
   static validation(message: string, details?: unknown) {
     return new AppError("VALIDATION_ERROR", message, details);

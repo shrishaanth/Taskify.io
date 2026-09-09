@@ -70,16 +70,38 @@ export function useCardMutations(boardId: Id, openCardId?: Id | null) {
     invalidateBoard();
   };
 
+  /**
+   * Create and update both answer with the authoritative card, so the board
+   * list can be updated from the response. Refetching it would ask the server
+   * to re-send data this client is already holding.
+   */
+  const writeCard = (card: CardSummary) => {
+    qc.setQueryData<CardSummary[]>(qk.cards(boardId), (prev) => {
+      if (!prev) return prev;
+      const idx = prev.findIndex((c) => c.id === card.id);
+      if (idx === -1) return [...prev, card];
+      const next = [...prev];
+      next[idx] = card;
+      return next;
+    });
+  };
+
   return {
     createCard: useMutation({
       mutationFn: (input: { title: string; columnId: string }) =>
         cardsApi.createCard(boardId, input),
-      onSuccess: invalidateBoard,
+      onSuccess: writeCard,
     }),
     updateCard: useMutation({
       mutationFn: (args: { cardId: Id; patch: CardPatch }) =>
         cardsApi.updateCard(boardId, args.cardId, args.patch),
-      onSuccess: invalidateCard,
+      onSuccess: (card, args) => {
+        writeCard(card);
+        // The detail view holds subtasks and comments the summary omits.
+        if (openCardId === args.cardId) {
+          void qc.invalidateQueries({ queryKey: qk.card(boardId, args.cardId) });
+        }
+      },
     }),
     moveCard: useMutation({
       mutationFn: (args: { cardId: Id; columnId: string; order: number }) =>
@@ -106,7 +128,12 @@ export function useCardMutations(boardId: Id, openCardId?: Id | null) {
     }),
     deleteCard: useMutation({
       mutationFn: (cardId: Id) => cardsApi.deleteCard(boardId, cardId),
-      onSuccess: invalidateBoard,
+      onSuccess: (_void, cardId) => {
+        qc.setQueryData<CardSummary[]>(qk.cards(boardId), (prev) =>
+          prev?.filter((c) => c.id !== cardId),
+        );
+        qc.removeQueries({ queryKey: qk.card(boardId, cardId) });
+      },
     }),
     addSubtask: useMutation({
       mutationFn: (args: { cardId: Id; title: string }) =>

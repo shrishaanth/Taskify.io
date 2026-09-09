@@ -75,6 +75,21 @@
   color: var(--danger);
 }
 
+/* Consequences shown inside a destructive confirmation dialog. */
+.calloutDanger {
+  padding: var(--space-3);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  background-color: var(--danger-surface, rgba(220, 38, 38, 0.08));
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+.calloutDanger a {
+  color: inherit;
+  font-weight: var(--font-weight-semibold);
+}
+
 .authFooter {
   text-align: center;
   font-family: var(--font-sans);

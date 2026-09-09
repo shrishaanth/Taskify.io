@@ -124,26 +124,19 @@ export function BoardPage() {
         doneColumnIds={doneColumnIds}
         canManage={canManage}
         onMoveCard={handleMoveCard}
-        onAddCard={(columnId) =>
-          m.createCard.mutate({ title: "Untitled card", columnId })
-        }
+        onAddCard={(columnId, title) => m.createCard.mutate({ title, columnId })}
         onOpenCard={(cardId) => setOpenCardId(cardId)}
-        onAddColumn={() =>
+        onAddColumn={(name) =>
           updateBoardColumns([
             ...board.columns,
-            { name: "New Column", order: board.columns.length },
+            { name, order: board.columns.length },
           ])
         }
-        onRenameColumn={(columnId) => {
-          const next = window.prompt("Rename column");
-          if (next) {
-            updateBoardColumns(
-              board.columns.map((c) =>
-                c.id === columnId ? { ...c, name: next } : c,
-              ),
-            );
-          }
-        }}
+        onRenameColumn={(columnId, name) =>
+          updateBoardColumns(
+            board.columns.map((c) => (c.id === columnId ? { ...c, name } : c)),
+          )
+        }
         onDeleteColumn={(columnId) =>
           updateBoardColumns(board.columns.filter((c) => c.id !== columnId))
         }

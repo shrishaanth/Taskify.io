@@ -99,6 +99,9 @@ export function Popover({
           role="dialog"
           aria-label={label}
           data-placement={placement}
+          // Marks this as a transient layer so an enclosing Modal lets the
+          // popover consume Escape first instead of closing itself.
+          data-popover-open="true"
           className={styles.panel}
         >
           {children}

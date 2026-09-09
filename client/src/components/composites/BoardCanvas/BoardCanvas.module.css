@@ -18,3 +18,72 @@
   height: 100%;
   min-height: 0;
 }
+
+.columnComposer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-self: flex-start;
+  height: auto;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.columnComposerInput {
+  width: 100%;
+  padding: var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+}
+.columnComposerInput:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: var(--shadow-focus);
+}
+
+.columnComposerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.columnComposerAdd,
+.columnComposerCancel {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.columnComposerAdd {
+  border: 1px solid transparent;
+  background-color: var(--primary);
+  color: var(--text-on-primary, #fff);
+}
+.columnComposerAdd:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.columnComposerCancel {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.columnComposerCancel:hover {
+  color: var(--text-primary);
+}
+
+.columnComposerAdd:focus-visible,
+.columnComposerCancel:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}

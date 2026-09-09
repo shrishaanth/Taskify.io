@@ -117,19 +117,87 @@ describe("useBoardRealtime", () => {
     });
   });
 
-  it.each(["card:created", "card:updated", "card:moved", "card:deleted"])(
-    "refetches the board's cards on %s",
-    (event) => {
-      const qc = new QueryClient();
-      const spy = vi.spyOn(qc, "invalidateQueries");
-      renderHook(() => useBoardRealtime("p1", "b1"), { wrapper: wrapper(qc) });
+  const rawCard = (over: Record<string, unknown> = {}) => ({
+    id: "c1",
+    boardId: "b1",
+    columnId: "col-1",
+    order: 0,
+    title: "Ship it",
+    labels: [],
+    assigneeIds: [],
+    assignees: [],
+    subtaskDone: 0,
+    subtaskTotal: 0,
+    commentCount: 0,
+    ...over,
+  });
 
-      fake.server(event, { id: "c1" });
+  const seed = (qc: QueryClient, cards: unknown[]) =>
+    qc.setQueryData(["cards", "b1"], cards);
 
-      expect(spy).toHaveBeenCalledWith({ queryKey: ["cards", "b1"] });
-      expect(spy).toHaveBeenCalledWith({ queryKey: ["card", "b1"] });
-    },
-  );
+  it("adds a new card to the cached list without refetching on card:created", () => {
+    const qc = new QueryClient();
+    seed(qc, []);
+    const spy = vi.spyOn(qc, "invalidateQueries");
+    renderHook(() => useBoardRealtime("p1", "b1"), { wrapper: wrapper(qc) });
+
+    fake.server("card:created", rawCard());
+
+    expect(qc.getQueryData(["cards", "b1"])).toEqual([
+      expect.objectContaining({ id: "c1", title: "Ship it" }),
+    ]);
+    expect(spy).not.toHaveBeenCalledWith({ queryKey: ["cards", "b1"] });
+  });
+
+  it("replaces the cached card in place on card:updated", () => {
+    const qc = new QueryClient();
+    seed(qc, [{ id: "c1", title: "Old", columnId: "col-1", order: 0 }]);
+    renderHook(() => useBoardRealtime("p1", "b1"), { wrapper: wrapper(qc) });
+
+    fake.server("card:updated", rawCard({ title: "New" }));
+
+    const cards = qc.getQueryData(["cards", "b1"]) as { title: string }[];
+    expect(cards).toHaveLength(1);
+    expect(cards[0]?.title).toBe("New");
+  });
+
+  it("applies the new column and order on card:moved", () => {
+    const qc = new QueryClient();
+    seed(qc, [{ id: "c1", title: "A", columnId: "col-1", order: 0 }]);
+    renderHook(() => useBoardRealtime("p1", "b1"), { wrapper: wrapper(qc) });
+
+    fake.server("card:moved", { id: "c1", columnId: "col-2", order: 3 });
+
+    expect(qc.getQueryData(["cards", "b1"])).toEqual([
+      expect.objectContaining({ id: "c1", columnId: "col-2", order: 3 }),
+    ]);
+  });
+
+  it("drops the card from the cache on card:deleted", () => {
+    const qc = new QueryClient();
+    seed(qc, [
+      { id: "c1", title: "A", columnId: "col-1", order: 0 },
+      { id: "c2", title: "B", columnId: "col-1", order: 1 },
+    ]);
+    renderHook(() => useBoardRealtime("p1", "b1"), { wrapper: wrapper(qc) });
+
+    fake.server("card:deleted", { id: "c1" });
+
+    expect(qc.getQueryData(["cards", "b1"])).toEqual([
+      expect.objectContaining({ id: "c2" }),
+    ]);
+  });
+
+  it("falls back to a refetch when a payload cannot be applied", () => {
+    const qc = new QueryClient();
+    seed(qc, []);
+    const spy = vi.spyOn(qc, "invalidateQueries");
+    renderHook(() => useBoardRealtime("p1", "b1"), { wrapper: wrapper(qc) });
+
+    fake.server("card:moved", { id: "c1" }); // no columnId/order
+
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["cards", "b1"] });
+  });
 
   it("refetches only the affected card's detail on comment:new", () => {
     const qc = new QueryClient();

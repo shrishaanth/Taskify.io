@@ -33,7 +33,11 @@ interface RawCardDetail extends RawCard {
   comments: RawComment[];
 }
 
-const toSummary = (c: RawCard): CardSummary => ({
+/**
+ * Realtime `card:*` payloads are the same server DTO the list endpoint returns,
+ * so socket listeners reuse this to apply an event without a refetch.
+ */
+export const cardSummaryFromPayload = (c: RawCard): CardSummary => ({
   id: c.id,
   boardId: c.boardId,
   columnId: c.columnId,
@@ -53,7 +57,7 @@ function toDetail(c: RawCardDetail, members: UserRef[]): CardDetail {
   const ref = (id?: string): UserRef =>
     (id && byId.get(id)) || { id: id ?? "", name: "Unknown" };
   return {
-    ...toSummary(c),
+    ...cardSummaryFromPayload(c),
     ...(c.description ? { description: c.description } : {}),
     subtasks: c.subtasks.map<Subtask>((s) => ({
       id: s.id,
@@ -72,7 +76,7 @@ function toDetail(c: RawCardDetail, members: UserRef[]): CardDetail {
 
 export async function listCards(boardId: Id): Promise<CardSummary[]> {
   const rows = await apiFetch<RawCard[]>(`/boards/${boardId}/cards`);
-  return rows.map(toSummary);
+  return rows.map(cardSummaryFromPayload);
 }
 
 export async function getCard(
@@ -88,7 +92,7 @@ export async function createCard(
   boardId: Id,
   input: { title: string; columnId: string },
 ): Promise<CardSummary> {
-  return toSummary(
+  return cardSummaryFromPayload(
     await apiFetch<RawCard>(`/boards/${boardId}/cards`, {
       method: "POST",
       body: input,
@@ -100,7 +104,7 @@ export function updateCard(boardId: Id, cardId: Id, patch: CardPatch) {
   return apiFetch<RawCard>(`/boards/${boardId}/cards/${cardId}`, {
     method: "PATCH",
     body: patch,
-  }).then(toSummary);
+  }).then(cardSummaryFromPayload);
 }
 
 export function moveCard(
@@ -111,7 +115,7 @@ export function moveCard(
   return apiFetch<RawCard>(`/boards/${boardId}/cards/${cardId}/move`, {
     method: "PATCH",
     body: move,
-  }).then(toSummary);
+  }).then(cardSummaryFromPayload);
 }
 
 export function deleteCard(boardId: Id, cardId: Id) {

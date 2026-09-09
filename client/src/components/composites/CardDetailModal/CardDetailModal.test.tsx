@@ -137,3 +137,75 @@ describe("CardDetailModal — interactions", () => {
     expect(onUpdateCard).toHaveBeenCalledWith({ description: "New description" });
   });
 });
+
+describe("CardDetailModal — pending description edits are not lost", () => {
+  it("saves a typed description when the dialog is closed with Escape", async () => {
+    const { onUpdateCard, onClose } = setup();
+
+    await userEvent.click(screen.getByLabelText("Card description"));
+    await userEvent.type(screen.getByLabelText("Card description"), " Plus a new line.");
+    await userEvent.keyboard("{Escape}");
+
+    expect(onUpdateCard).toHaveBeenCalledWith({
+      description: "We need to refresh the current hero graphic. Plus a new line.",
+    });
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("saves a typed description when the dialog is closed with the × button", async () => {
+    const { onUpdateCard } = setup();
+
+    await userEvent.type(screen.getByLabelText("Card description"), " Trailing edit.");
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(onUpdateCard).toHaveBeenCalledWith({
+      description: "We need to refresh the current hero graphic. Trailing edit.",
+    });
+  });
+
+  it("does not write anything when the description was left untouched", async () => {
+    const { onUpdateCard } = setup();
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(onUpdateCard).not.toHaveBeenCalled();
+  });
+
+  it("shows the incoming description when a different card is opened", () => {
+    const { rerender } = render(
+      <CardDetailModal
+        open
+        onClose={vi.fn()}
+        card={card}
+        breadcrumb="B"
+        viewer={{ projectRole: "member", orgRole: "member" }}
+        currentUser={members[0]}
+        currentUserId="u1"
+        projectMembers={members}
+        onUpdateCard={vi.fn()}
+        onToggleSubtask={vi.fn()}
+        onAddSubtask={vi.fn()}
+        onAddComment={vi.fn()}
+      />,
+    );
+
+    rerender(
+      <CardDetailModal
+        open
+        onClose={vi.fn()}
+        card={{ ...card, id: "c2", description: "A different card entirely." }}
+        breadcrumb="B"
+        viewer={{ projectRole: "member", orgRole: "member" }}
+        currentUser={members[0]}
+        currentUserId="u1"
+        projectMembers={members}
+        onUpdateCard={vi.fn()}
+        onToggleSubtask={vi.fn()}
+        onAddSubtask={vi.fn()}
+        onAddComment={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByLabelText("Card description")[0]).toHaveValue(
+      "A different card entirely.",
+    );
+  });
+});

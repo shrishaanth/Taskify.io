@@ -39,6 +39,7 @@ export function AppShell() {
         onLoadMoreNotifications={() => void notificationsQuery.fetchNextPage()}
         onMarkAllNotificationsRead={() => markAllRead.mutate()}
         user={session.user}
+        onProfile={() => navigate("/account")}
         onLogout={() => {
           void signOut().then(() => navigate("/login"));
         }}

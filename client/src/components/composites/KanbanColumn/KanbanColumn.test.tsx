@@ -34,13 +34,56 @@ describe("KanbanColumn", () => {
     expect(within(region).getAllByRole("button", { name: /^Card/ })).toHaveLength(3);
   });
 
-  it("adds a card via the footer button", async () => {
+  it("adds a card with the title typed into the composer", async () => {
     const onAddCard = vi.fn();
     render(
       <KanbanColumn column={column} cards={[]} onAddCard={onAddCard} onOpenCard={() => {}} />,
     );
+
     await userEvent.click(screen.getByRole("button", { name: /add a card/i }));
-    expect(onAddCard).toHaveBeenCalledTimes(1);
+    await userEvent.type(screen.getByLabelText(/new card in/i), "Write the docs");
+    await userEvent.click(screen.getByRole("button", { name: /^add card$/i }));
+
+    expect(onAddCard).toHaveBeenCalledWith("Write the docs");
+  });
+
+  it("submits the composer on Enter and stays open for the next card", async () => {
+    const onAddCard = vi.fn();
+    render(
+      <KanbanColumn column={column} cards={[]} onAddCard={onAddCard} onOpenCard={() => {}} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /add a card/i }));
+    await userEvent.type(screen.getByLabelText(/new card in/i), "First{Enter}");
+    await userEvent.type(screen.getByLabelText(/new card in/i), "Second{Enter}");
+
+    expect(onAddCard).toHaveBeenNthCalledWith(1, "First");
+    expect(onAddCard).toHaveBeenNthCalledWith(2, "Second");
+  });
+
+  it("never creates a card with an empty title", async () => {
+    const onAddCard = vi.fn();
+    render(
+      <KanbanColumn column={column} cards={[]} onAddCard={onAddCard} onOpenCard={() => {}} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /add a card/i }));
+    await userEvent.type(screen.getByLabelText(/new card in/i), "   {Enter}");
+
+    expect(onAddCard).not.toHaveBeenCalled();
+  });
+
+  it("discards the draft on Escape", async () => {
+    const onAddCard = vi.fn();
+    render(
+      <KanbanColumn column={column} cards={[]} onAddCard={onAddCard} onOpenCard={() => {}} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /add a card/i }));
+    await userEvent.type(screen.getByLabelText(/new card in/i), "Nope{Escape}");
+
+    expect(onAddCard).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /add a card/i })).toBeInTheDocument();
   });
 
   it("opens a card with its id", async () => {

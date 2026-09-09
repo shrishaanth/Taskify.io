@@ -72,3 +72,35 @@ export async function logout(): Promise<void> {
 export async function fetchSession(): Promise<Session> {
   return toSession(await apiFetch<MeResponse>("/auth/me"));
 }
+
+export interface OrgDeletionImpact {
+  id: string;
+  name: string;
+  memberCount: number;
+}
+
+export interface DeletionPreview {
+  /** Orgs the caller solely owns that still have other members. Blocking. */
+  blockingOrgs: OrgDeletionImpact[];
+  /** Orgs the caller is the only member of — deleted with the account. */
+  orgsToDelete: OrgDeletionImpact[];
+}
+
+export function fetchDeletionPreview(): Promise<DeletionPreview> {
+  return apiFetch<DeletionPreview>("/auth/me/deletion-preview");
+}
+
+export async function deleteAccount(input: {
+  password: string;
+  confirmEmail: string;
+}): Promise<void> {
+  await apiFetch<void>("/auth/me", {
+    method: "DELETE",
+    body: input,
+    noRetry: true,
+  });
+  // Only after it succeeded — a rejected attempt (wrong password, or an org
+  // that still needs an Owner) must leave the session intact so the user can
+  // read the error and correct it.
+  setAccessToken(null);
+}

@@ -76,6 +76,28 @@ export function CardDetailModal({
     if (editingTitle) titleInputRef.current?.select();
   }, [editingTitle]);
 
+  const savedDesc = card.description ?? "";
+  // The modal is reused when a different card is opened, so the draft has to
+  // follow the card it belongs to rather than the mount.
+  useEffect(() => {
+    setDesc(savedDesc);
+  }, [card.id, savedDesc]);
+
+  // Closing must not discard what was typed. Escape and the × both bypass
+  // blur, so the pending description is flushed from here instead.
+  const latest = useRef({ desc, savedDesc });
+  latest.current = { desc, savedDesc };
+
+  const flushDescription = () => {
+    const { desc: current, savedDesc: saved } = latest.current;
+    if (canEdit && current !== saved) onUpdateCard({ description: current });
+  };
+
+  const closeWithSave = () => {
+    flushDescription();
+    onClose();
+  };
+
   const commitTitle = () => {
     const next = titleDraft.trim();
     setEditingTitle(false);
@@ -95,7 +117,7 @@ export function CardDetailModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={closeWithSave}
       size="lg"
       aria-label={card.title}
       headerSlot={
@@ -156,7 +178,7 @@ export function CardDetailModal({
                 label="Close"
                 variant="circle"
                 size="sm"
-                onClick={onClose}
+                onClick={closeWithSave}
                 icon={<span aria-hidden="true">×</span>}
               />
             </div>

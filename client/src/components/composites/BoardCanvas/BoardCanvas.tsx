@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "../../utils/cn";
 import { AddTile } from "../AddTile/AddTile";
 import { KanbanColumn } from "../KanbanColumn/KanbanColumn";
@@ -9,10 +9,10 @@ import styles from "./BoardCanvas.module.css";
 export interface BoardCanvasProps {
   columns: Column[];
   cardsByColumn: Record<string, CardSummary[]>;
-  onAddCard: (columnId: string) => void;
+  onAddCard: (columnId: string, title: string) => void;
   onOpenCard: (cardId: string) => void;
-  onAddColumn?: () => void;
-  onRenameColumn?: (columnId: string) => void;
+  onAddColumn?: (name: string) => void;
+  onRenameColumn?: (columnId: string, name: string) => void;
   onDeleteColumn?: (columnId: string) => void;
   onMoveCard?: (
     cardId: string,
@@ -42,8 +42,27 @@ export function BoardCanvas({
   className,
 }: BoardCanvasProps) {
   const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
+  const [addingColumn, setAddingColumn] = useState(false);
+  const [columnDraft, setColumnDraft] = useState("");
+  const columnInputRef = useRef<HTMLInputElement>(null);
   const dndEnabled = canManage && Boolean(onMoveCard);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (addingColumn) columnInputRef.current?.focus();
+  }, [addingColumn]);
+
+  const cancelColumn = () => {
+    setAddingColumn(false);
+    setColumnDraft("");
+  };
+
+  const submitColumn = () => {
+    const name = columnDraft.trim();
+    if (!name) return cancelColumn();
+    onAddColumn?.(name);
+    cancelColumn();
+  };
 
   const ordered = [...columns].sort((a, b) => a.order - b.order);
   const flipSignature = ordered
@@ -66,7 +85,7 @@ export function BoardCanvas({
           isDoneColumn={doneColumnIds.includes(column.id)}
           draggable={dndEnabled}
           draggingCardId={draggingCardId}
-          onAddCard={() => onAddCard(column.id)}
+          onAddCard={(title) => onAddCard(column.id, title)}
           onOpenCard={onOpenCard}
           {...(dndEnabled
             ? {
@@ -81,7 +100,7 @@ export function BoardCanvas({
               }
             : {})}
           {...(canManage && onRenameColumn
-            ? { onRenameColumn: () => onRenameColumn(column.id) }
+            ? { onRenameColumn: (name: string) => onRenameColumn(column.id, name) }
             : {})}
           {...(canManage && onDeleteColumn
             ? { onDeleteColumn: () => onDeleteColumn(column.id) }
@@ -91,7 +110,47 @@ export function BoardCanvas({
       ))}
       {canManage && onAddColumn && (
         <div className={styles.addColumn}>
-          <AddTile label="Add column" onClick={onAddColumn} />
+          {addingColumn ? (
+            <div className={styles.columnComposer}>
+              <input
+                ref={columnInputRef}
+                className={styles.columnComposerInput}
+                value={columnDraft}
+                placeholder="Column name"
+                aria-label="New column name"
+                onChange={(e) => setColumnDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    submitColumn();
+                  } else if (e.key === "Escape") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    cancelColumn();
+                  }
+                }}
+              />
+              <div className={styles.columnComposerActions}>
+                <button
+                  type="button"
+                  className={styles.columnComposerAdd}
+                  onClick={submitColumn}
+                  disabled={columnDraft.trim().length === 0}
+                >
+                  Add column
+                </button>
+                <button
+                  type="button"
+                  className={styles.columnComposerCancel}
+                  onClick={cancelColumn}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <AddTile label="Add column" onClick={() => setAddingColumn(true)} />
+          )}
         </div>
       )}
     </div>

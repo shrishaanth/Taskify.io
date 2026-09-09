@@ -1,4 +1,18 @@
+import { getOriginSocketId } from "../lib/requestContext.js";
 import { getIO } from "./io.js";
+
+/**
+ * Room emitter that excludes the socket which triggered the change. That client
+ * already has the authoritative result in its HTTP response, so echoing to it
+ * only causes a redundant refetch of data it just received.
+ */
+function toRoom(room: string, event: string, payload: unknown): void {
+  const io = getIO();
+  if (!io) return;
+  const origin = getOriginSocketId();
+  const target = origin ? io.to(room).except(origin) : io.to(room);
+  target.emit(event, payload);
+}
 
 function toBoard(
   boardId: string | null | undefined,
@@ -6,7 +20,7 @@ function toBoard(
   payload: unknown,
 ): void {
   if (!boardId) return;
-  getIO()?.to(`board:${boardId}`).emit(event, payload);
+  toRoom(`board:${boardId}`, event, payload);
 }
 
 function toProject(
@@ -15,7 +29,7 @@ function toProject(
   payload: unknown,
 ): void {
   if (!projectId) return;
-  getIO()?.to(`project:${projectId}`).emit(event, payload);
+  toRoom(`project:${projectId}`, event, payload);
 }
 
 function toOrg(
@@ -24,7 +38,7 @@ function toOrg(
   payload: unknown,
 ): void {
   if (!orgId) return;
-  getIO()?.to(`org:${orgId}`).emit(event, payload);
+  toRoom(`org:${orgId}`, event, payload);
 }
 
 export function emitNotificationNew(userId: string, notification: unknown): void {

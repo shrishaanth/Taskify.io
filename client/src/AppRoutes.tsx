@@ -10,6 +10,7 @@ import { ProjectPage } from "./pages/ProjectPage";
 import { BoardPage } from "./pages/BoardPage";
 import { OrgMembersPage } from "./pages/OrgMembersPage";
 import { OrgSettingsPage } from "./pages/OrgSettingsPage";
+import { AccountSettingsPage } from "./pages/AccountSettingsPage";
 import { AcceptInvitePage } from "./pages/AcceptInvitePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { Spinner } from "./components/primitives/Spinner/Spinner";
@@ -78,6 +79,7 @@ export function AppRoutes() {
           </RequireAuth>
         }
       >
+        <Route path="/account" element={<AccountSettingsPage />} />
         <Route path="/orgs/:orgId" element={<Navigate to="projects" replace />} />
         <Route path="/orgs/:orgId/projects" element={<ProjectsPage />} />
         <Route path="/orgs/:orgId/members" element={<OrgMembersPage />} />

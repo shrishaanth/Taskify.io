@@ -82,3 +82,13 @@ export async function me(req: Request, res: Response) {
   const { user, memberships } = await service.currentUser(auth(req).userId);
   res.json({ user: userDto(user), memberships });
 }
+
+export async function deletionPreview(req: Request, res: Response) {
+  res.json(await service.previewAccountDeletion(auth(req).userId));
+}
+
+export async function deleteAccount(req: Request, res: Response) {
+  await service.deleteAccount(auth(req).userId, req.body);
+  res.clearCookie(REFRESH_COOKIE, { path: "/api/v1/auth" });
+  res.status(204).end();
+}

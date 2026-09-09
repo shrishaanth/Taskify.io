@@ -7,6 +7,7 @@ import {
   OrgMembershipModel,
   ProjectMembershipModel,
   UserModel,
+  activeUser,
 } from "../models/index.js";
 
 let io: Server | null = null;
@@ -61,7 +62,9 @@ async function authenticate(socket: Socket): Promise<void> {
     throw new Error("unauthenticated");
   }
   const { userId } = verifyAccessToken(token);
-  const user = await UserModel.findById(userId).select("_id").lean();
+  const user = await UserModel.findOne({ _id: userId, ...activeUser })
+    .select("_id")
+    .lean();
   if (!user) throw new Error("unauthenticated");
   socket.data.userId = String(user._id);
 }

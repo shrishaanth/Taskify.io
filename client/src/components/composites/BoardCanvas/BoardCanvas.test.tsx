@@ -65,7 +65,8 @@ describe("BoardCanvas", () => {
     );
     const addButtons = screen.getAllByRole("button", { name: /add a card/i });
     await userEvent.click(addButtons[1]);
-    expect(onAddCard).toHaveBeenCalledWith("doing");
+    await userEvent.type(screen.getByLabelText(/new card in/i), "Triage bugs{Enter}");
+    expect(onAddCard).toHaveBeenCalledWith("doing", "Triage bugs");
   });
 
   it("shows the add-column tile only when canManage + onAddColumn", async () => {
@@ -92,7 +93,8 @@ describe("BoardCanvas", () => {
       />,
     );
     await userEvent.click(screen.getByRole("button", { name: "Add column" }));
-    expect(onAddColumn).toHaveBeenCalledTimes(1);
+    await userEvent.type(screen.getByLabelText(/new column name/i), "Blocked{Enter}");
+    expect(onAddColumn).toHaveBeenCalledWith("Blocked");
   });
 
   it("renders the empty state instead of the board when there are no columns", () => {

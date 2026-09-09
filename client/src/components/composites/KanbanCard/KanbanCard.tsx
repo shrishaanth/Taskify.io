@@ -70,6 +70,18 @@ export function KanbanCard({
           : undefined
       }
       onDragEnd={draggable ? () => onDragEnd?.() : undefined}
+      onDragEnter={
+        onDragOverCard
+          ? (e) => {
+              // Marks the card as a valid target the moment the pointer
+              // arrives. Relying on dragover alone loses drops that are
+              // released before the next dragover tick fires.
+              e.preventDefault();
+              e.stopPropagation();
+              onDragOverCard();
+            }
+          : undefined
+      }
       onDragOver={
         onDragOverCard
           ? (e) => {

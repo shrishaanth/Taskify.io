@@ -308,3 +308,62 @@ describe("realtime — org rooms", () => {
     });
   });
 });
+
+describe("realtime — the actor is not told what it already knows", () => {
+  async function subscribed(userId: string, boardId: string) {
+    const socket = await connect(signAccessToken(userId));
+    socket.emit("subscribe:board", boardId);
+    await new Promise((r) => setTimeout(r, 150));
+    return socket;
+  }
+
+  it("skips the socket named by x-socket-id and still reaches everyone else", async () => {
+    const { head, member, project } = await makeScenario();
+    const board = await makeBoard(project.organizationId, project._id);
+
+    const actor = await subscribed(head._id.toString(), board._id.toString());
+    const observer = await subscribed(member._id.toString(), board._id.toString());
+
+    const actorEcho = nextEvent(actor, "card:created", 1200);
+    const observerEvent = nextEvent<{ title: string }>(observer, "card:created");
+
+    await asUser(app, head)
+      .post(`/api/v1/boards/${board._id}/cards`)
+      .set("x-socket-id", actor.id as string)
+      .send({ title: "No echo please", columnId: "c1" });
+
+    // The observer still gets it...
+    expect((await observerEvent).title).toBe("No echo please");
+    // ...while the tab that made the change is left alone.
+    await expect(actorEcho).rejects.toThrow(/timed out/);
+  });
+
+  it("still echoes when the client sends no socket id", async () => {
+    const { head, project } = await makeScenario();
+    const board = await makeBoard(project.organizationId, project._id);
+    const actor = await subscribed(head._id.toString(), board._id.toString());
+
+    const echo = nextEvent<{ title: string }>(actor, "card:created");
+    await asUser(app, head)
+      .post(`/api/v1/boards/${board._id}/cards`)
+      .send({ title: "Echo me", columnId: "c1" });
+
+    expect((await echo).title).toBe("Echo me");
+  });
+
+  it("a second tab of the same user is not suppressed", async () => {
+    const { head, project } = await makeScenario();
+    const board = await makeBoard(project.organizationId, project._id);
+
+    const tabA = await subscribed(head._id.toString(), board._id.toString());
+    const tabB = await subscribed(head._id.toString(), board._id.toString());
+
+    const otherTab = nextEvent<{ title: string }>(tabB, "card:created");
+    await asUser(app, head)
+      .post(`/api/v1/boards/${board._id}/cards`)
+      .set("x-socket-id", tabA.id as string)
+      .send({ title: "Sync my other tab", columnId: "c1" });
+
+    expect((await otherTab).title).toBe("Sync my other tab");
+  });
+});

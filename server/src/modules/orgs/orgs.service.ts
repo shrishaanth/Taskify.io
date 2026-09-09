@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { AppError } from "../../lib/errors.js";
-import { deleteProjectCascade } from "../../lib/cascade.js";
+import { deleteOrgCascade } from "../../lib/cascade.js";
 import { notifyInviteAccepted } from "../../lib/notify.js";
 import { uniqueSlug } from "../../lib/slug.js";
 import { hashPassword } from "../../lib/tokens.js";
@@ -8,7 +8,6 @@ import {
   OrgInviteModel,
   OrgMembershipModel,
   OrganizationModel,
-  ProjectModel,
   UserModel,
   type OrgRole,
   type UserDoc,
@@ -54,17 +53,9 @@ export async function updateOrg(
 }
 
 export async function deleteOrg(orgId: string) {
-  const org = await OrganizationModel.findById(orgId);
+  const org = await OrganizationModel.findById(orgId).select("_id").lean();
   if (!org) throw AppError.notFound();
-
-  const projects = await ProjectModel.find({ organizationId: orgId })
-    .select("_id")
-    .lean();
-  for (const p of projects) await deleteProjectCascade(p._id);
-
-  await OrgInviteModel.deleteMany({ organizationId: orgId });
-  await OrgMembershipModel.deleteMany({ organizationId: orgId });
-  await org.deleteOne();
+  await deleteOrgCascade(orgId);
 }
 
 export async function listMembers(orgId: string) {

@@ -4,6 +4,7 @@ import cors from "cors";
 import express, { type Express } from "express";
 import { config } from "./config/index.js";
 import { isMongoConnected } from "./db/mongoose.js";
+import { requestContext } from "./lib/requestContext.js";
 import { errorHandler, notFoundHandler } from "./middleware/index.js";
 import { apiV1Router } from "./modules/router.js";
 
@@ -27,7 +28,7 @@ export function createApp(): Express {
       .json({ status: ready ? "ready" : "not-ready", mongo: ready });
   });
 
-  app.use("/api/v1", apiV1Router);
+  app.use("/api/v1", requestContext, apiV1Router);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

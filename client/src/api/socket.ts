@@ -1,5 +1,5 @@
 import { io, type Socket } from "socket.io-client";
-import { API_BASE } from "./http";
+import { API_BASE, setSocketIdProvider } from "./http";
 
 const WS_ORIGIN: string =
   (import.meta.env.VITE_WS_URL as string | undefined) ??
@@ -10,6 +10,8 @@ const WS_ORIGIN: string =
       : "http://localhost:4000");
 
 let socket: Socket | null = null;
+
+setSocketIdProvider(() => socket?.id);
 
 export function connectSocket(token: string | null): Socket | null {
   if (import.meta.env.MODE === "test" || !token) return socket;

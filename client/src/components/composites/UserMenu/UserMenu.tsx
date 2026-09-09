@@ -16,7 +16,8 @@ export function UserMenu({
   onLogoutAll,
 }: UserMenuProps) {
   const items: MenuItem[] = [];
-  if (onProfile) items.push({ id: "profile", label: "Profile", onSelect: onProfile });
+  if (onProfile)
+    items.push({ id: "profile", label: "Account settings", onSelect: onProfile });
   if (onLogout) items.push({ id: "logout", label: "Log out", onSelect: onLogout });
   if (onLogoutAll)
     items.push({

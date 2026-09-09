@@ -14,6 +14,7 @@ export interface UserDto {
   email: string;
   name: string;
   avatarUrl?: string;
+  deleted?: boolean;
 }
 
 export function userDto(u: {
@@ -21,7 +22,13 @@ export function userDto(u: {
   email: string;
   name: string;
   avatarUrl?: string | null;
+  deletedAt?: Date | null;
 }): UserDto {
+  // A deleted account keeps its row so old comments still resolve an author,
+  // but nothing identifying about the person may leave the server.
+  if (u.deletedAt) {
+    return { id: String(u._id), email: "", name: "Deleted user", deleted: true };
+  }
   return {
     id: String(u._id),
     email: u.email,

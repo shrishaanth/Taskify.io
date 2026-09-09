@@ -1,6 +1,12 @@
 export * from "./enums.js";
 
-export { UserModel, type User, type UserDoc } from "./User.js";
+export {
+  UserModel,
+  DELETED_USER_NAME,
+  activeUser,
+  type User,
+  type UserDoc,
+} from "./User.js";
 export {
   RefreshTokenModel,
   type RefreshToken,

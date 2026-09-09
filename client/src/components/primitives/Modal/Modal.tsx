@@ -25,6 +25,13 @@ export interface ModalProps {
 const FOCUSABLE =
   'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
+/** Form fields, which are what a dialog usually wants focused on open. */
+const PREFERRED_FOCUS =
+  'input:not([disabled]):not([type="hidden"]),textarea:not([disabled]),select:not([disabled])';
+
+/** Layers that sit above a modal and should absorb Escape before it does. */
+const TRANSIENT_LAYER = '[role="menu"],[role="listbox"],[data-popover-open="true"]';
+
 export function Modal({
   open,
   onClose,
@@ -49,8 +56,14 @@ export function Modal({
     document.body.style.overflow = "hidden";
 
     const panel = panelRef.current;
-    const first = panel?.querySelector<HTMLElement>(FOCUSABLE);
-    (first ?? panel)?.focus();
+    // Land on the first thing the user is meant to fill in. Falling straight
+    // to the first focusable would park focus on the close button and make
+    // every dialog start one Tab away from being usable.
+    const target =
+      panel?.querySelector<HTMLElement>(PREFERRED_FOCUS) ??
+      panel?.querySelector<HTMLElement>(FOCUSABLE) ??
+      panel;
+    target?.focus();
 
     return () => {
       document.body.style.overflow = prevOverflow;
@@ -61,10 +74,12 @@ export function Modal({
   useEffect(() => {
     if (!open || !closeOnEsc) return;
     const onKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
+      if (e.key !== "Escape") return;
+      // A menu or dropdown opened from inside the dialog owns Escape first;
+      // dismissing the whole dialog would throw away unrelated work.
+      if (document.querySelector(TRANSIENT_LAYER)) return;
+      e.stopPropagation();
+      onClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);

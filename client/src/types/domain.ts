@@ -19,6 +19,8 @@ export interface UserRef {
   name: string;
   email?: string;
   avatarUrl?: string;
+  /** The account was deleted; name and email are tombstones, not real values. */
+  deleted?: boolean;
 }
 
 export interface Column {

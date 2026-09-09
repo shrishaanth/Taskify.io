@@ -24,6 +24,18 @@ export function setOnAuthLost(fn: OnAuthLost) {
   onAuthLost = fn;
 }
 
+/**
+ * Lets the socket layer tell the API layer which connection this tab owns.
+ * The id travels as `x-socket-id` so the server can skip echoing a change back
+ * to the tab that made it — that tab already has the result in its response.
+ * Registered by `api/socket.ts`, which imports from here (no cycle).
+ */
+type SocketIdProvider = () => string | undefined;
+let socketIdProvider: SocketIdProvider = () => undefined;
+export function setSocketIdProvider(fn: SocketIdProvider) {
+  socketIdProvider = fn;
+}
+
 export interface RequestOptions {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   body?: unknown;
@@ -80,6 +92,8 @@ export async function apiFetch<T = unknown>(
     if (body !== undefined) headers["Content-Type"] = "application/json";
     const token = getAccessToken();
     if (token) headers.Authorization = `Bearer ${token}`;
+    const socketId = socketIdProvider();
+    if (socketId) headers["x-socket-id"] = socketId;
     return fetch(`${API_BASE}${path}`, {
       method,
       headers,

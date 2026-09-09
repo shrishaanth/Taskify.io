@@ -25,3 +25,13 @@ export const refreshSchema = {
 };
 
 export const logoutSchema = refreshSchema;
+
+export const deleteAccountSchema = {
+  body: z.object({
+    // Re-authentication: deleting an account is irreversible, so a stolen or
+    // left-open session should not be enough on its own.
+    password: z.string().min(1, "Enter your password to confirm"),
+    // Typed-out confirmation, checked against the caller's own email.
+    confirmEmail: z.string().email(),
+  }),
+};

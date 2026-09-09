@@ -50,6 +50,7 @@ Engineering constraints are documented in
 | Area | Implemented |
 |---|---|
 | **Auth** | Email/password signup & login, short-lived JWT access tokens, server-tracked **rotating + revocable** refresh tokens (stored hashed), `logout` / `logout-all`, bcrypt |
+| **Account deletion** | Self-service soft delete behind password + typed-email confirmation; blocks while the caller is an org's only Owner, cascade-deletes orgs nobody else belongs to, frees the email for reuse, keeps authored comments under a "Deleted user" tombstone |
 | **Organizations** | Create, rename, members list, role changes, member removal with last-owner protection, cascade delete |
 | **Invites** | Invite by email (existing or new user), accept flow that creates the account on first login, pending-invite lists, revoke |
 | **Projects** | Creator becomes Head, name-only visibility for non-members, Head-only edit/delete, member management with Org Owner/Admin override |
@@ -177,7 +178,7 @@ npm run typecheck         # tsc --noEmit   (run inside client/ or server/)
 npm run lint
 ```
 
-**202** server tests (20 files) + **453** client tests (70 files), all green;
+**223** server tests (21 files) + **461** client tests (70 files), all green;
 both packages type-check and lint clean.
 
 Priorities, per [`PROJECT_RULES.md`](PROJECT_RULES.md) §7:
@@ -240,6 +241,8 @@ POST   /refresh           rotate refresh token, issue new access token
 POST   /logout            revoke current refresh token
 POST   /logout-all        revoke all of the user's refresh tokens
 GET    /me                current user + org memberships
+GET    /me/deletion-preview   orgs that block deletion / would be deleted with it
+DELETE /me                delete the account (password + confirmEmail in body)
 ```
 
 **Organizations** — `/api/v1/orgs`
@@ -312,10 +315,19 @@ access check.
 | `org:memberChanged` | `org:<id>` | `{ userId, role }` |
 | `notification:new` | `user:<id>` | notification object |
 
-The client never treats a payload as complete state — each event nudges TanStack
-Query to refetch the affected slice, so authorization and DTO shaping are
-re-applied server-side. Card moves are optimistic, with the event as
-confirmation.
+Events are **not echoed to the client that caused them**. Every mutating request
+carries an `x-socket-id` header naming the caller's own connection, and the
+room emitters exclude it — that tab already has the authoritative result in its
+HTTP response, so echoing to it only produced a redundant refetch.
+
+`card:*` payloads are the same DTOs the REST endpoints serve, and only reach
+sockets already admitted to `board:<id>`, so the client applies them straight to
+the TanStack Query cache instead of refetching the board. Anything that cannot
+be applied locally — a malformed payload, or `comment:new`, whose bodies live
+only on the card detail — falls back to invalidating the affected slice, where
+authorization and DTO shaping are re-applied server-side. Card moves stay
+optimistic and still revalidate on settle, because a move renumbers siblings the
+payload does not describe.
 
 ---
 

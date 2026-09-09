@@ -1,7 +1,7 @@
 import type { RequestHandler } from "express";
 import { AppError } from "../lib/errors.js";
 import { verifyAccessToken } from "../lib/tokens.js";
-import { OrgMembershipModel, UserModel } from "../models/index.js";
+import { OrgMembershipModel, UserModel, activeUser } from "../models/index.js";
 import type { AuthContext } from "../types/express.js";
 
 function extractBearer(header: string | undefined): string | null {
@@ -18,7 +18,9 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
 
     const { userId } = verifyAccessToken(token);
 
-    const exists = await UserModel.exists({ _id: userId });
+    // Re-read on every request, so an access token minted before the account
+    // was deleted stops working immediately rather than at its 15-minute TTL.
+    const exists = await UserModel.exists({ _id: userId, ...activeUser });
     if (!exists) throw AppError.unauthenticated("Account no longer exists");
 
     const memberships = await OrgMembershipModel.find({ userId })
