@@ -25,10 +25,10 @@ One deployment serves many customer companies. Inside a company, work is
 organised into projects → boards → cards, and every change appears live for
 everyone viewing the same board.
 
-- **Multi-tenancy** — Organizations are the tenant boundary. Every org-scoped
-  document carries a denormalized `organizationId`, and every query filters on
-  it at the database layer, so cross-tenant access is structurally impossible
-  rather than policed by convention.
+- **Multi-tenancy** — Organizations are the tenant boundary. Projects, boards
+  and cards carry a denormalized `organizationId` and are filtered on it at the
+  database layer; subtasks, comments and attachments are only reachable through
+  a card that has already passed that check.
 - **Two-layer RBAC** — independent Organization roles (`owner` / `admin` /
   `member`) and Project roles (`head` / `member`), both re-read from MongoDB on
   every request instead of trusted from the JWT, so a demotion takes effect
@@ -39,10 +39,6 @@ everyone viewing the same board.
 - **Stateless API** — no server-side session store, so any instance can serve
   any request.
 
-Engineering constraints are documented in
-[`PROJECT_RULES.md`](PROJECT_RULES.md); the UI catalog in
-[`COMPONENT_INVENTORY.md`](COMPONENT_INVENTORY.md).
-
 ---
 
 ## Features
@@ -51,15 +47,15 @@ Engineering constraints are documented in
 |---|---|
 | **Auth** | Email/password signup & login, short-lived JWT access tokens, server-tracked **rotating + revocable** refresh tokens (stored hashed), `logout` / `logout-all`, bcrypt |
 | **Account deletion** | Self-service soft delete behind password + typed-email confirmation; blocks while the caller is an org's only Owner, cascade-deletes orgs nobody else belongs to, frees the email for reuse, keeps authored comments under a "Deleted user" tombstone |
-| **Organizations** | Create, rename, members list, role changes, member removal with last-owner protection, cascade delete |
+| **Organizations** | Create, rename, members list, role changes, member removal with last-owner protection, cascade delete. Only an Owner can grant, change or remove the Owner role; removing a member also removes their project roles and assignments |
 | **Invites** | Invite by email (existing or new user), accept flow that creates the account on first login, pending-invite lists, revoke |
-| **Projects** | Creator becomes Head, name-only visibility for non-members, Head-only edit/delete, member management with Org Owner/Admin override |
-| **Boards & Cards** | Embedded user-defined columns; cards with labels, priority, due dates, assignees, markdown description, subtasks, comments |
-| **Kanban UX** | Native HTML5 drag-and-drop, optimistic card moves, FLIP-animated reordering that plays exactly once when the confirming event lands |
-| **Notifications** | `card_assigned`, `comment_mention`, `role_changed`, `invite_accepted`; live bell, mark-one / mark-all read |
+| **Projects** | Creator becomes Head, name-only visibility for non-members, Head-only edit/delete, member management with Org Owner/Admin override, always at least one Head |
+| **Boards & Cards** | Embedded user-defined columns; cards with labels, priority, due dates, assignees, description, subtasks, comments. Removing a column that still holds cards requires moving or deleting them |
+| **Kanban UX** | Native HTML5 drag-and-drop plus a Column picker in the card dialog (for touch), optimistic moves and edits, FLIP-animated reordering, confirmations on every destructive action |
+| **Notifications** | `card_assigned`, `comment_mention`, `role_changed`, `invite_accepted`; live bell, click to open what it is about, mark-one / mark-all read |
 | **Real-time** | `card:*`, `comment:new`, `board:*`, `project:member*`, `org:memberChanged`, `notification:new` — membership-derived room joins |
 | **Tenant isolation** | One shared scoped-query helper; dedicated cross-tenant suite asserting `404` (never confirming a foreign resource exists) |
-| **Ops** | `/api/health` (liveness + instance id), `/api/ready` (Mongo readiness) |
+| **Ops** | `/api/health` (liveness + instance id), `/api/ready` (Mongo readiness), rate-limited credential endpoints, `helmet` headers |
 
 ---
 
@@ -137,7 +133,7 @@ npm run dev               # http://localhost:4000
 | `NODE_ENV` | `development` | `development` \| `test` \| `production` |
 | `PORT` | `4000` | |
 | `MONGODB_URI` | `mongodb://127.0.0.1:27017/taskify` | Atlas or local |
-| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | dev values | long random strings outside dev |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | dev values | long random strings outside dev; in production the server refuses to start on a default or `.env.example` value |
 | `ACCESS_TOKEN_TTL` | `15m` | |
 | `REFRESH_TOKEN_TTL_DAYS` | `30` | |
 | `CLIENT_ORIGIN` | `http://localhost:5173` | CORS origin for the SPA |
@@ -178,10 +174,10 @@ npm run typecheck         # tsc --noEmit   (run inside client/ or server/)
 npm run lint
 ```
 
-**223** server tests (21 files) + **461** client tests (70 files), all green;
+**247** server tests (24 files) + **490** client tests (73 files), all green;
 both packages type-check and lint clean.
 
-Priorities, per [`PROJECT_RULES.md`](PROJECT_RULES.md) §7:
+Priorities:
 
 - **Tenant isolation** is the highest-priority suite — every org-scoped endpoint
   is asserted to return `404` (not `403`) for a foreign resource, with the
@@ -277,6 +273,8 @@ DELETE /:projectId/members/:userId   remove project access       (Head / Org Own
 ```
 GET|POST /                        list / create boards
 GET|PATCH|DELETE /:boardId        get / rename+columns / cascade delete
+                                  (removing a non-empty column needs
+                                   moveCardsTo or deleteCards, else 409)
 GET|POST /                        list / create cards
 GET|PATCH|DELETE /:cardId         get / edit / cascade delete
 PATCH  /:cardId/move              { columnId, order }
@@ -303,7 +301,9 @@ GET    /api/ready        readiness (Mongo connectivity)
 Rooms are `user:<id>`, `org:<id>`, `project:<id>` and `board:<id>` — never a
 global broadcast. The first three are joined on connect from the caller's
 memberships; `board:<id>` is joined on demand via `subscribe:board` after an
-access check.
+access check. Rooms are kept in step with access afterwards: a user's sockets
+join a project or org room when they are added, leave it when they are removed,
+and are disconnected when the account is deleted.
 
 | Event | Room | Payload |
 |---|---|---|
@@ -313,6 +313,7 @@ access check.
 | `board:created` / `board:updated` / `board:deleted` | `project:<id>` | board dto (or id) |
 | `project:memberChanged` / `project:memberRemoved` | `project:<id>` | `{ userId, role }` / `{ userId }` |
 | `org:memberChanged` | `org:<id>` | `{ userId, role }` |
+| `org:memberRemoved` | `org:<id>` and `user:<id>` | `{ userId }` |
 | `notification:new` | `user:<id>` | notification object |
 
 Events are **not echoed to the client that caused them**. Every mutating request
