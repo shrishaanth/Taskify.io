@@ -56,7 +56,8 @@ async function parse(res: Response): Promise<unknown> {
 
 let refreshInFlight: Promise<boolean> | null = null;
 
-async function tryRefresh(): Promise<boolean> {
+/** Exchanges the refresh cookie for a new access token. Shared by every caller in flight. */
+export async function refreshAccessToken(): Promise<boolean> {
   refreshInFlight ??= (async () => {
     try {
       const res = await fetch(`${API_BASE}/auth/refresh`, {
@@ -106,7 +107,7 @@ export async function apiFetch<T = unknown>(
   let res = await doFetch();
 
   if (res.status === 401 && !noRetry) {
-    const refreshed = await tryRefresh();
+    const refreshed = await refreshAccessToken();
     if (refreshed) {
       res = await doFetch();
     } else {
