@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { BoardHeader } from "../components/composites/BoardHeader/BoardHeader";
 import { BoardCanvas } from "../components/composites/BoardCanvas/BoardCanvas";
 import { EmptyState } from "../components/composites/EmptyState/EmptyState";
@@ -24,7 +24,29 @@ import styles from "./pages.module.css";
 
 export function BoardPage() {
   const { orgId = "", projectId = "", boardId = "" } = useParams();
-  const [openCardId, setOpenCardId] = useState<string | null>(null);
+  // `?card=<id>` lets a notification (or a pasted link) land on an open card.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [openCardId, setOpenCardIdState] = useState<string | null>(
+    searchParams.get("card"),
+  );
+  const setOpenCardId = (id: string | null) => {
+    setOpenCardIdState(id);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (id) next.set("card", id);
+        else next.delete("card");
+        return next;
+      },
+      { replace: true },
+    );
+  };
+  // Following a second notification while already on this board only changes
+  // the query string, so the open card has to follow it.
+  const cardParam = searchParams.get("card");
+  useEffect(() => {
+    setOpenCardIdState(cardParam);
+  }, [cardParam]);
   const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
   const { confirm, dialog: confirmDialog } = useConfirm();
 

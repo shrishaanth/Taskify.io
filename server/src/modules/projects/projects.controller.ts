@@ -89,6 +89,7 @@ export async function setMember(req: Request, res: Response) {
     String(doc.userId),
     "project",
     project?.name ?? "the project",
+    { organizationId: req.params.orgId, projectId: req.params.projectId },
   );
 
   res.json({ userId: String(doc.userId), role: doc.role });
