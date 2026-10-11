@@ -16,9 +16,13 @@ export function useAppRealtime(): void {
     const refetchNotifications = () => {
       void qc.invalidateQueries({ queryKey: qk.notifications });
     };
-    const refetchBoards = () => {
+    const refetchBoards = (evt?: { id?: string; cardsChanged?: boolean }) => {
       void qc.invalidateQueries({ queryKey: ["boards"] });
       void qc.invalidateQueries({ queryKey: ["board"] });
+      // A column was removed and its cards were moved or deleted with it.
+      if (evt?.cardsChanged && evt.id) {
+        void qc.invalidateQueries({ queryKey: qk.cards(evt.id) });
+      }
     };
     const refetchProjectMembers = () => {
       void qc.invalidateQueries({ queryKey: ["project"] });

@@ -32,11 +32,13 @@ export function useCreateBoard(projectId: Id) {
 export function useUpdateBoard(projectId: Id, boardId: Id) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: {
-      name?: string;
-      columns?: { id?: string; name: string; order: number }[];
-    }) => boardsApi.updateBoard(projectId, boardId, patch),
-    onSuccess: () => {
+    mutationFn: (patch: boardsApi.BoardPatch) =>
+      boardsApi.updateBoard(projectId, boardId, patch),
+    onSuccess: (_board, patch) => {
+      // Removing a column can move or delete its cards on the server.
+      if (patch.moveCardsTo || patch.deleteCards) {
+        qc.invalidateQueries({ queryKey: qk.cards(boardId) });
+      }
       qc.invalidateQueries({ queryKey: qk.board(projectId, boardId) });
       qc.invalidateQueries({ queryKey: qk.boards(projectId) });
     },
