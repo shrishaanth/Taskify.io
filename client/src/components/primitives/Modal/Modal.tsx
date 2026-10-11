@@ -25,9 +25,13 @@ export interface ModalProps {
 const FOCUSABLE =
   'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
-/** Form fields, which are what a dialog usually wants focused on open. */
+/**
+ * Text fields, which are what a dialog usually wants focused on open. A
+ * <select> is deliberately left out: with focus on it an arrow key changes
+ * its value, and in the card dialog that would move the card.
+ */
 const PREFERRED_FOCUS =
-  'input:not([disabled]):not([type="hidden"]),textarea:not([disabled]),select:not([disabled])';
+  'input:not([disabled]):not([type="hidden"]):not([type="checkbox"]),textarea:not([disabled])';
 
 /**
  * Open dialogs, oldest first. A confirmation can open on top of another
