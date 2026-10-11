@@ -2,7 +2,8 @@ import type { Request, Response } from "express";
 import { auth } from "../../lib/http.js";
 import { notifyRoleChanged } from "../../lib/notify.js";
 import { projectDto, userDto } from "../../lib/serialize.js";
-import { ProjectModel } from "../../models/index.js";
+import { BoardModel, ProjectModel } from "../../models/index.js";
+import { evictUserFromRooms, joinUserToRooms } from "../../realtime/io.js";
 import {
   emitProjectMemberChanged,
   emitProjectMemberRemoved,
@@ -74,6 +75,9 @@ export async function setMember(req: Request, res: Response) {
     role: req.body.role,
   });
 
+  // Rooms are only joined at connect, so someone added mid-session would
+  // otherwise hear nothing about the project until they reloaded.
+  joinUserToRooms(String(doc.userId), [`project:${req.params.projectId}`]);
   emitProjectMemberChanged(req.params.projectId, {
     userId: String(doc.userId),
     role: doc.role,
@@ -97,5 +101,14 @@ export async function removeMember(req: Request, res: Response) {
     req.params.userId,
   );
   emitProjectMemberRemoved(req.params.projectId, req.params.userId);
+  // Emitted first so the removed person's client learns why; after this their
+  // sockets leave the project and every board room under it.
+  const boards = await BoardModel.find({ projectId: req.params.projectId })
+    .select("_id")
+    .lean();
+  evictUserFromRooms(req.params.userId, [
+    `project:${req.params.projectId}`,
+    ...boards.map((b) => `board:${String(b._id)}`),
+  ]);
   res.status(204).end();
 }

@@ -16,6 +16,7 @@ export interface MemberRowProps {
   scope: "org" | "project";
   canManage: boolean;
   lockManage?: boolean;
+  excludeRoles?: (OrgRole | ProjectRole)[];
   onChangeRole?: (role: OrgRole | ProjectRole) => void;
   onRemove?: () => void;
 }
@@ -27,6 +28,7 @@ export function MemberRow({
   scope,
   canManage,
   lockManage = false,
+  excludeRoles = [],
   onChangeRole,
   onRemove,
 }: MemberRowProps) {
@@ -51,7 +53,9 @@ export function MemberRow({
           role={role}
           size="sm"
           uppercase={scope === "org"}
-          {...(editable && onChangeRole ? { editable: true, onChange: onChangeRole } : {})}
+          {...(editable && onChangeRole
+            ? { editable: true, exclude: excludeRoles, onChange: onChangeRole }
+            : {})}
         />
       </td>
       <td className={`${styles.td} ${styles.actions}`}>

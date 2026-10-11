@@ -5,9 +5,14 @@ import { notifyInviteAccepted } from "../../lib/notify.js";
 import { uniqueSlug } from "../../lib/slug.js";
 import { hashPassword } from "../../lib/tokens.js";
 import {
+  BoardModel,
+  CardModel,
   OrgInviteModel,
   OrgMembershipModel,
   OrganizationModel,
+  ProjectMembershipModel,
+  ProjectModel,
+  SubtaskModel,
   UserModel,
   type OrgRole,
   type UserDoc,
@@ -223,16 +228,28 @@ export async function acceptInvite(token: string, ctx: AcceptContext) {
   };
 }
 
+/**
+ * The Owner role is the only one that can delete the organization, so it can
+ * only be handed out, taken away or removed by someone who already holds it.
+ */
+function assertMayTouchOwner(actorRole: OrgRole, ...roles: OrgRole[]): void {
+  if (roles.includes("owner") && actorRole !== "owner") {
+    throw AppError.forbidden("Only an Owner can grant, change or remove the Owner role");
+  }
+}
+
 export async function changeMemberRole(
   orgId: string,
   userId: string,
   role: OrgRole,
+  actorRole: OrgRole,
 ) {
   const membership = await OrgMembershipModel.findOne({
     organizationId: orgId,
     userId,
   });
   if (!membership) throw AppError.notFound();
+  assertMayTouchOwner(actorRole, membership.role, role);
 
   if (membership.role === "owner" && role !== "owner") {
     const owners = await OrgMembershipModel.countDocuments({
@@ -249,12 +266,22 @@ export async function changeMemberRole(
   return membership;
 }
 
-export async function removeMember(orgId: string, userId: string) {
+/**
+ * Removes the member and everything that only made sense while they belonged:
+ * their project roles in this org and their card and subtask assignments.
+ * Leaving those behind would silently restore them on a later re-invite.
+ */
+export async function removeMember(
+  orgId: string,
+  userId: string,
+  actorRole: OrgRole,
+): Promise<{ projectIds: string[]; boardIds: string[] }> {
   const membership = await OrgMembershipModel.findOne({
     organizationId: orgId,
     userId,
   });
   if (!membership) throw AppError.notFound();
+  assertMayTouchOwner(actorRole, membership.role);
 
   if (membership.role === "owner") {
     const owners = await OrgMembershipModel.countDocuments({
@@ -266,5 +293,30 @@ export async function removeMember(orgId: string, userId: string) {
     }
   }
 
-  await membership.deleteOne();
+  const projects = await ProjectModel.find({ organizationId: orgId })
+    .select("_id")
+    .lean();
+  const projectIds = projects.map((p) => p._id);
+  const [boards, cards] = await Promise.all([
+    BoardModel.find({ organizationId: orgId }).select("_id").lean(),
+    CardModel.find({ organizationId: orgId }).select("_id").lean(),
+  ]);
+
+  await Promise.all([
+    membership.deleteOne(),
+    ProjectMembershipModel.deleteMany({ projectId: { $in: projectIds }, userId }),
+    CardModel.updateMany(
+      { organizationId: orgId, assigneeIds: userId },
+      { $pull: { assigneeIds: userId } },
+    ),
+    SubtaskModel.updateMany(
+      { cardId: { $in: cards.map((c) => c._id) }, assigneeId: userId },
+      { $unset: { assigneeId: "" } },
+    ),
+  ]);
+
+  return {
+    projectIds: projectIds.map(String),
+    boardIds: boards.map((b) => String(b._id)),
+  };
 }

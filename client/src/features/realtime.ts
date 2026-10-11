@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { cardSummaryFromPayload } from "../api/cards";
 import { getSocket } from "../api/socket";
+import { useSession } from "../stores/sessionStore";
 import type { CardSummary } from "../types/domain";
 import { applyCardMove } from "./cards";
 import { qk } from "./queryClient";
@@ -25,6 +26,29 @@ export function useAppRealtime(): void {
     const refetchOrgMembers = () => {
       void qc.invalidateQueries({ queryKey: ["orgs"] });
     };
+    // Being added to a project arrives as a role_changed notification; the
+    // project list has to be re-read for its tile to unlock.
+    const onNotification = (n: { type?: string } | undefined) => {
+      refetchNotifications();
+      if (n?.type === "role_changed") {
+        void qc.invalidateQueries({ queryKey: ["projects"] });
+        void qc.invalidateQueries({ queryKey: ["project"] });
+      }
+    };
+    // Membership decides which orgs and roles the shell shows, and that lives
+    // in the session, not in a query.
+    const me = () => useSession.getState().session?.user.id;
+    const onOrgMemberChanged = (evt: { userId?: string } | undefined) => {
+      refetchOrgMembers();
+      if (evt?.userId && evt.userId === me()) void useSession.getState().refresh();
+    };
+    const onOrgMemberRemoved = (evt: { userId?: string } | undefined) => {
+      refetchOrgMembers();
+      if (evt?.userId && evt.userId === me()) {
+        void useSession.getState().refresh();
+        void qc.invalidateQueries();
+      }
+    };
 
     // The first connect coincides with the initial page load, which fetches
     // everything anyway; only later ones mean events may have been missed.
@@ -40,23 +64,25 @@ export function useAppRealtime(): void {
       refetchOrgMembers();
     };
     socket.on("connect", resync);
-    socket.on("notification:new", refetchNotifications);
+    socket.on("notification:new", onNotification);
     socket.on("board:created", refetchBoards);
     socket.on("board:updated", refetchBoards);
     socket.on("board:deleted", refetchBoards);
     socket.on("project:memberChanged", refetchProjectMembers);
     socket.on("project:memberRemoved", refetchProjectMembers);
-    socket.on("org:memberChanged", refetchOrgMembers);
+    socket.on("org:memberChanged", onOrgMemberChanged);
+    socket.on("org:memberRemoved", onOrgMemberRemoved);
 
     return () => {
       socket.off("connect", resync);
-      socket.off("notification:new", refetchNotifications);
+      socket.off("notification:new", onNotification);
       socket.off("board:created", refetchBoards);
       socket.off("board:updated", refetchBoards);
       socket.off("board:deleted", refetchBoards);
       socket.off("project:memberChanged", refetchProjectMembers);
       socket.off("project:memberRemoved", refetchProjectMembers);
-      socket.off("org:memberChanged", refetchOrgMembers);
+      socket.off("org:memberChanged", onOrgMemberChanged);
+      socket.off("org:memberRemoved", onOrgMemberRemoved);
     };
   }, [qc]);
 }

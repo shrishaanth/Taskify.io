@@ -38,6 +38,8 @@ export function MembersTable({
       ? canManageOrgMembers(viewer.orgRole)
       : canManageProjectMembers(viewer);
 
+  const viewerIsOwner = viewer.orgRole === "owner";
+
   const ownerCount =
     scope === "org"
       ? members.filter((m) => (m as OrgMemberRow).role === "owner").length
@@ -55,8 +57,11 @@ export function MembersTable({
       </thead>
       <tbody>
         {members.map((m) => {
-          const isLastOwner =
-            scope === "org" && (m as OrgMemberRow).role === "owner" && ownerCount <= 1;
+          const isOwnerRow = scope === "org" && (m as OrgMemberRow).role === "owner";
+          const isLastOwner = isOwnerRow && ownerCount <= 1;
+          // Only an Owner may grant, change or remove the Owner role; the
+          // server enforces this, the table just stops offering it.
+          const ownerOnly = isOwnerRow && !viewerIsOwner;
           return (
             <MemberRow
               key={m.user.id}
@@ -65,7 +70,10 @@ export function MembersTable({
               role={m.role}
               scope={scope}
               canManage={canManage}
-              lockManage={isLastOwner}
+              lockManage={isLastOwner || ownerOnly}
+              {...(scope === "org" && !viewerIsOwner
+                ? { excludeRoles: ["owner" as const] }
+                : {})}
               {...(onChangeRole
                 ? { onChangeRole: (role: OrgRole | ProjectRole) => onChangeRole(m.user.id, role) }
                 : {})}

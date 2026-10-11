@@ -3,6 +3,7 @@ import { config } from "../../config/index.js";
 import { AppError } from "../../lib/errors.js";
 import { userDto } from "../../lib/serialize.js";
 import { auth } from "../../lib/http.js";
+import { disconnectUser } from "../../realtime/io.js";
 import * as service from "./auth.service.js";
 
 const REFRESH_COOKIE = "taskify_refresh";
@@ -74,6 +75,7 @@ export async function logout(req: Request, res: Response) {
 
 export async function logoutAll(req: Request, res: Response) {
   await service.logoutAll(auth(req).userId);
+  disconnectUser(auth(req).userId);
   res.clearCookie(REFRESH_COOKIE, { path: "/api/v1/auth" });
   res.status(204).end();
 }
@@ -89,6 +91,8 @@ export async function deletionPreview(req: Request, res: Response) {
 
 export async function deleteAccount(req: Request, res: Response) {
   await service.deleteAccount(auth(req).userId, req.body);
+  // Revoking tokens does nothing to connections that are already open.
+  disconnectUser(auth(req).userId);
   res.clearCookie(REFRESH_COOKIE, { path: "/api/v1/auth" });
   res.status(204).end();
 }

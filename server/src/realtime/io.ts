@@ -49,6 +49,24 @@ export function getIO(): Server | null {
   return io;
 }
 
+/**
+ * Rooms are joined when a socket connects, so they have to be corrected by
+ * hand whenever access changes afterwards. Every socket a user owns sits in
+ * `user:<id>`, which makes that room the handle for all of their connections.
+ */
+export function joinUserToRooms(userId: string, rooms: string[]): void {
+  if (rooms.length > 0) io?.in(`user:${userId}`).socketsJoin(rooms);
+}
+
+export function evictUserFromRooms(userId: string, rooms: string[]): void {
+  if (rooms.length > 0) io?.in(`user:${userId}`).socketsLeave(rooms);
+}
+
+/** Drops every live connection the user has, e.g. once the account is gone. */
+export function disconnectUser(userId: string): void {
+  io?.in(`user:${userId}`).disconnectSockets(true);
+}
+
 export async function shutdownRealtime(): Promise<void> {
   if (io) {
     await io.close();
