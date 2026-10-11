@@ -112,3 +112,41 @@ describe("MembersTable — actions + last-owner guard", () => {
     expect(onChangeRole).toHaveBeenCalledWith("u3", "admin");
   });
 });
+
+describe("MembersTable — the Owner role is reserved for Owners", () => {
+  const twoOwners = [
+    ...orgMembers,
+    { user: { id: "u9", name: "Olga Owner", email: "olga@acme.com" }, role: "owner" as const },
+  ];
+
+  it("an Admin cannot edit or remove an Owner row", () => {
+    render(
+      <MembersTable
+        scope="org"
+        members={twoOwners}
+        viewer={{ projectRole: null, orgRole: "admin" }}
+        onChangeRole={() => {}}
+        onRemove={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Remove Olga Owner" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: /Owner — change role/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("an Admin is not offered Owner when changing someone's role", async () => {
+    render(
+      <MembersTable
+        scope="org"
+        members={twoOwners}
+        viewer={{ projectRole: null, orgRole: "admin" }}
+        onChangeRole={() => {}}
+        onRemove={() => {}}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Member — change role/i }));
+    expect(screen.getByRole("menuitem", { name: "Admin" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Owner" })).not.toBeInTheDocument();
+  });
+});

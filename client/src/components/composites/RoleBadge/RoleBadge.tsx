@@ -30,6 +30,8 @@ export interface RoleBadgeProps {
   scope: "org" | "project";
   role: RoleValue;
   editable?: boolean;
+  /** Roles the viewer may not hand out, e.g. Owner for an Admin. */
+  exclude?: (OrgRole | ProjectRole)[];
   onChange?: (role: OrgRole | ProjectRole) => void;
   uppercase?: boolean;
   size?: "sm" | "md";
@@ -40,6 +42,7 @@ export function RoleBadge({
   scope,
   role,
   editable = false,
+  exclude = [],
   onChange,
   uppercase = false,
   size = "md",
@@ -57,7 +60,7 @@ export function RoleBadge({
   if (!editable || role === "no-access") return badge;
 
   const options = (scope === "org" ? ORG_ROLES : PROJECT_ROLES).filter(
-    (r) => r !== role,
+    (r) => r !== role && !exclude.includes(r),
   );
 
   return (
