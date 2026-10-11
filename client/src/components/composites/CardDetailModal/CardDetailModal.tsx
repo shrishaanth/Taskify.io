@@ -16,6 +16,7 @@ import { canWorkOnBoard, type ViewerContext } from "../../../lib/permissions";
 import type {
   CardDetail,
   CardPatch,
+  Column,
   Id,
   Priority,
   UserRef,
@@ -46,6 +47,12 @@ export interface CardDetailModalProps {
   onAddComment: (body: string) => void;
   onDeleteComment?: (id: Id) => void;
   onDeleteCard?: () => void;
+  /**
+   * The board's columns. With `onMoveToColumn` this adds a Column picker, the
+   * only way to move a card on a touch screen, where drag and drop never fires.
+   */
+  columns?: Column[];
+  onMoveToColumn?: (columnId: string) => void;
   now?: Date;
 }
 
@@ -67,6 +74,8 @@ export function CardDetailModal({
   onAddComment,
   onDeleteComment,
   onDeleteCard,
+  columns,
+  onMoveToColumn,
   now,
 }: CardDetailModalProps) {
   const canEdit = canWorkOnBoard(viewer);
@@ -259,6 +268,18 @@ export function CardDetailModal({
         </div>
 
         <aside className={styles.sidebar}>
+          {canEdit && columns && columns.length > 1 && onMoveToColumn && (
+            <div className={styles.field}>
+              <span className={styles.fieldLabel}>Column</span>
+              <Select
+                aria-label="Column"
+                value={card.columnId}
+                options={columns.map((c) => ({ label: c.name, value: c.id }))}
+                onChange={(e) => onMoveToColumn(e.target.value)}
+              />
+            </div>
+          )}
+
           <div className={styles.field}>
             <span className={styles.fieldLabel}>Assignees</span>
             <AssigneePicker

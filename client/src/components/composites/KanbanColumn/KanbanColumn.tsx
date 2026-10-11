@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "../../utils/cn";
 import { IconButton } from "../../primitives/IconButton/IconButton";
 import { Menu, type MenuItem } from "../../primitives/Menu/Menu";
+import { Skeleton } from "../../primitives/Skeleton/Skeleton";
 import { KanbanCard } from "../KanbanCard/KanbanCard";
 import type { CardSummary, Column } from "../../../types/domain";
 import styles from "./KanbanColumn.module.css";
@@ -9,6 +10,8 @@ import styles from "./KanbanColumn.module.css";
 export interface KanbanColumnProps {
   column: Column;
   cards: CardSummary[];
+  /** Cards are still being fetched; show placeholders instead of an empty list. */
+  loading?: boolean;
   /** Receives the title typed into the inline composer. */
   onAddCard: (title: string) => void;
   onOpenCard: (cardId: string) => void;
@@ -29,6 +32,7 @@ export interface KanbanColumnProps {
 export function KanbanColumn({
   column,
   cards,
+  loading = false,
   onAddCard,
   onOpenCard,
   canManage = false,
@@ -187,6 +191,12 @@ export function KanbanColumn({
             dragActive ? () => finishDrop(dropBeforeId ?? null) : undefined
           }
         >
+          {loading && cards.length === 0 && (
+            <>
+              <Skeleton variant="block" height={56} />
+              <Skeleton variant="block" height={56} />
+            </>
+          )}
           {cards.map((card) => (
             <KanbanCard
               key={card.id}

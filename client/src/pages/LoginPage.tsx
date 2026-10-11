@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Input } from "../components/primitives/Input/Input";
 import { Button } from "../components/primitives/Button/Button";
 import { IconButton } from "../components/primitives/IconButton/IconButton";
@@ -11,6 +11,14 @@ import styles from "./pages.module.css";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Only ever an in-app path: it is set by our own redirect, and anything
+  // that does not start with a single slash is ignored.
+  const from = (location.state as { from?: unknown } | null)?.from;
+  const returnTo =
+    typeof from === "string" && from.startsWith("/") && !from.startsWith("//")
+      ? from
+      : "/";
   const bootstrap = useSession((s) => s.bootstrap);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +33,7 @@ export function LoginPage() {
     try {
       await authApi.login({ email, password });
       await bootstrap();
-      navigate("/");
+      navigate(returnTo, { replace: true });
     } catch (err) {
       setError(
         err instanceof ApiError && err.status === 401
