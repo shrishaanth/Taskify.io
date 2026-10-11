@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { Checkbox } from "../../primitives/Checkbox/Checkbox";
 import { Avatar } from "../../primitives/Avatar/Avatar";
@@ -19,6 +19,10 @@ export function SubtaskItem({
   onDelete,
 }: SubtaskItemProps) {
   const [draft, setDraft] = useState(subtask.title);
+  // Follow a rename made elsewhere instead of holding on to the old text.
+  useEffect(() => {
+    setDraft(subtask.title);
+  }, [subtask.title]);
 
   const commit = () => {
     const next = draft.trim();

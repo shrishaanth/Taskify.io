@@ -3,6 +3,8 @@ import {
   Breadcrumbs,
   type BreadcrumbItem,
 } from "../../primitives/Breadcrumbs/Breadcrumbs";
+import { IconButton } from "../../primitives/IconButton/IconButton";
+import { Menu, type MenuItem } from "../../primitives/Menu/Menu";
 import { Tabs } from "../../primitives/Tabs/Tabs";
 import styles from "./ProjectHeader.module.css";
 
@@ -14,6 +16,8 @@ export interface ProjectHeaderProps {
   breadcrumbs: BreadcrumbItem[];
   activeTab: ProjectTabId;
   onTabChange: (tab: ProjectTabId) => void;
+  /** Edit, delete and the like; the menu is hidden when empty. */
+  actions?: MenuItem[];
   className?: string;
 }
 
@@ -39,12 +43,29 @@ export function ProjectHeader({
   breadcrumbs,
   activeTab,
   onTabChange,
+  actions = [],
   className,
 }: ProjectHeaderProps) {
   return (
     <header className={cn(styles.root, className)}>
       <Breadcrumbs items={breadcrumbs} />
-      <h1 className={styles.name}>{name}</h1>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+        <h1 className={styles.name}>{name}</h1>
+        {actions.length > 0 && (
+          <Menu
+            menuLabel="Project actions"
+            placement="bottom-start"
+            trigger={
+              <IconButton
+                label="Project actions"
+                size="sm"
+                icon={<span aria-hidden="true">⋯</span>}
+              />
+            }
+            items={actions}
+          />
+        )}
+      </div>
       {description && <p className={styles.description}>{description}</p>}
       <Tabs
         className={styles.tabs}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { BoardHeader } from "../components/composites/BoardHeader/BoardHeader";
 import { BoardCanvas } from "../components/composites/BoardCanvas/BoardCanvas";
 import { EmptyState } from "../components/composites/EmptyState/EmptyState";
@@ -11,7 +11,8 @@ import {
 } from "../components/composites/DeleteColumnDialog/DeleteColumnDialog";
 import { Skeleton } from "../components/primitives/Skeleton/Skeleton";
 import { ApiError } from "../api/http";
-import { useBoard, useUpdateBoard } from "../features/boards";
+import { EditDetailsDialog } from "../components/composites/EditDetailsDialog/EditDetailsDialog";
+import { useBoard, useDeleteBoard, useUpdateBoard } from "../features/boards";
 import { useProject } from "../features/projects";
 import { useCardMutations, useCards, useCardDetail } from "../features/cards";
 import { useBoardRealtime } from "../features/realtime";
@@ -48,6 +49,8 @@ export function BoardPage() {
     setOpenCardIdState(cardParam);
   }, [cardParam]);
   const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const navigate = useNavigate();
   const { confirm, dialog: confirmDialog } = useConfirm();
 
   const org = useSession((s) => s.session?.orgs.find((o) => o.id === orgId));
@@ -64,6 +67,7 @@ export function BoardPage() {
     ...(currentUser ? { currentUser } : {}),
   });
   const updateBoard = useUpdateBoard(projectId, boardId);
+  const deleteBoard = useDeleteBoard(projectId);
   useBoardRealtime(projectId, boardId);
   const updateBoardColumns = (
     columns: { id?: string; name: string; order: number }[],
@@ -161,7 +165,40 @@ export function BoardPage() {
   return (
     <div>
       <div className={styles.boardHead}>
-        <BoardHeader name={board.name} breadcrumbs={breadcrumbs} />
+        <BoardHeader
+          name={board.name}
+          breadcrumbs={breadcrumbs}
+          actions={
+            canManage
+              ? [
+                  { id: "rename", label: "Rename board", onSelect: () => setRenaming(true) },
+                  {
+                    id: "delete",
+                    label: "Delete board",
+                    tone: "danger",
+                    onSelect: () => {
+                      void confirm({
+                        title: `Delete "${board.name}"?`,
+                        message:
+                          cards.length === 0
+                            ? "The board will be deleted. This cannot be undone."
+                            : `The board and its ${cards.length} card${cards.length === 1 ? "" : "s"} will be deleted. This cannot be undone.`,
+                        confirmLabel: "Delete board",
+                      }).then((ok) => {
+                        if (!ok) return;
+                        deleteBoard.mutate(boardId, {
+                          onSuccess: () =>
+                            navigate(`/orgs/${orgId}/projects/${projectId}`, {
+                              replace: true,
+                            }),
+                        });
+                      });
+                    },
+                  },
+                ]
+              : []
+          }
+        />
       </div>
 
       <BoardCanvas
@@ -169,6 +206,7 @@ export function BoardPage() {
         cardsByColumn={cardsByColumn}
         doneColumnIds={doneColumnIds}
         canManage={canManage}
+        loadingCards={cardsQuery.isLoading}
         onMoveCard={handleMoveCard}
         onAddCard={(columnId, title) => m.createCard.mutate({ title, columnId })}
         onOpenCard={(cardId) => setOpenCardId(cardId)}
@@ -220,6 +258,14 @@ export function BoardPage() {
           currentUser={currentUser}
           currentUserId={currentUser.id}
           projectMembers={members}
+          columns={board.columns}
+          onMoveToColumn={(columnId) => handleMoveCard(detail.id, columnId, null)}
+          onEditSubtaskTitle={(id, title) =>
+            m.editSubtask.mutate({ cardId: detail.id, subtaskId: id, title })
+          }
+          onDeleteSubtask={(id) =>
+            m.deleteSubtask.mutate({ cardId: detail.id, subtaskId: id })
+          }
           onUpdateCard={(patch) =>
             m.updateCard.mutate({ cardId: detail.id, patch })
           }
@@ -265,6 +311,17 @@ export function BoardPage() {
         pending={updateBoard.isPending}
         onCancel={() => setColumnToDelete(null)}
         onConfirm={removeColumn}
+      />
+      <EditDetailsDialog
+        open={renaming}
+        title="Rename board"
+        nameLabel="Board name"
+        initialName={board.name}
+        pending={updateBoard.isPending}
+        onCancel={() => setRenaming(false)}
+        onSubmit={({ name }) =>
+          updateBoard.mutate({ name }, { onSuccess: () => setRenaming(false) })
+        }
       />
       {confirmDialog}
     </div>

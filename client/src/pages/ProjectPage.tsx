@@ -8,6 +8,7 @@ import { BoardTile } from "../components/composites/BoardTile/BoardTile";
 import { AddTile } from "../components/composites/AddTile/AddTile";
 import { EmptyState } from "../components/composites/EmptyState/EmptyState";
 import { MembersTable } from "../components/composites/MembersTable/MembersTable";
+import { EditDetailsDialog } from "../components/composites/EditDetailsDialog/EditDetailsDialog";
 import { useConfirm } from "../components/composites/ConfirmDialog/useConfirm";
 import { InviteForm } from "../components/composites/InviteForm/InviteForm";
 import { Skeleton } from "../components/primitives/Skeleton/Skeleton";
@@ -15,14 +16,20 @@ import { CreateBoardModal } from "../components/composites/CreateModals/CreateBo
 import { useToast } from "../components/primitives/Toast/useToast";
 import { ApiError } from "../api/http";
 import {
+  useDeleteProject,
   useProject,
   useProjectMembers,
+  useUpdateProject,
   useRemoveProjectMember,
   useSetProjectMember,
 } from "../features/projects";
 import { useOrgMembers } from "../features/orgs";
 import { useBoards, useCreateBoard } from "../features/boards";
-import { canManageProjectMembers, canWorkOnBoard } from "../lib/permissions";
+import {
+  canEditProject,
+  canManageProjectMembers,
+  canWorkOnBoard,
+} from "../lib/permissions";
 import { useSession } from "../stores/sessionStore";
 import { NotFoundPage } from "./NotFoundPage";
 import { AccessDeniedPage } from "./AccessDeniedPage";
@@ -32,6 +39,7 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
   const navigate = useNavigate();
   const { orgId = "", projectId = "" } = useParams();
   const [boardModalOpen, setBoardModalOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const toast = useToast();
   const { confirm, dialog: confirmDialog } = useConfirm();
@@ -43,6 +51,8 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
   const createBoard = useCreateBoard(projectId);
   const setRole = useSetProjectMember(orgId, projectId);
   const removeMember = useRemoveProjectMember(orgId, projectId);
+  const updateProject = useUpdateProject(orgId, projectId);
+  const deleteProject = useDeleteProject(orgId);
 
   if (!org) return <NotFoundPage />;
 
@@ -78,6 +88,32 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
         name={project.name}
         {...(project.description ? { description: project.description } : {})}
         breadcrumbs={breadcrumbs}
+        actions={
+          canEditProject(viewer)
+            ? [
+                { id: "edit", label: "Edit project", onSelect: () => setEditing(true) },
+                {
+                  id: "delete",
+                  label: "Delete project",
+                  tone: "danger",
+                  onSelect: () => {
+                    void confirm({
+                      title: `Delete "${project.name}"?`,
+                      message:
+                        "Every board and card in this project will be deleted for all of its members. This cannot be undone.",
+                      confirmLabel: "Delete project",
+                    }).then((ok) => {
+                      if (!ok) return;
+                      deleteProject.mutate(projectId, {
+                        onSuccess: () =>
+                          navigate(`/orgs/${orgId}/projects`, { replace: true }),
+                      });
+                    });
+                  },
+                },
+              ]
+            : []
+        }
         activeTab={tab}
         onTabChange={(next) =>
           navigate(
@@ -205,6 +241,21 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
             },
           );
         }}
+      />
+      <EditDetailsDialog
+        open={editing}
+        title="Edit project"
+        nameLabel="Project name"
+        initialName={project.name}
+        initialDescription={project.description ?? ""}
+        pending={updateProject.isPending}
+        onCancel={() => setEditing(false)}
+        onSubmit={({ name, description }) =>
+          updateProject.mutate(
+            { name, description: description ? description : null },
+            { onSuccess: () => setEditing(false) },
+          )
+        }
       />
       {confirmDialog}
     </main>

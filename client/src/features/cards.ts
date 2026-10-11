@@ -281,6 +281,47 @@ export function useCardMutations(boardId: Id, ctx: CardMutationContext = {}) {
       onSettled: (_d, _e, args) => confirm(args.cardId),
     }),
 
+    editSubtask: useMutation({
+      mutationKey,
+      mutationFn: (args: { cardId: Id; subtaskId: Id; title: string }) =>
+        cardsApi.updateSubtask(args.cardId, args.subtaskId, { title: args.title }),
+      onMutate: ({ cardId, subtaskId, title }) =>
+        applyOptimistic(cardId, (d) => ({
+          ...d,
+          subtasks: d.subtasks.map((s) => (s.id === subtaskId ? { ...s, title } : s)),
+        })),
+      onError: rollback,
+      onSettled: (_d, _e, args) => confirm(args.cardId),
+    }),
+
+    deleteSubtask: useMutation({
+      mutationKey,
+      mutationFn: (args: { cardId: Id; subtaskId: Id }) =>
+        cardsApi.deleteSubtask(args.cardId, args.subtaskId),
+      onMutate: ({ cardId, subtaskId }) => {
+        let wasDone = false;
+        return applyOptimistic(
+          cardId,
+          (d) => {
+            wasDone = Boolean(d.subtasks.find((s) => s.id === subtaskId)?.done);
+            return {
+              ...d,
+              subtasks: d.subtasks.filter((s) => s.id !== subtaskId),
+              subtaskTotal: Math.max(0, d.subtaskTotal - 1),
+              subtaskDone: Math.max(0, d.subtaskDone - (wasDone ? 1 : 0)),
+            };
+          },
+          (s) => ({
+            ...s,
+            subtaskTotal: Math.max(0, s.subtaskTotal - 1),
+            subtaskDone: Math.max(0, s.subtaskDone - (wasDone ? 1 : 0)),
+          }),
+        );
+      },
+      onError: rollback,
+      onSettled: (_d, _e, args) => confirm(args.cardId),
+    }),
+
     addComment: useMutation({
       mutationKey,
       mutationFn: (args: { cardId: Id; body: string }) =>

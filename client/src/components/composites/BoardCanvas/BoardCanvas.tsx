@@ -20,6 +20,7 @@ export interface BoardCanvasProps {
     beforeCardId: string | null,
   ) => void;
   canManage?: boolean;
+  loadingCards?: boolean;
   doneColumnIds?: string[];
   emptyState?: ReactNode;
   now?: Date;
@@ -36,6 +37,7 @@ export function BoardCanvas({
   onDeleteColumn,
   onMoveCard,
   canManage = false,
+  loadingCards = false,
   doneColumnIds = [],
   emptyState,
   now,
@@ -82,6 +84,7 @@ export function BoardCanvas({
           column={column}
           cards={cardsByColumn[column.id] ?? []}
           canManage={canManage}
+          loading={loadingCards}
           isDoneColumn={doneColumnIds.includes(column.id)}
           draggable={dndEnabled}
           draggingCardId={draggingCardId}
