@@ -69,3 +69,14 @@
   align-items: center;
   justify-content: center;
 }
+
+.menu {
+  animation: menuIn var(--duration-fast) var(--ease-out);
+  transform-origin: top;
+}
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}

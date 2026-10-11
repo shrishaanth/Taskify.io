@@ -80,3 +80,27 @@
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5) var(--space-5);
 }
+
+/* Dialogs arrive rather than appear: the backdrop fades and the panel settles
+   upward a few pixels. Short enough not to slow anyone down. */
+.backdrop {
+  animation: backdropIn var(--duration-base) var(--ease-out);
+}
+.panel {
+  animation: panelIn var(--duration-base) var(--ease-out);
+}
+/* The card dialog holds subtasks and a comment thread; give it room. */
+.panel[data-size="lg"] {
+  min-height: min(38rem, calc(100vh - 2 * var(--space-8)));
+}
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+}

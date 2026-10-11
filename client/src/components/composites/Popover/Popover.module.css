@@ -28,3 +28,14 @@
   margin-top: 0;
   margin-bottom: var(--space-2);
 }
+
+.panel {
+  animation: popoverIn var(--duration-fast) var(--ease-out);
+  transform-origin: top;
+}
+@keyframes popoverIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}

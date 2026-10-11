@@ -3,17 +3,18 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-1-5) var(--space-2-5);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--nav-border);
   border-radius: var(--radius-md);
-  background-color: var(--bg-surface);
+  background-color: var(--nav-surface);
   font-family: var(--font-sans);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
+  color: var(--nav-fg);
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard);
 }
 .trigger:hover {
-  background-color: var(--bg-surface-muted);
+  background-color: var(--nav-surface-hover);
 }
 .trigger:focus-visible {
   outline: none;
@@ -34,7 +35,7 @@
 }
 
 .chev {
-  color: var(--text-muted);
+  color: var(--nav-fg-muted);
   font-size: 0.75rem;
 }
 

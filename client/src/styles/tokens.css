@@ -203,11 +203,34 @@
 
   --text-primary: var(--color-slate-900);
   --text-secondary: var(--color-slate-600);
-  --text-muted: var(--color-slate-400);
+  --text-muted: var(--color-slate-500);
   --text-inverse: var(--color-white);
   --text-link: var(--color-sky-600);
   --text-on-primary: var(--color-white);
   --text-on-danger: var(--color-white);
+
+  /* The board sits one step darker than the page so white cards read as
+     objects resting on a column rather than floating on near-white. */
+  --bg-column: #e4e9f1;
+
+  /* Top bar: a dark anchor for the screen. */
+  --nav-bg: var(--color-slate-900);
+  --nav-fg: var(--color-white);
+  --nav-fg-muted: var(--color-slate-300);
+  --nav-surface: rgb(255 255 255 / 0.08);
+  --nav-surface-hover: rgb(255 255 255 / 0.14);
+  --nav-border: rgb(255 255 255 / 0.16);
+
+  /* Second brand colour, used sparingly beside the sky primary. */
+  --accent: var(--color-violet-600);
+  --accent-subtle: var(--color-violet-100);
+  --brand-gradient: linear-gradient(135deg, var(--color-sky-500), var(--color-violet-600));
+
+  /* Priority, readable at a glance as a card's left edge. */
+  --priority-low: var(--color-slate-400);
+  --priority-medium: var(--color-sky-500);
+  --priority-high: var(--color-amber-500);
+  --priority-urgent: var(--color-red-500);
 
   --primary: var(--color-sky-600);
   --primary-hover: var(--color-sky-700);
