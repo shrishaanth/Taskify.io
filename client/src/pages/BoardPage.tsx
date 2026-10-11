@@ -163,11 +163,12 @@ export function BoardPage() {
   const detail = openCardId ? cardDetailQuery.data : undefined;
 
   return (
-    <div>
+    <div className={styles.boardPage}>
       <div className={styles.boardHead}>
         <BoardHeader
           name={board.name}
           breadcrumbs={breadcrumbs}
+          members={members}
           actions={
             canManage
               ? [

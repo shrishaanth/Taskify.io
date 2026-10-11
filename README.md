@@ -174,7 +174,7 @@ npm run typecheck         # tsc --noEmit   (run inside client/ or server/)
 npm run lint
 ```
 
-**247** server tests (24 files) + **490** client tests (73 files), all green;
+**247** server tests (24 files) + **499** client tests (74 files), all green;
 both packages type-check and lint clean.
 
 Priorities:

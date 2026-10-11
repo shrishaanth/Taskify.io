@@ -101,6 +101,32 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  align-self: start;
+}
+
+.dangerLink {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--danger);
+  cursor: pointer;
+}
+.dangerLink:hover {
+  text-decoration: underline;
+}
+.dangerLink:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
 }
 .field {
   display: flex;

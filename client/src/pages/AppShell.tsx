@@ -1,4 +1,4 @@
-import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { TopNavBar } from "../components/composites/TopNavBar/TopNavBar";
 import {
   useNotifications,
@@ -12,6 +12,14 @@ import { useSession } from "../stores/sessionStore";
 export function AppShell() {
   const navigate = useNavigate();
   const { orgId } = useParams();
+  const { pathname } = useLocation();
+  const activeSection = pathname.endsWith("/members") && !pathname.includes("/projects/")
+    ? "members"
+    : pathname.endsWith("/settings")
+      ? "settings"
+      : pathname.includes("/projects")
+        ? "projects"
+        : undefined;
   const session = useSession((s) => s.session);
   const signOut = useSession((s) => s.signOut);
 
@@ -33,6 +41,8 @@ export function AppShell() {
         onSwitchOrg={(id) => navigate(`/orgs/${id}/projects`)}
         onLogoClick={() => navigate("/")}
         onCreateOrg={() => navigate("/welcome")}
+        onOpenProjects={() => navigate(`/orgs/${currentOrgId}/projects`)}
+        {...(activeSection ? { activeSection } : {})}
         onOpenOrgMembers={() => navigate(`/orgs/${currentOrgId}/members`)}
         onOpenOrgSettings={() => navigate(`/orgs/${currentOrgId}/settings`)}
         notifications={notificationsQuery.items}

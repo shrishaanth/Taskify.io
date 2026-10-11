@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { PageHeader } from "../components/composites/PageHeader/PageHeader";
+import { AddTile } from "../components/composites/AddTile/AddTile";
 import { ProjectTile } from "../components/composites/ProjectTile/ProjectTile";
 import { EmptyState } from "../components/composites/EmptyState/EmptyState";
 import { Button } from "../components/primitives/Button/Button";
@@ -53,6 +54,7 @@ export function ProjectsPage() {
           {projects.map((p) => (
             <ProjectTile key={p.id} project={p} onOpen={() => openProject(p.id)} />
           ))}
+          <AddTile label="New project" onClick={() => setModalOpen(true)} />
         </div>
       )}
 

@@ -97,8 +97,7 @@ describe("CardDetailModal — permission-driven rendering", () => {
     expect(screen.getByLabelText("Card description")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add assignee" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "+ Add checklist subtask" })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Card actions" }));
-    await userEvent.click(screen.getByRole("menuitem", { name: "Delete card" }));
+    await userEvent.click(screen.getByRole("button", { name: "Delete this card" }));
     expect(onDeleteCard).toHaveBeenCalledTimes(1);
   });
 

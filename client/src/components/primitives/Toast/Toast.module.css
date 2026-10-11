@@ -54,3 +54,13 @@
 .dismiss {
   flex-shrink: 0;
 }
+
+.toast {
+  animation: toastIn var(--duration-base) var(--ease-out);
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}

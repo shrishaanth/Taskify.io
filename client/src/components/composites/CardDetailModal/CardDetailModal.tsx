@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "../../primitives/Modal/Modal";
 import { IconButton } from "../../primitives/IconButton/IconButton";
-import { Menu, type MenuItem } from "../../primitives/Menu/Menu";
 import { Input } from "../../primitives/Input/Input";
 import { Textarea } from "../../primitives/Textarea/Textarea";
 import { Select } from "../../primitives/Select/Select";
@@ -123,15 +122,6 @@ export function CardDetailModal({
     else setTitleDraft(card.title);
   };
 
-  const menuItems: MenuItem[] = [];
-  if (canEdit && onDeleteCard)
-    menuItems.push({
-      id: "delete",
-      label: "Delete card",
-      tone: "danger",
-      onSelect: onDeleteCard,
-    });
-
   return (
     <Modal
       open={open}
@@ -178,20 +168,6 @@ export function CardDetailModal({
               </h2>
             </div>
             <div className={styles.headerActions}>
-              {menuItems.length > 0 && (
-                <Menu
-                  menuLabel="Card actions"
-                  placement="bottom-end"
-                  trigger={
-                    <IconButton
-                      label="Card actions"
-                      size="sm"
-                      icon={<span aria-hidden="true">⋯</span>}
-                    />
-                  }
-                  items={menuItems}
-                />
-              )}
               <IconButton
                 label="Close"
                 variant="circle"
@@ -291,15 +267,6 @@ export function CardDetailModal({
           </div>
 
           <div className={styles.field}>
-            <span className={styles.fieldLabel}>Labels</span>
-            <LabelPicker
-              labels={card.labels}
-              canEdit={canEdit}
-              onChange={(labels) => onUpdateCard({ labels })}
-            />
-          </div>
-
-          <div className={styles.field}>
             <span className={styles.fieldLabel}>Due date</span>
             <DateField
               {...(card.dueDate ? { value: card.dueDate } : {})}
@@ -323,6 +290,21 @@ export function CardDetailModal({
               <PriorityBadge priority={card.priority} />
             ) : null}
           </div>
+
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Labels</span>
+            <LabelPicker
+              labels={card.labels}
+              canEdit={canEdit}
+              onChange={(labels) => onUpdateCard({ labels })}
+            />
+          </div>
+
+          {canEdit && onDeleteCard && (
+            <button type="button" className={styles.dangerLink} onClick={onDeleteCard}>
+              Delete this card
+            </button>
+          )}
         </aside>
       </div>
     </Modal>

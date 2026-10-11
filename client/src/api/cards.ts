@@ -50,6 +50,7 @@ export const cardSummaryFromPayload = (c: RawCard): CardSummary => ({
   subtaskDone: c.subtaskDone ?? 0,
   subtaskTotal: c.subtaskTotal ?? 0,
   commentCount: c.commentCount ?? 0,
+  ...(c.description ? { hasDescription: true } : {}),
 });
 
 function toDetail(c: RawCardDetail, members: UserRef[]): CardDetail {

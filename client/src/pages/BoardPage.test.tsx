@@ -98,9 +98,8 @@ describe("BoardPage", () => {
     );
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(
-      within(dialog).getByRole("button", { name: "Card actions" }),
+      within(dialog).getByRole("button", { name: "Delete this card" }),
     );
-    await userEvent.click(screen.getByRole("menuitem", { name: "Delete card" }));
     // Nothing is deleted until the confirmation is accepted.
     await userEvent.click(
       await screen.findByRole("button", { name: "Delete card" }),
@@ -120,9 +119,8 @@ describe("BoardPage", () => {
     );
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(
-      within(dialog).getByRole("button", { name: "Card actions" }),
+      within(dialog).getByRole("button", { name: "Delete this card" }),
     );
-    await userEvent.click(screen.getByRole("menuitem", { name: "Delete card" }));
     await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
     expect(
       screen.getByRole("dialog", { name: /Fix API integration bugs/ }),

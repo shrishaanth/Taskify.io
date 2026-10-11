@@ -92,7 +92,7 @@ describe("CommentList — permission-driven delete", () => {
     expect(screen.getAllByRole("button", { name: "Delete comment" })).toHaveLength(2);
   });
 
-  it("newest comment renders first", () => {
+  it("reads oldest to newest, with the box to reply underneath", () => {
     render(
       <CommentList
         comments={comments}
@@ -104,6 +104,11 @@ describe("CommentList — permission-driven delete", () => {
       />,
     );
     const bodies = screen.getAllByText(/Thanks!|final photo cuts/);
-    expect(bodies[0]).toHaveTextContent("Thanks!");
+    expect(bodies[bodies.length - 1]).toHaveTextContent("Thanks!");
+    const box = screen.getByLabelText("Write a comment");
+    expect(
+      bodies[bodies.length - 1]!.compareDocumentPosition(box) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });

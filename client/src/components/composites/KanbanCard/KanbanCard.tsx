@@ -1,6 +1,6 @@
 import { cn } from "../../utils/cn";
 import { Chip } from "../../primitives/Chip/Chip";
-import { Avatar } from "../../primitives/Avatar/Avatar";
+import { AvatarGroup } from "../../primitives/AvatarGroup/AvatarGroup";
 import { DueDateChip } from "../DueDateChip/DueDateChip";
 import { PriorityBadge } from "../PriorityBadge/PriorityBadge";
 import { labelToneFor } from "../../../lib/labelColor";
@@ -22,10 +22,9 @@ export interface KanbanCardProps {
   className?: string;
 }
 
-const CheckMini = () => (
+const DescriptionMini = () => (
   <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <rect x="2.5" y="2.5" width="11" height="11" rx="2.5" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M5.5 8l2 2 3.5-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3 4h10M3 8h10M3 12h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
 const CommentMini = () => (
@@ -48,7 +47,16 @@ export function KanbanCard({
   now,
   className,
 }: KanbanCardProps) {
-  const assignee = card.assignees[0];
+  const allDone = card.subtaskTotal > 0 && card.subtaskDone === card.subtaskTotal;
+  // The coloured edge already says low or medium; only the ones that need
+  // attention also get a written badge.
+  const showPriorityBadge = card.priority === "high" || card.priority === "urgent";
+  const hasFooter =
+    Boolean(card.dueDate) ||
+    card.subtaskTotal > 0 ||
+    card.commentCount > 0 ||
+    Boolean(card.hasDescription) ||
+    card.assignees.length > 0;
 
   return (
     <button
@@ -57,6 +65,7 @@ export function KanbanCard({
       data-card-id={card.id}
       data-dragging={isDragging ? "true" : "false"}
       data-drop-target={isDropTarget ? "true" : "false"}
+      {...(card.priority ? { "data-priority": card.priority } : {})}
       aria-roledescription="Card"
       draggable={draggable}
       onClick={onOpen}
@@ -101,9 +110,9 @@ export function KanbanCard({
           : undefined
       }
     >
-      {(card.labels.length > 0 || card.priority) && (
+      {(card.labels.length > 0 || showPriorityBadge) && (
         <span className={styles.labels}>
-          {card.priority && (
+          {showPriorityBadge && card.priority && (
             <PriorityBadge priority={card.priority} size="sm" />
           )}
           {card.labels.map((label) => (
@@ -116,37 +125,56 @@ export function KanbanCard({
 
       <h4 className={styles.title}>{card.title}</h4>
 
-      <div className={styles.footer}>
-        {card.dueDate && (
-          <DueDateChip
-            date={card.dueDate}
-            done={done}
-            size="sm"
-            {...(now ? { now } : {})}
-          />
-        )}
-        {card.subtaskTotal > 0 && (
-          <span className={styles.meta} data-testid="subtask-progress">
-            <CheckMini />
-            {card.subtaskDone}/{card.subtaskTotal}
-          </span>
-        )}
-        {card.commentCount > 0 && (
-          <span className={styles.meta} data-testid="comment-count">
-            <CommentMini />
-            {card.commentCount}
-          </span>
-        )}
-        {assignee && (
-          <span className={styles.assignee}>
-            <Avatar
-              name={assignee.name}
-              {...(assignee.avatarUrl ? { src: assignee.avatarUrl } : {})}
+      {hasFooter && (
+        <div className={styles.footer}>
+          {card.dueDate && (
+            <DueDateChip
+              date={card.dueDate}
+              done={done}
               size="sm"
+              {...(now ? { now } : {})}
             />
-          </span>
-        )}
-      </div>
+          )}
+          {card.hasDescription && (
+            <span className={styles.meta} title="Has a description" data-testid="has-description">
+              <DescriptionMini />
+            </span>
+          )}
+          {card.subtaskTotal > 0 && (
+            <span
+              className={styles.progress}
+              data-testid="subtask-progress"
+              data-complete={allDone ? "true" : "false"}
+            >
+              <span className={styles.progressTrack} aria-hidden="true">
+                <span
+                  className={styles.progressFill}
+                  style={{ width: `${(card.subtaskDone / card.subtaskTotal) * 100}%` }}
+                />
+              </span>
+              {card.subtaskDone}/{card.subtaskTotal}
+            </span>
+          )}
+          {card.commentCount > 0 && (
+            <span className={styles.meta} data-testid="comment-count">
+              <CommentMini />
+              {card.commentCount}
+            </span>
+          )}
+          {card.assignees.length > 0 && (
+            <span className={styles.assignee}>
+              <AvatarGroup
+                avatars={card.assignees.map((a) => ({
+                  name: a.name,
+                  ...(a.avatarUrl ? { src: a.avatarUrl } : {}),
+                }))}
+                max={3}
+                size="sm"
+              />
+            </span>
+          )}
+        </div>
+      )}
     </button>
   );
 }

@@ -29,16 +29,12 @@ export function CommentList({
   className,
 }: CommentListProps) {
   const ordered = [...comments].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    // Oldest first, with the box to reply underneath, the way a thread reads.
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 
   return (
     <div className={cn(styles.root, className)}>
-      <CommentComposer
-        currentUser={currentUser}
-        onSubmit={onSubmit}
-        pending={pending}
-      />
       <div className={styles.list}>
         {ordered.map((c) => {
           const isAuthor = c.author.id === currentUserId;
@@ -53,6 +49,11 @@ export function CommentList({
           );
         })}
       </div>
+      <CommentComposer
+        currentUser={currentUser}
+        onSubmit={onSubmit}
+        pending={pending}
+      />
     </div>
   );
 }

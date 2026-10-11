@@ -22,6 +22,11 @@
   color: var(--tone-red-soft-fg);
 }
 
+.root[data-soon="true"] {
+  background-color: var(--tone-amber-soft-bg);
+  color: var(--tone-amber-soft-fg);
+}
+
 .root[data-empty="true"] {
   background-color: transparent;
   color: var(--text-muted);

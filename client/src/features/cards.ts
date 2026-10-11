@@ -196,7 +196,14 @@ export function useCardMutations(boardId: Id, ctx: CardMutationContext = {}) {
             }
             return next;
           },
-          patchSummary(patch),
+          (c) => {
+            const next = patchSummary(patch)(c);
+            if (patch.description !== undefined) {
+              if (patch.description) next.hasDescription = true;
+              else delete next.hasDescription;
+            }
+            return next;
+          },
         ),
       onError: rollback,
       onSuccess: (card) => writeCard(card),

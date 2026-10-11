@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { cn } from "../../utils/cn";
 import { IconButton } from "../../primitives/IconButton/IconButton";
 import { Menu, type MenuItem } from "../../primitives/Menu/Menu";
@@ -10,6 +11,8 @@ import styles from "./KanbanColumn.module.css";
 export interface KanbanColumnProps {
   column: Column;
   cards: CardSummary[];
+  /** Colour of the strip along the top of the column. */
+  accent?: string;
   /** Cards are still being fetched; show placeholders instead of an empty list. */
   loading?: boolean;
   /** Receives the title typed into the inline composer. */
@@ -29,10 +32,16 @@ export interface KanbanColumnProps {
   className?: string;
 }
 
+/** Marks where the dragged card will land. Purely visual; the list takes the drop. */
+function DropSlot() {
+  return <div className={styles.dropSlot} data-testid="drop-slot" aria-hidden="true" />;
+}
+
 export function KanbanColumn({
   column,
   cards,
   loading = false,
+  accent,
   onAddCard,
   onOpenCard,
   canManage = false,
@@ -101,6 +110,13 @@ export function KanbanColumn({
       tone: "danger",
     });
 
+  // No slot directly around the dragged card itself: dropping there is a no-op.
+  const showSlotBefore = (cardId: string) => {
+    if (!dragActive || dropBeforeId !== cardId || cardId === draggingCardId) return false;
+    const at = cards.findIndex((c) => c.id === cardId);
+    return cards[at - 1]?.id !== draggingCardId;
+  };
+
   const finishDrop = (beforeCardId: string | null) => {
     setDropBeforeId(undefined);
     onCardDrop?.({ beforeCardId });
@@ -112,6 +128,9 @@ export function KanbanColumn({
       aria-label={column.name}
       data-testid="kanban-column"
       data-drag-over={dragActive && dropBeforeId !== undefined ? "true" : "false"}
+      {...(accent
+        ? { style: { "--column-accent": accent } as CSSProperties }
+        : {})}
     >
       <div className={styles.header}>
         {renaming ? (
@@ -198,8 +217,9 @@ export function KanbanColumn({
             </>
           )}
           {cards.map((card) => (
+            <Fragment key={card.id}>
+            {showSlotBefore(card.id) && <DropSlot />}
             <KanbanCard
-              key={card.id}
               card={card}
               done={isDoneColumn}
               draggable={draggable}
@@ -220,7 +240,9 @@ export function KanbanColumn({
                 : {})}
               {...(now ? { now } : {})}
             />
+            </Fragment>
           ))}
+          {dragActive && dropBeforeId === null && <DropSlot />}
         </div>
 
         {composing ? (
