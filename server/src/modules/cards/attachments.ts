@@ -37,7 +37,13 @@ attachmentsRouter.post(
     params: z.object({ cardId: objectId }),
     body: z.object({
       fileName: z.string().trim().min(1).max(300),
-      fileUrl: z.string().url().max(2000),
+      // z.url() accepts any scheme, including javascript: and data:, which
+      // would run in the page the moment a client rendered this as a link.
+      fileUrl: z
+        .string()
+        .url()
+        .max(2000)
+        .refine((u) => /^https?:\/\//i.test(u), "Only http(s) links are allowed"),
       mimeType: z.string().min(1).max(200),
       sizeBytes: z.number().int().min(0).max(50 * 1024 * 1024),
     }),
