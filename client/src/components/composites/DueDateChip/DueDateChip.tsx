@@ -1,5 +1,5 @@
 import { cn } from "../../utils/cn";
-import { formatShortDate, isOverdue } from "../../../lib/format";
+import { formatDueDate, isOverdue } from "../../../lib/format";
 import styles from "./DueDateChip.module.css";
 
 export interface DueDateChipProps {
@@ -58,7 +58,7 @@ export function DueDateChip({
       title={overdue ? "Overdue" : undefined}
     >
       <CalendarIcon />
-      {formatShortDate(date, now)}
+      {formatDueDate(date, now)}
     </span>
   );
 }

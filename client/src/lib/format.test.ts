@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   formatShortDate,
+  formatDueDate,
   isOverdue,
   formatRelativeTime,
   formatFileSize,
@@ -37,6 +38,25 @@ describe("isOverdue", () => {
   });
   it("is false when there is no due date", () => {
     expect(isOverdue(undefined, { now })).toBe(false);
+  });
+});
+
+describe("due dates are calendar days, not instants", () => {
+  // What the date picker stores for "20 Oct 2026".
+  const due = "2026-10-20T00:00:00.000Z";
+
+  it("shows the picked day in every timezone", () => {
+    expect(formatDueDate(due, REF)).toBe("Oct 20");
+    expect(formatDueDate("2027-01-05T00:00:00.000Z", REF)).toBe("Jan 5, 2027");
+  });
+
+  it("is not overdue at any time on the due day itself", () => {
+    expect(isOverdue(due, { now: new Date(2026, 9, 20, 0, 0, 1) })).toBe(false);
+    expect(isOverdue(due, { now: new Date(2026, 9, 20, 23, 59, 59) })).toBe(false);
+  });
+
+  it("is overdue from the following local day", () => {
+    expect(isOverdue(due, { now: new Date(2026, 9, 21, 0, 0, 1) })).toBe(true);
   });
 });
 
