@@ -9,7 +9,8 @@
   display: flex;
   flex-direction: column;
   height: calc(100vh - 3.5rem);
-  min-height: 24rem;
+  /* On a short screen the page scrolls instead of crushing the columns. */
+  min-height: 36rem;
 }
 .boardHead {
   flex: 0 0 auto;

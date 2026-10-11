@@ -28,6 +28,11 @@ export interface KanbanColumnProps {
   onCardDragStart?: (cardId: string) => void;
   onCardDragEnd?: () => void;
   onCardDrop?: (payload: { beforeCardId: string | null }) => void;
+  /**
+   * Drop position decided outside the column (the touch drag works it out
+   * from the finger's position). `undefined` means not over this column.
+   */
+  touchDropBeforeId?: string | null | undefined;
   now?: Date;
   className?: string;
 }
@@ -53,18 +58,26 @@ export function KanbanColumn({
   onCardDragStart,
   onCardDragEnd,
   onCardDrop,
+  touchDropBeforeId,
   now,
   className,
 }: KanbanColumnProps) {
-  const [dropBeforeId, setDropBeforeId] = useState<string | null | undefined>(
+  const [mouseDropBeforeId, setDropBeforeId] = useState<string | null | undefined>(
     undefined,
   );
+  // Mouse drags report their position through drag events on this column;
+  // touch drags hand it in from above. Whichever is in play wins.
+  const dropBeforeId =
+    touchDropBeforeId !== undefined ? touchDropBeforeId : mouseDropBeforeId;
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState("");
   const [renaming, setRenaming] = useState(false);
   const draftRef = useRef<HTMLTextAreaElement>(null);
   const renameRef = useRef<HTMLInputElement>(null);
-  const dragActive = draggable && Boolean(draggingCardId) && Boolean(onCardDrop);
+  const dragActive =
+    draggable &&
+    Boolean(draggingCardId) &&
+    (Boolean(onCardDrop) || touchDropBeforeId !== undefined);
 
   useEffect(() => {
     if (composing) draftRef.current?.focus();
@@ -127,6 +140,7 @@ export function KanbanColumn({
       className={cn(styles.root, className)}
       aria-label={column.name}
       data-testid="kanban-column"
+      data-column-id={column.id}
       data-drag-over={dragActive && dropBeforeId !== undefined ? "true" : "false"}
       {...(accent
         ? { style: { "--column-accent": accent } as CSSProperties }
@@ -207,7 +221,7 @@ export function KanbanColumn({
               : undefined
           }
           onDrop={
-            dragActive ? () => finishDrop(dropBeforeId ?? null) : undefined
+            dragActive ? () => finishDrop(mouseDropBeforeId ?? null) : undefined
           }
         >
           {loading && cards.length === 0 && (

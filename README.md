@@ -51,7 +51,8 @@ everyone viewing the same board.
 | **Invites** | Invite by email (existing or new user), accept flow that creates the account on first login, pending-invite lists, revoke |
 | **Projects** | Creator becomes Head, name-only visibility for non-members, Head-only edit/delete, member management with Org Owner/Admin override, always at least one Head |
 | **Boards & Cards** | Embedded user-defined columns; cards with labels, priority, due dates, assignees, description, subtasks, comments. Removing a column that still holds cards requires moving or deleting them |
-| **Kanban UX** | Native HTML5 drag-and-drop plus a Column picker in the card dialog (for touch), optimistic moves and edits, FLIP-animated reordering, confirmations on every destructive action |
+| **Kanban UX** | Drag and drop with a mouse (HTML5) or by press-and-hold on touch screens, a Column picker in the card dialog, optimistic moves and edits, FLIP-animated reordering, confirmations on every destructive action |
+| **Board filters** | Search plus filters by assignee, priority, label and due date; `/` focuses the search box |
 | **Notifications** | `card_assigned`, `comment_mention`, `role_changed`, `invite_accepted`; live bell, click to open what it is about, mark-one / mark-all read |
 | **Real-time** | `card:*`, `comment:new`, `board:*`, `project:member*`, `org:memberChanged`, `notification:new` — membership-derived room joins |
 | **Tenant isolation** | One shared scoped-query helper; dedicated cross-tenant suite asserting `404` (never confirming a foreign resource exists) |
@@ -174,7 +175,7 @@ npm run typecheck         # tsc --noEmit   (run inside client/ or server/)
 npm run lint
 ```
 
-**247** server tests (24 files) + **499** client tests (74 files), all green;
+**247** server tests (24 files) + **514** client tests (77 files), all green;
 both packages type-check and lint clean.
 
 Priorities:

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { BoardHeader } from "../components/composites/BoardHeader/BoardHeader";
 import { BoardCanvas } from "../components/composites/BoardCanvas/BoardCanvas";
+import { BoardFilterBar } from "../components/composites/BoardFilterBar/BoardFilterBar";
 import { EmptyState } from "../components/composites/EmptyState/EmptyState";
 import { CardDetailModal } from "../components/composites/CardDetailModal/CardDetailModal";
 import { useConfirm } from "../components/composites/ConfirmDialog/useConfirm";
@@ -16,6 +17,12 @@ import { useBoard, useDeleteBoard, useUpdateBoard } from "../features/boards";
 import { useProject } from "../features/projects";
 import { useCardMutations, useCards, useCardDetail } from "../features/cards";
 import { useBoardRealtime } from "../features/realtime";
+import {
+  NO_FILTERS,
+  applyCardFilters,
+  isFiltering,
+  type CardFilters,
+} from "../lib/cardFilters";
 import { canWorkOnBoard } from "../lib/permissions";
 import { useSession } from "../stores/sessionStore";
 import type { CardSummary } from "../types/domain";
@@ -50,6 +57,24 @@ export function BoardPage() {
   }, [cardParam]);
   const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
+  const [filters, setFilters] = useState<CardFilters>(NO_FILTERS);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // "/" jumps to the search box, as it does in most tools people already use.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) {
+        return;
+      }
+      if (!searchRef.current) return;
+      e.preventDefault();
+      searchRef.current.focus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
   const navigate = useNavigate();
   const { confirm, dialog: confirmDialog } = useConfirm();
 
@@ -114,12 +139,24 @@ export function BoardPage() {
     .filter((c) => /done|complete/i.test(c.name))
     .map((c) => c.id);
 
+  // Every card, by column: what the server has, and what moves are measured in.
   const cardsByColumn: Record<string, CardSummary[]> = {};
   for (const col of board.columns) {
     cardsByColumn[col.id] = cards
       .filter((c) => c.columnId === col.id)
       .sort((a, b) => a.order - b.order);
   }
+
+  // What is on screen once the filters have been applied.
+  const filtering = isFiltering(filters);
+  const shown = new Set(applyCardFilters(cards, filters).map((c) => c.id));
+  const visibleByColumn: Record<string, CardSummary[]> = {};
+  for (const col of board.columns) {
+    visibleByColumn[col.id] = (cardsByColumn[col.id] ?? []).filter((c) => shown.has(c.id));
+  }
+  const boardLabels = [...new Set(cards.flatMap((c) => c.labels))].sort((a, b) =>
+    a.localeCompare(b),
+  );
 
   const handleMoveCard = (
     cardId: string,
@@ -132,7 +169,16 @@ export function BoardPage() {
     const idx = beforeCardId
       ? target.findIndex((c) => c.id === beforeCardId)
       : -1;
-    const order = idx === -1 ? target.length : idx;
+    // With filters on, "the end" of what is visible is just after the last
+    // visible card, not after hidden ones the user cannot see.
+    const lastVisible = (visibleByColumn[toColumnId] ?? [])
+      .filter((c) => c.id !== cardId)
+      .at(-1);
+    const afterLastVisible =
+      filtering && lastVisible
+        ? target.findIndex((c) => c.id === lastVisible.id) + 1
+        : target.length;
+    const order = idx === -1 ? afterLastVisible : idx;
     const current = cards.find((c) => c.id === cardId);
     if (current && current.columnId === toColumnId && current.order === order) {
       return;
@@ -202,9 +248,19 @@ export function BoardPage() {
         />
       </div>
 
+      <BoardFilterBar
+        ref={searchRef}
+        filters={filters}
+        onChange={setFilters}
+        members={members}
+        labels={boardLabels}
+        shownCount={shown.size}
+        totalCount={cards.length}
+      />
+
       <BoardCanvas
         columns={board.columns}
-        cardsByColumn={cardsByColumn}
+        cardsByColumn={visibleByColumn}
         doneColumnIds={doneColumnIds}
         canManage={canManage}
         loadingCards={cardsQuery.isLoading}
