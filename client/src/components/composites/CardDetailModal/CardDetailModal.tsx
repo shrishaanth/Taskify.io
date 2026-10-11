@@ -5,6 +5,7 @@ import { Menu, type MenuItem } from "../../primitives/Menu/Menu";
 import { Input } from "../../primitives/Input/Input";
 import { Textarea } from "../../primitives/Textarea/Textarea";
 import { Select } from "../../primitives/Select/Select";
+import { Skeleton } from "../../primitives/Skeleton/Skeleton";
 import { SubtaskChecklist } from "../SubtaskChecklist/SubtaskChecklist";
 import { CommentList } from "../CommentList/CommentList";
 import { AssigneePicker } from "../AssigneePicker/AssigneePicker";
@@ -27,6 +28,11 @@ export interface CardDetailModalProps {
   open: boolean;
   onClose: () => void;
   card: CardDetail;
+  /**
+   * The card is being shown from the board's summary while its description,
+   * subtasks and comments are still on their way.
+   */
+  loading?: boolean;
   breadcrumb: string;
   viewer: ViewerContext;
   currentUser: UserRef;
@@ -47,6 +53,7 @@ export function CardDetailModal({
   open,
   onClose,
   card,
+  loading = false,
   breadcrumb,
   viewer,
   currentUser,
@@ -90,7 +97,9 @@ export function CardDetailModal({
 
   const flushDescription = () => {
     const { desc: current, savedDesc: saved } = latest.current;
-    if (canEdit && current !== saved) onUpdateCard({ description: current });
+    if (canEdit && !loading && current !== saved) {
+      onUpdateCard({ description: current });
+    }
   };
 
   const closeWithSave = () => {
@@ -191,7 +200,9 @@ export function CardDetailModal({
         <div>
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Description</h3>
-            {canEdit ? (
+            {loading ? (
+              <Skeleton variant="block" height={72} />
+            ) : canEdit ? (
               <Textarea
                 className={styles.descEdit}
                 aria-label="Card description"
@@ -208,6 +219,13 @@ export function CardDetailModal({
           </div>
 
           <div className={styles.section}>
+            {loading ? (
+              <>
+                <h3 className={styles.sectionTitle}>Subtasks Checklist</h3>
+                <Skeleton variant="line" />
+                <Skeleton variant="line" width="60%" />
+              </>
+            ) : (
             <SubtaskChecklist
               subtasks={card.subtasks}
               canEdit={canEdit}
@@ -216,10 +234,17 @@ export function CardDetailModal({
               {...(onEditSubtaskTitle ? { onEditTitle: onEditSubtaskTitle } : {})}
               {...(onDeleteSubtask ? { onDelete: onDeleteSubtask } : {})}
             />
+            )}
           </div>
 
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Activity Comments</h3>
+            {loading ? (
+              <>
+                <Skeleton variant="line" />
+                <Skeleton variant="line" width="80%" />
+              </>
+            ) : (
             <CommentList
               comments={card.comments}
               currentUser={currentUser}
@@ -229,6 +254,7 @@ export function CardDetailModal({
               {...(onDeleteComment ? { onDelete: onDeleteComment } : {})}
               {...(now ? { now } : {})}
             />
+            )}
           </div>
         </div>
 
