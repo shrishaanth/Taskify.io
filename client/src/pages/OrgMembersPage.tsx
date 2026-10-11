@@ -85,35 +85,6 @@ export function OrgMembersPage() {
           : {})}
       />
 
-      {membersQuery.isLoading ? (
-        <Skeleton variant="block" height={220} />
-      ) : (
-        <MembersTable
-          scope="org"
-          members={membersQuery.data ?? []}
-          viewer={{ projectRole: null, orgRole: org.role }}
-          onChangeRole={(userId, role) =>
-            changeRole.mutate({
-              userId,
-              role: role as "owner" | "admin" | "member",
-            })
-          }
-          onRemove={(userId) => {
-            const who =
-              membersQuery.data?.find((m) => m.user.id === userId)?.user.name ??
-              "this member";
-            void confirm({
-              title: `Remove ${who} from ${org.name}?`,
-              message:
-                "They lose access to every project here and are unassigned from their cards.",
-              confirmLabel: "Remove member",
-            }).then((ok) => {
-              if (ok) removeMember.mutate(userId);
-            });
-          }}
-        />
-      )}
-
       {canManage && invites.length > 0 && (
         <section className={styles.inviteSection} aria-label="Pending invitations">
           <h2>Pending Invitations</h2>
@@ -152,6 +123,35 @@ export function OrgMembersPage() {
             ))}
           </div>
         </section>
+      )}
+
+      {membersQuery.isLoading ? (
+        <Skeleton variant="block" height={220} />
+      ) : (
+        <MembersTable
+          scope="org"
+          members={membersQuery.data ?? []}
+          viewer={{ projectRole: null, orgRole: org.role }}
+          onChangeRole={(userId, role) =>
+            changeRole.mutate({
+              userId,
+              role: role as "owner" | "admin" | "member",
+            })
+          }
+          onRemove={(userId) => {
+            const who =
+              membersQuery.data?.find((m) => m.user.id === userId)?.user.name ??
+              "this member";
+            void confirm({
+              title: `Remove ${who} from ${org.name}?`,
+              message:
+                "They lose access to every project here and are unassigned from their cards.",
+              confirmLabel: "Remove member",
+            }).then((ok) => {
+              if (ok) removeMember.mutate(userId);
+            });
+          }}
+        />
       )}
 
       <InviteMemberModal
