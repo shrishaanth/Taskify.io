@@ -3,6 +3,7 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { cardSummaryFromPayload } from "../api/cards";
 import { getSocket } from "../api/socket";
 import type { CardSummary } from "../types/domain";
+import { applyCardMove } from "./cards";
 import { qk } from "./queryClient";
 
 export function useAppRealtime(): void {
@@ -25,6 +26,20 @@ export function useAppRealtime(): void {
       void qc.invalidateQueries({ queryKey: ["orgs"] });
     };
 
+    // The first connect coincides with the initial page load, which fetches
+    // everything anyway; only later ones mean events may have been missed.
+    let connectedBefore = socket.connected;
+    const resync = () => {
+      if (!connectedBefore) {
+        connectedBefore = true;
+        return;
+      }
+      refetchNotifications();
+      refetchBoards();
+      refetchProjectMembers();
+      refetchOrgMembers();
+    };
+    socket.on("connect", resync);
     socket.on("notification:new", refetchNotifications);
     socket.on("board:created", refetchBoards);
     socket.on("board:updated", refetchBoards);
@@ -34,6 +49,7 @@ export function useAppRealtime(): void {
     socket.on("org:memberChanged", refetchOrgMembers);
 
     return () => {
+      socket.off("connect", resync);
       socket.off("notification:new", refetchNotifications);
       socket.off("board:created", refetchBoards);
       socket.off("board:updated", refetchBoards);
@@ -70,7 +86,6 @@ export function useBoardRealtime(projectId: string, boardId: string): void {
 
     const join = () => socket.emit("subscribe:board", boardId);
     join();
-    socket.on("connect", join);
 
     // A refetch is the fallback for payloads that cannot be applied locally.
     const refetchCards = () => {
@@ -90,12 +105,17 @@ export function useBoardRealtime(projectId: string, boardId: string): void {
       if (!move?.id || !move.columnId || typeof move.order !== "number") {
         return refetchCards();
       }
+      const known = qc
+        .getQueryData<CardSummary[]>(qk.cards(boardId))
+        ?.some((c) => c.id === move.id);
+      if (!known) return refetchCards();
+      // The payload names only the moved card, but a move also shifts every
+      // sibling. Renumber them the same way the server and the optimistic
+      // path do, or the moved card ties with a neighbour and sorts wrongly.
       qc.setQueryData<CardSummary[]>(qk.cards(boardId), (prev) =>
-        prev?.map((c) =>
-          c.id === move.id
-            ? { ...c, columnId: move.columnId as string, order: move.order as number }
-            : c,
-        ),
+        prev
+          ? applyCardMove(prev, move.id as string, move.columnId as string, move.order as number)
+          : prev,
       );
     };
 
@@ -116,6 +136,20 @@ export function useBoardRealtime(projectId: string, boardId: string): void {
       void qc.invalidateQueries({ queryKey: qk.cards(boardId) });
     };
 
+    // Events sent while this client was offline are gone, so a reconnect has
+    // to rejoin the room and re-read the board rather than trust the cache.
+    let connectedBefore = socket.connected;
+    const onConnect = () => {
+      join();
+      if (!connectedBefore) {
+        connectedBefore = true;
+        return;
+      }
+      refetchCards();
+      void qc.invalidateQueries({ queryKey: ["card", boardId] });
+    };
+    socket.on("connect", onConnect);
+
     socket.on("card:created", onCardWritten);
     socket.on("card:updated", onCardWritten);
     socket.on("card:moved", onCardMoved);
@@ -124,7 +158,7 @@ export function useBoardRealtime(projectId: string, boardId: string): void {
 
     return () => {
       socket.emit("unsubscribe:board", boardId);
-      socket.off("connect", join);
+      socket.off("connect", onConnect);
       socket.off("card:created", onCardWritten);
       socket.off("card:updated", onCardWritten);
       socket.off("card:moved", onCardMoved);
