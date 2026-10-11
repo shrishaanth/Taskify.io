@@ -37,7 +37,10 @@ export function BoardPage() {
   const project = projectQuery.data;
   const members = useMemo(() => project?.members ?? [], [project]);
   const cardDetailQuery = useCardDetail(boardId, openCardId, members);
-  const m = useCardMutations(boardId, openCardId);
+  const m = useCardMutations(boardId, {
+    members,
+    ...(currentUser ? { currentUser } : {}),
+  });
   const updateBoard = useUpdateBoard(projectId, boardId);
   useBoardRealtime(projectId, boardId);
   const updateBoardColumns = (
@@ -189,6 +192,7 @@ export function BoardPage() {
           open
           onClose={() => setOpenCardId(null)}
           card={detail}
+          loading={cardDetailQuery.isPlaceholderData}
           breadcrumb={`${project.name} / ${board.name}`.toUpperCase()}
           viewer={viewer}
           currentUser={currentUser}

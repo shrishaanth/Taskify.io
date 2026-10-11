@@ -256,10 +256,12 @@ export async function deleteAccount(
 }
 
 export async function currentUser(userId: string) {
-  const user = await UserModel.findOne({ _id: userId, ...activeUser });
+  const [user, memberships] = await Promise.all([
+    UserModel.findOne({ _id: userId, ...activeUser }),
+    OrgMembershipModel.find({ userId }).lean(),
+  ]);
   if (!user) throw AppError.unauthenticated("Account no longer exists");
 
-  const memberships = await OrgMembershipModel.find({ userId }).lean();
   const orgs = await OrganizationModel.find({
     _id: { $in: memberships.map((m) => m.organizationId) },
   }).lean();
