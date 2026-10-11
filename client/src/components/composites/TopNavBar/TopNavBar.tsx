@@ -13,6 +13,9 @@ export interface TopNavBarProps {
   onCreateOrg?: () => void;
   onOpenOrgMembers?: () => void;
   onOpenOrgSettings?: () => void;
+  /** With this, Projects / Members / Settings also appear as links in the bar. */
+  onOpenProjects?: () => void;
+  activeSection?: "projects" | "members" | "settings";
   notifications: AppNotification[];
   notificationUnreadCount?: number;
   notificationsHasMore?: boolean;
@@ -42,6 +45,8 @@ export function TopNavBar({
   onCreateOrg,
   onOpenOrgMembers,
   onOpenOrgSettings,
+  onOpenProjects,
+  activeSection,
   notifications,
   notificationUnreadCount,
   notificationsHasMore,
@@ -90,6 +95,30 @@ export function TopNavBar({
           {...(onOpenOrgMembers ? { onOpenMembers: onOpenOrgMembers } : {})}
           {...(onOpenOrgSettings ? { onOpenSettings: onOpenOrgSettings } : {})}
         />
+      )}
+
+      {orgs.length > 0 && (onOpenProjects || onOpenOrgMembers || onOpenOrgSettings) && (
+        <nav className={styles.nav} aria-label="Organization">
+          {(
+            [
+              ["projects", "Projects", onOpenProjects],
+              ["members", "Members", onOpenOrgMembers],
+              ["settings", "Settings", onOpenOrgSettings],
+            ] as const
+          ).map(([id, label, go]) =>
+            go ? (
+              <button
+                key={id}
+                type="button"
+                className={styles.navLink}
+                aria-current={activeSection === id ? "page" : undefined}
+                onClick={go}
+              >
+                {label}
+              </button>
+            ) : null,
+          )}
+        </nav>
       )}
 
       <span className={styles.spacer} />
