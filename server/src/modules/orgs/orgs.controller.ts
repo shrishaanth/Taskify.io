@@ -2,7 +2,15 @@ import type { Request, Response } from "express";
 import { auth } from "../../lib/http.js";
 import { orgDto, orgInviteDto, userDto } from "../../lib/serialize.js";
 import { signAccessToken, verifyAccessToken } from "../../lib/tokens.js";
-import { emitOrgMemberChanged } from "../../realtime/emit.js";
+import { AppError } from "../../lib/errors.js";
+import {
+  emitOrgMemberChanged,
+  emitOrgMemberRemoved,
+} from "../../realtime/emit.js";
+import {
+  evictUserFromRooms,
+  joinUserToRooms,
+} from "../../realtime/io.js";
 import * as service from "./orgs.service.js";
 
 export async function create(req: Request, res: Response) {
@@ -83,6 +91,14 @@ export async function acceptInvite(req: Request, res: Response) {
     ...(req.body?.password ? { password: req.body.password } : {}),
   });
 
+  // The new member's open tabs start hearing about the org straight away, and
+  // everyone already looking at the member list sees them appear.
+  joinUserToRooms(result.userId, [`org:${result.organizationId}`]);
+  emitOrgMemberChanged(result.organizationId, {
+    userId: result.userId,
+    role: result.role,
+  });
+
   const payload: Record<string, unknown> = {
     organizationId: result.organizationId,
     role: result.role,
@@ -101,6 +117,7 @@ export async function changeRole(req: Request, res: Response) {
     req.params.orgId,
     req.params.userId,
     req.body.role,
+    actorRole(req),
   );
   emitOrgMemberChanged(req.params.orgId, {
     userId: String(m.userId),
@@ -110,6 +127,23 @@ export async function changeRole(req: Request, res: Response) {
 }
 
 export async function remove(req: Request, res: Response) {
-  await service.removeMember(req.params.orgId, req.params.userId);
+  const { orgId, userId } = req.params;
+  const { projectIds, boardIds } = await service.removeMember(
+    orgId,
+    userId,
+    actorRole(req),
+  );
+  emitOrgMemberRemoved(orgId, userId);
+  // Their sockets must stop hearing about anything in this organization.
+  evictUserFromRooms(userId, [
+    `org:${orgId}`,
+    ...projectIds.map((id) => `project:${id}`),
+    ...boardIds.map((id) => `board:${id}`),
+  ]);
   res.status(204).end();
+}
+
+function actorRole(req: Request) {
+  if (!req.org) throw AppError.forbidden();
+  return req.org.role;
 }

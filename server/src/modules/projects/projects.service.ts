@@ -147,6 +147,10 @@ export async function setProjectMember(input: {
     );
   }
 
+  if (input.role !== "head") {
+    await assertNotLastHead(input.projectId, input.userId);
+  }
+
   const doc = await ProjectMembershipModel.findOneAndUpdate(
     { projectId: input.projectId, userId: input.userId },
     { $set: { role: input.role } },
@@ -161,6 +165,25 @@ export async function removeProjectMember(
   userId: string,
 ) {
   await findInOrg(orgId, projectId);
+  await assertNotLastHead(projectId, userId);
   const res = await ProjectMembershipModel.deleteOne({ projectId, userId });
   if (res.deletedCount === 0) throw AppError.notFound();
+}
+
+/**
+ * A project with no Head can only be rescued by an Org Owner or Admin, so the
+ * last one cannot be demoted or removed, mirroring the last-Owner rule.
+ */
+async function assertNotLastHead(projectId: string, userId: string) {
+  const target = await ProjectMembershipModel.findOne({ projectId, userId })
+    .select("role")
+    .lean();
+  if (target?.role !== "head") return;
+  const heads = await ProjectMembershipModel.countDocuments({
+    projectId,
+    role: "head",
+  });
+  if (heads <= 1) {
+    throw AppError.conflict("The project must keep at least one Head");
+  }
 }

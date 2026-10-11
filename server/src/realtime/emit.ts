@@ -109,3 +109,9 @@ export function emitOrgMemberChanged(
 ): void {
   toOrg(orgId, "org:memberChanged", payload);
 }
+
+export function emitOrgMemberRemoved(orgId: string, userId: string): void {
+  toOrg(orgId, "org:memberRemoved", { userId });
+  // The person removed may no longer be in the org room by the time this runs.
+  getIO()?.to(`user:${userId}`).emit("org:memberRemoved", { userId, orgId });
+}
