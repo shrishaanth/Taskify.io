@@ -146,7 +146,13 @@ export async function createCard(input: {
 
   await notifyCardAssigned(
     assigneeIds,
-    { id: card._id.toString(), title: card.title },
+    {
+      id: card._id.toString(),
+      title: card.title,
+      organizationId: String(card.organizationId),
+      projectId: input.projectId,
+      boardId: input.boardId,
+    },
     input.actorId,
   );
   return card;
@@ -216,7 +222,13 @@ export async function updateCard(input: {
   if (newlyAssigned.length > 0) {
     await notifyCardAssigned(
       newlyAssigned,
-      { id: card._id.toString(), title: card.title },
+      {
+        id: card._id.toString(),
+        title: card.title,
+        organizationId: String(card.organizationId),
+        projectId: input.projectId,
+        boardId: input.boardId,
+      },
       input.actorId,
     );
   }

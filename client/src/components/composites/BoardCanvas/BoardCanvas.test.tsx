@@ -157,7 +157,8 @@ describe("BoardCanvas", () => {
   });
 
   it("suppresses overdue styling for cards in done columns", () => {
-    const past = new Date(2000, 0, 1).toISOString();
+    // Stored the way the date picker stores it: the day at UTC midnight.
+    const past = "2000-01-01T00:00:00.000Z";
     render(
       <BoardCanvas
         columns={columns}

@@ -3,7 +3,9 @@ import { TopNavBar } from "../components/composites/TopNavBar/TopNavBar";
 import {
   useNotifications,
   useMarkAllNotificationsRead,
+  useMarkNotificationRead,
 } from "../features/notifications";
+import { notificationHref } from "../lib/notificationLink";
 import { useAppRealtime } from "../features/realtime";
 import { useSession } from "../stores/sessionStore";
 
@@ -15,6 +17,7 @@ export function AppShell() {
 
   const notificationsQuery = useNotifications();
   const markAllRead = useMarkAllNotificationsRead();
+  const markRead = useMarkNotificationRead();
   useAppRealtime();
 
   const orgs = session?.orgs ?? [];
@@ -38,6 +41,13 @@ export function AppShell() {
         loadingMoreNotifications={notificationsQuery.isFetchingNextPage}
         onLoadMoreNotifications={() => void notificationsQuery.fetchNextPage()}
         onMarkAllNotificationsRead={() => markAllRead.mutate()}
+        onNotificationClick={(id) => {
+          const item = notificationsQuery.items.find((n) => n.id === id);
+          if (!item) return;
+          if (!item.read) markRead.mutate(id);
+          const href = notificationHref(item);
+          if (href) navigate(href);
+        }}
         user={session.user}
         onProfile={() => navigate("/account")}
         onLogout={() => {

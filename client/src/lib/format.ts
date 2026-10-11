@@ -8,20 +8,35 @@ export function formatShortDate(iso: string, ref: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-US", opts).format(d);
 }
 
+/**
+ * A due date is a calendar day, stored as that day's UTC midnight. Formatting
+ * or comparing it as an instant shifts it by the viewer's offset: west of UTC
+ * it would read a day early and count as overdue on the due day itself.
+ */
+const dueDay = (iso: string) => iso.slice(0, 10);
+
+const localDay = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+
+export function formatDueDate(iso: string, ref: Date = new Date()): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const opts: Intl.DateTimeFormatOptions =
+    d.getUTCFullYear() === ref.getFullYear()
+      ? { month: "short", day: "numeric", timeZone: "UTC" }
+      : { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" };
+  return new Intl.DateTimeFormat("en-US", opts).format(d);
+}
+
 export function isOverdue(
   iso: string | undefined,
   opts: { done?: boolean; now?: Date } = {},
 ): boolean {
   if (!iso || opts.done) return false;
-  const due = new Date(iso);
-  if (Number.isNaN(due.getTime())) return false;
-  const now = opts.now ?? new Date();
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  ).getTime();
-  return due.getTime() < startOfToday;
+  if (Number.isNaN(new Date(iso).getTime())) return false;
+  return dueDay(iso) < localDay(opts.now ?? new Date());
 }
 
 export function formatRelativeTime(iso: string, now: Date = new Date()): string {

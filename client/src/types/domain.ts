@@ -121,6 +121,14 @@ export interface AppNotification {
   id: Id;
   type: NotificationType;
   title: string;
+  /** Where the notification points; older ones may lack the ids. */
+  payload?: {
+    organizationId?: string;
+    projectId?: string;
+    boardId?: string;
+    cardId?: string;
+    scope?: "org" | "project";
+  };
   createdAt: IsoDate;
   read: boolean;
 }

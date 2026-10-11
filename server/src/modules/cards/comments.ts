@@ -61,12 +61,18 @@ commentsRouter.post(
     const author = await UserModel.findById(me).lean();
 
     const card = await CardModel.findById(req.params.cardId)
-      .select("title assigneeIds")
+      .select("title assigneeIds organizationId boardId")
       .lean();
-    if (card) {
+    if (card && req.resolvedProjectId) {
       await notifyCommentOnCard(
         card.assigneeIds.map(String),
-        { id: req.params.cardId, title: card.title },
+        {
+          id: req.params.cardId,
+          title: card.title,
+          organizationId: String(card.organizationId),
+          projectId: req.resolvedProjectId,
+          boardId: String(card.boardId),
+        },
         me,
       );
     }

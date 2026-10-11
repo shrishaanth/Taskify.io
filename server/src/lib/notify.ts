@@ -18,38 +18,46 @@ async function create(
   }
 }
 
+/** Enough to link a notification back to the card it is about. */
+export interface CardRef {
+  id: string;
+  title: string;
+  organizationId: string;
+  projectId: string;
+  boardId: string;
+}
+
+const cardPayload = (card: CardRef) => ({
+  cardId: card.id,
+  cardTitle: card.title,
+  organizationId: card.organizationId,
+  projectId: card.projectId,
+  boardId: card.boardId,
+});
+
 export function notifyCardAssigned(
   assigneeIds: string[],
-  card: { id: string; title: string },
+  card: CardRef,
   actorId: string,
 ) {
-  return create(
-    assigneeIds,
-    "card_assigned",
-    { cardId: card.id, cardTitle: card.title },
-    actorId,
-  );
+  return create(assigneeIds, "card_assigned", cardPayload(card), actorId);
 }
 
 export function notifyCommentOnCard(
   recipientIds: string[],
-  card: { id: string; title: string },
+  card: CardRef,
   actorId: string,
 ) {
-  return create(
-    recipientIds,
-    "comment_mention",
-    { cardId: card.id, cardTitle: card.title },
-    actorId,
-  );
+  return create(recipientIds, "comment_mention", cardPayload(card), actorId);
 }
 
 export function notifyRoleChanged(
   userId: string,
   scope: "org" | "project",
   contextName: string,
+  where: { organizationId: string; projectId?: string },
 ) {
-  return create([userId], "role_changed", { scope, contextName });
+  return create([userId], "role_changed", { scope, contextName, ...where });
 }
 
 export function notifyInviteAccepted(
