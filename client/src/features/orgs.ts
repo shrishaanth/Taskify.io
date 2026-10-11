@@ -23,6 +23,7 @@ export function useCreateOrg() {
 export function useUpdateOrg(orgId: Id) {
   const refresh = useSession((s) => s.refresh);
   return useMutation({
+    meta: { handlesOwnErrors: true },
     mutationFn: (patch: { name?: string; slug?: string }) =>
       orgsApi.updateOrg(orgId, patch),
     onSuccess: () => refresh(),
@@ -32,6 +33,7 @@ export function useUpdateOrg(orgId: Id) {
 export function useDeleteOrg(orgId: Id) {
   const refresh = useSession((s) => s.refresh);
   return useMutation({
+    meta: { handlesOwnErrors: true },
     mutationFn: () => orgsApi.deleteOrg(orgId),
     onSuccess: () => refresh(),
   });
@@ -48,6 +50,7 @@ export function useOrgInvites(orgId: Id, enabled = true) {
 export function useInviteOrgMember(orgId: Id) {
   const qc = useQueryClient();
   return useMutation({
+    meta: { handlesOwnErrors: true },
     mutationFn: (input: { email: string; role: "admin" | "member" }) =>
       orgsApi.inviteOrgMember(orgId, input),
     onSuccess: () => {
