@@ -1,7 +1,9 @@
 import type { Request, Response } from "express";
 import { auth } from "../../lib/http.js";
 import { orgDto, orgInviteDto, userDto } from "../../lib/serialize.js";
-import { signAccessToken, verifyAccessToken } from "../../lib/tokens.js";
+import { setRefreshCookie } from "../../lib/refreshCookie.js";
+import { verifyAccessToken } from "../../lib/tokens.js";
+import { issueTokens } from "../auth/auth.service.js";
 import { AppError } from "../../lib/errors.js";
 import {
   emitOrgMemberChanged,
@@ -105,8 +107,16 @@ export async function acceptInvite(req: Request, res: Response) {
   };
 
   if (result.createdUser) {
+    // A full session, exactly as signup issues one. A bare access token would
+    // log the new member out as soon as it expired.
+    const tokens = await issueTokens(
+      result.userId,
+      req.get("user-agent") ?? undefined,
+    );
+    setRefreshCookie(res, tokens.refreshToken, tokens.refreshExpiresAt);
     payload.user = userDto(result.createdUser);
-    payload.accessToken = signAccessToken(result.userId);
+    payload.accessToken = tokens.accessToken;
+    payload.refreshToken = tokens.refreshToken;
   }
 
   res.status(result.createdUser ? 201 : 200).json(payload);

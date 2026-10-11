@@ -20,5 +20,5 @@
 
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src", "vitest.config.ts", "eslint.config.js"]
+  "include": ["src", "scripts", "vitest.config.ts", "eslint.config.js"]
 }

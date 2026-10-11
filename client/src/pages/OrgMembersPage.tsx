@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { PageHeader } from "../components/composites/PageHeader/PageHeader";
 import { MembersTable } from "../components/composites/MembersTable/MembersTable";
 import { RoleBadge } from "../components/composites/RoleBadge/RoleBadge";
+import { useConfirm } from "../components/composites/ConfirmDialog/useConfirm";
 import { InviteMemberModal } from "../components/composites/CreateModals/InviteMemberModal";
 import { Button } from "../components/primitives/Button/Button";
 import { Skeleton } from "../components/primitives/Skeleton/Skeleton";
@@ -34,6 +35,7 @@ export function OrgMembersPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
 
   const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const org = useSession((s) => s.session?.orgs.find((o) => o.id === orgId));
   const canManage = canManageOrgMembers(org?.role ?? null);
 
@@ -96,7 +98,19 @@ export function OrgMembersPage() {
               role: role as "owner" | "admin" | "member",
             })
           }
-          onRemove={(userId) => removeMember.mutate(userId)}
+          onRemove={(userId) => {
+            const who =
+              membersQuery.data?.find((m) => m.user.id === userId)?.user.name ??
+              "this member";
+            void confirm({
+              title: `Remove ${who} from ${org.name}?`,
+              message:
+                "They lose access to every project here and are unassigned from their cards.",
+              confirmLabel: "Remove member",
+            }).then((ok) => {
+              if (ok) removeMember.mutate(userId);
+            });
+          }}
         />
       )}
 
@@ -122,7 +136,15 @@ export function OrgMembersPage() {
                 <Button
                   variant="danger"
                   size="sm"
-                  onClick={() => revokeInvite.mutate(inv.id)}
+                  onClick={() => {
+                    void confirm({
+                      title: `Revoke the invite for ${inv.email}?`,
+                      message: "The link you sent them will stop working.",
+                      confirmLabel: "Revoke invite",
+                    }).then((ok) => {
+                      if (ok) revokeInvite.mutate(inv.id);
+                    });
+                  }}
                 >
                   Revoke {inv.email}
                 </Button>
@@ -162,6 +184,7 @@ export function OrgMembersPage() {
           );
         }}
       />
+      {confirmDialog}
     </main>
   );
 }

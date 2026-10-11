@@ -33,9 +33,25 @@ describe("OrgMembersPage", () => {
     await userEvent.click(
       await screen.findByRole("button", { name: "Remove David Kim" }),
     );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Remove member" }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("cell", { name: "u-david@acme.test" }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it("keeps the member when removal is cancelled", async () => {
+    renderRoute("/orgs/org-acme/members");
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Remove David Kim" }),
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
     expect(
-      screen.queryByRole("cell", { name: "u-david@acme.test" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("cell", { name: "u-david@acme.test" }),
+    ).toBeInTheDocument();
   });
 
   it("creates a pending invite through the modal (no immediate membership)", async () => {
@@ -72,6 +88,9 @@ describe("OrgMembersPage", () => {
       within(pending).getByRole("button", {
         name: "Revoke pending.hire@acme.test",
       }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Revoke invite" }),
     );
     await waitFor(() =>
       expect(

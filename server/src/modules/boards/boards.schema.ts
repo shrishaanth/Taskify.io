@@ -28,8 +28,15 @@ export const updateBoardSchema = {
     .object({
       name: z.string().trim().min(1).max(120).optional(),
       columns: z.array(columnInput).max(30).optional(),
+      // What to do with cards in a column this update removes. Without one
+      // of these the update is refused rather than stranding the cards.
+      moveCardsTo: z.string().min(1).max(40).optional(),
+      deleteCards: z.boolean().optional(),
     })
     .refine((b) => b.name !== undefined || b.columns !== undefined, {
       message: "Nothing to update",
+    })
+    .refine((b) => !(b.moveCardsTo && b.deleteCards), {
+      message: "Choose either moveCardsTo or deleteCards",
     }),
 };

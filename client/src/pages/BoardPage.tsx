@@ -4,6 +4,11 @@ import { BoardHeader } from "../components/composites/BoardHeader/BoardHeader";
 import { BoardCanvas } from "../components/composites/BoardCanvas/BoardCanvas";
 import { EmptyState } from "../components/composites/EmptyState/EmptyState";
 import { CardDetailModal } from "../components/composites/CardDetailModal/CardDetailModal";
+import { useConfirm } from "../components/composites/ConfirmDialog/useConfirm";
+import {
+  DeleteColumnDialog,
+  type ColumnRemoval,
+} from "../components/composites/DeleteColumnDialog/DeleteColumnDialog";
 import { Skeleton } from "../components/primitives/Skeleton/Skeleton";
 import { ApiError } from "../api/http";
 import { useBoard, useUpdateBoard } from "../features/boards";
@@ -20,6 +25,8 @@ import styles from "./pages.module.css";
 export function BoardPage() {
   const { orgId = "", projectId = "", boardId = "" } = useParams();
   const [openCardId, setOpenCardId] = useState<string | null>(null);
+  const [columnToDelete, setColumnToDelete] = useState<string | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const org = useSession((s) => s.session?.orgs.find((o) => o.id === orgId));
   const currentUser = useSession((s) => s.session?.user);
@@ -104,6 +111,20 @@ export function BoardPage() {
     m.moveCard.mutate({ cardId, columnId: toColumnId, order });
   };
 
+  const removeColumn = (removal: ColumnRemoval) => {
+    if (!columnToDelete) return;
+    updateBoard.mutate(
+      {
+        columns: board.columns
+          .filter((c) => c.id !== columnToDelete)
+          .map((c, i) => ({ id: c.id, name: c.name, order: i })),
+        ...(removal.kind === "move" ? { moveCardsTo: removal.toColumnId } : {}),
+        ...(removal.kind === "delete" ? { deleteCards: true } : {}),
+      },
+      { onSuccess: () => setColumnToDelete(null) },
+    );
+  };
+
   const breadcrumbs = [
     { label: org.name, href: `/orgs/${orgId}/projects` },
     { label: project.name, href: `/orgs/${orgId}/projects/${projectId}` },
@@ -137,9 +158,7 @@ export function BoardPage() {
             board.columns.map((c) => (c.id === columnId ? { ...c, name } : c)),
           )
         }
-        onDeleteColumn={(columnId) =>
-          updateBoardColumns(board.columns.filter((c) => c.id !== columnId))
-        }
+        onDeleteColumn={(columnId) => setColumnToDelete(columnId)}
         emptyState={
           <EmptyState
             tone="red"
@@ -187,16 +206,41 @@ export function BoardPage() {
           onAddComment={(body) =>
             m.addComment.mutate({ cardId: detail.id, body })
           }
-          onDeleteComment={(id) =>
-            m.deleteComment.mutate({ cardId: detail.id, commentId: id })
-          }
-          onDeleteCard={() =>
-            m.deleteCard.mutate(detail.id, {
-              onSuccess: () => setOpenCardId(null),
-            })
-          }
+          onDeleteComment={(id) => {
+            void confirm({
+              title: "Delete this comment?",
+              message: "It will be removed for everyone on the board.",
+            }).then((ok) => {
+              if (ok) m.deleteComment.mutate({ cardId: detail.id, commentId: id });
+            });
+          }}
+          onDeleteCard={() => {
+            void confirm({
+              title: `Delete "${detail.title}"?`,
+              message:
+                "The card, its subtasks and its comments will be deleted. This cannot be undone.",
+              confirmLabel: "Delete card",
+            }).then((ok) => {
+              if (ok) {
+                m.deleteCard.mutate(detail.id, {
+                  onSuccess: () => setOpenCardId(null),
+                });
+              }
+            });
+          }}
         />
       )}
+
+      <DeleteColumnDialog
+        open={columnToDelete !== null}
+        column={board.columns.find((c) => c.id === columnToDelete) ?? null}
+        cardCount={columnToDelete ? (cardsByColumn[columnToDelete]?.length ?? 0) : 0}
+        otherColumns={board.columns.filter((c) => c.id !== columnToDelete)}
+        pending={updateBoard.isPending}
+        onCancel={() => setColumnToDelete(null)}
+        onConfirm={removeColumn}
+      />
+      {confirmDialog}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { Types } from "mongoose";
 import { AppError } from "../../lib/errors.js";
-import { deleteBoardCascade } from "../../lib/cascade.js";
+import { deleteBoardCascade, deleteCardCascade } from "../../lib/cascade.js";
 import { BoardModel, CardModel, ProjectModel } from "../../models/index.js";
 
 const colId = () => `col_${randomBytes(5).toString("hex")}`;
@@ -82,15 +82,78 @@ export async function getBoard(projectId: string, boardId: string) {
 export async function updateBoard(
   projectId: string,
   boardId: string,
-  patch: { name?: string; columns?: ColumnInput[] },
+  patch: {
+    name?: string;
+    columns?: ColumnInput[];
+    moveCardsTo?: string;
+    deleteCards?: boolean;
+  },
 ) {
   const board = await findBoardInProject(projectId, boardId);
+  let cardsChanged = false;
+
   if (patch.name !== undefined) board.name = patch.name;
   if (patch.columns !== undefined) {
-    board.set("columns", normaliseColumns(patch.columns));
+    const next = normaliseColumns(patch.columns);
+    const kept = new Set(next.map((c) => c.id));
+    const removed = board.columns.map((c) => c.id).filter((id) => !kept.has(id));
+    cardsChanged = await rehomeCards(boardId, removed, kept, patch);
+    board.set("columns", next);
   }
   await board.save();
-  return board;
+  return { board, cardsChanged };
+}
+
+/**
+ * Cards point at a column by id, so dropping a column that still holds cards
+ * would leave them in the database but on no board anyone can see. The caller
+ * has to say where they go; returns whether any card was touched.
+ */
+async function rehomeCards(
+  boardId: string,
+  removed: string[],
+  kept: Set<string>,
+  patch: { moveCardsTo?: string; deleteCards?: boolean },
+): Promise<boolean> {
+  if (removed.length === 0) return false;
+  const stranded = await CardModel.find({ boardId, columnId: { $in: removed } })
+    .sort({ columnId: 1, order: 1 })
+    .select("_id")
+    .lean();
+  if (stranded.length === 0) return false;
+
+  if (patch.deleteCards) {
+    for (const c of stranded) await deleteCardCascade(c._id);
+    return true;
+  }
+
+  const target = patch.moveCardsTo;
+  if (target) {
+    if (!kept.has(target)) {
+      throw AppError.validation("moveCardsTo must be a column that remains on the board");
+    }
+    const last = await CardModel.findOne({ boardId, columnId: target })
+      .sort({ order: -1 })
+      .select("order")
+      .lean();
+    const start = last ? last.order + 1 : 0;
+    await CardModel.bulkWrite(
+      stranded.map((c, i) => ({
+        updateOne: {
+          filter: { _id: c._id },
+          update: { $set: { columnId: target, order: start + i } },
+        },
+      })),
+    );
+    return true;
+  }
+
+  throw AppError.conflict(
+    stranded.length === 1
+      ? "1 card is still in that column. Move it or delete it first."
+      : `${stranded.length} cards are still in that column. Move them or delete them first.`,
+    { code: "COLUMN_NOT_EMPTY", cards: stranded.length },
+  );
 }
 
 export async function deleteBoard(projectId: string, boardId: string) {

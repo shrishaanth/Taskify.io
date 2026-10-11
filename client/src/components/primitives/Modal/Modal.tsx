@@ -29,6 +29,13 @@ const FOCUSABLE =
 const PREFERRED_FOCUS =
   'input:not([disabled]):not([type="hidden"]),textarea:not([disabled]),select:not([disabled])';
 
+/**
+ * Open dialogs, oldest first. A confirmation can open on top of another
+ * dialog; only the top one may react to Escape, or one key press would close
+ * the whole stack.
+ */
+const openStack: symbol[] = [];
+
 /** Layers that sit above a modal and should absorb Escape before it does. */
 const TRANSIENT_LAYER = '[role="menu"],[role="listbox"],[data-popover-open="true"]';
 
@@ -48,6 +55,7 @@ export function Modal({
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const stackId = useRef<symbol | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -60,6 +68,7 @@ export function Modal({
     // to the first focusable would park focus on the close button and make
     // every dialog start one Tab away from being usable.
     const target =
+      panel?.querySelector<HTMLElement>('[data-autofocus="true"]') ??
       panel?.querySelector<HTMLElement>(PREFERRED_FOCUS) ??
       panel?.querySelector<HTMLElement>(FOCUSABLE) ??
       panel;
@@ -72,9 +81,21 @@ export function Modal({
   }, [open]);
 
   useEffect(() => {
+    if (!open) return;
+    const id = Symbol("modal");
+    stackId.current = id;
+    openStack.push(id);
+    return () => {
+      const at = openStack.indexOf(id);
+      if (at !== -1) openStack.splice(at, 1);
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (!open || !closeOnEsc) return;
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      if (openStack[openStack.length - 1] !== stackId.current) return;
       // A menu or dropdown opened from inside the dialog owns Escape first;
       // dismissing the whole dialog would throw away unrelated work.
       if (document.querySelector(TRANSIENT_LAYER)) return;

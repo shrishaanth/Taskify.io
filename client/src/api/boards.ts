@@ -40,10 +40,18 @@ export async function createBoard(projectId: Id, input: { name: string }) {
   return toBoardSummary(raw);
 }
 
+export interface BoardPatch {
+  name?: string;
+  columns?: { id?: string; name: string; order: number }[];
+  /** Required when the update removes a column that still holds cards. */
+  moveCardsTo?: string;
+  deleteCards?: boolean;
+}
+
 export function updateBoard(
   projectId: Id,
   boardId: Id,
-  patch: { name?: string; columns?: { id?: string; name: string; order: number }[] },
+  patch: BoardPatch,
 ) {
   return apiFetch<RawBoard>(`/projects/${projectId}/boards/${boardId}`, {
     method: "PATCH",

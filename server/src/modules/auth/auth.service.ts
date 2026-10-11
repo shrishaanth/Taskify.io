@@ -29,7 +29,7 @@ export interface IssuedTokens {
   refreshExpiresAt: Date;
 }
 
-async function issueTokens(
+export async function issueTokens(
   userId: string,
   deviceInfo?: string,
 ): Promise<IssuedTokens> {

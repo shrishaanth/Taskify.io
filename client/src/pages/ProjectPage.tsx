@@ -8,6 +8,7 @@ import { BoardTile } from "../components/composites/BoardTile/BoardTile";
 import { AddTile } from "../components/composites/AddTile/AddTile";
 import { EmptyState } from "../components/composites/EmptyState/EmptyState";
 import { MembersTable } from "../components/composites/MembersTable/MembersTable";
+import { useConfirm } from "../components/composites/ConfirmDialog/useConfirm";
 import { InviteForm } from "../components/composites/InviteForm/InviteForm";
 import { Skeleton } from "../components/primitives/Skeleton/Skeleton";
 import { CreateBoardModal } from "../components/composites/CreateModals/CreateBoardModal";
@@ -33,6 +34,7 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
   const [boardModalOpen, setBoardModalOpen] = useState(false);
 
   const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const org = useSession((s) => s.session?.orgs.find((o) => o.id === orgId));
   const projectQuery = useProject(orgId, projectId);
   const boardsQuery = useBoards(projectId);
@@ -134,7 +136,17 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
             onChangeRole={(userId, role) =>
               setRole.mutate({ userId, role: role as "head" | "member" })
             }
-            onRemove={(userId) => removeMember.mutate(userId)}
+            onRemove={(userId) => {
+              const who =
+                members.find((m) => m.user.id === userId)?.user.name ?? "this member";
+              void confirm({
+                title: `Remove ${who} from ${project.name}?`,
+                message: "They will no longer be able to open this project's boards.",
+                confirmLabel: "Remove member",
+              }).then((ok) => {
+                if (ok) removeMember.mutate(userId);
+              });
+            }}
           />
           {canManageMembers && (
             <div className={styles.card}>
@@ -194,6 +206,7 @@ export function ProjectPage({ tab }: { tab: ProjectTabId }) {
           );
         }}
       />
+      {confirmDialog}
     </main>
   );
 }

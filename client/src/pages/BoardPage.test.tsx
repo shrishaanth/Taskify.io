@@ -101,10 +101,52 @@ describe("BoardPage", () => {
       within(dialog).getByRole("button", { name: "Card actions" }),
     );
     await userEvent.click(screen.getByRole("menuitem", { name: "Delete card" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // Nothing is deleted until the confirmation is accepted.
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Delete card" }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
     expect(
       screen.queryByText(/Fix API integration bugs/),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps the card when the delete confirmation is cancelled", async () => {
+    renderRoute(BOARD);
+    await userEvent.click(
+      await screen.findByRole("button", { name: /Fix API integration bugs/ }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Card actions" }),
+    );
+    await userEvent.click(screen.getByRole("menuitem", { name: "Delete card" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    expect(
+      screen.getByRole("dialog", { name: /Fix API integration bugs/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("asks where a column's cards should go before deleting it", async () => {
+    renderRoute(BOARD);
+    await userEvent.click(
+      await screen.findByRole("button", { name: "To Do column actions" }),
+    );
+    await userEvent.click(screen.getByRole("menuitem", { name: "Delete column" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByLabelText("Move cards to")).toBeInTheDocument();
+    // Still there: nothing happens until a choice is made.
+    expect(screen.getByRole("region", { name: "To Do" })).toBeInTheDocument();
+
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Move cards and delete" }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("region", { name: "To Do" })).not.toBeInTheDocument(),
+    );
   });
 
   it("moves a card to another column by drag and drop", async () => {

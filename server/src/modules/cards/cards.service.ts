@@ -95,6 +95,18 @@ async function assertAssigneesHaveAccess(projectId: string, assigneeIds: string[
   }
 }
 
+/**
+ * One past the highest order in the column. Counting the cards instead would
+ * reuse a number as soon as any card had been deleted.
+ */
+export async function nextOrder(boardId: string, columnId: string): Promise<number> {
+  const last = await CardModel.findOne({ boardId, columnId })
+    .sort({ order: -1 })
+    .select("order")
+    .lean();
+  return last ? last.order + 1 : 0;
+}
+
 export async function listCards(boardId: string) {
   return CardModel.find({ boardId }).sort({ columnId: 1, order: 1 }).lean();
 }
@@ -117,12 +129,7 @@ export async function createCard(input: {
   const assigneeIds = input.assigneeIds ?? [];
   await assertAssigneesHaveAccess(input.projectId, assigneeIds);
 
-  const order =
-    input.order ??
-    (await CardModel.countDocuments({
-      boardId: input.boardId,
-      columnId: input.columnId,
-    }));
+  const order = input.order ?? (await nextOrder(input.boardId, input.columnId));
 
   const card = await CardModel.create({
     organizationId: board.organizationId,
