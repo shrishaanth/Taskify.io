@@ -24,6 +24,14 @@
 .root:active {
   cursor: grabbing;
 }
+/* Press-and-hold picks the card up; it must not also select text or open
+   the browser's own long-press menu. */
+.root {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
 
 .root[data-priority="low"] {
   --card-edge: var(--priority-low);

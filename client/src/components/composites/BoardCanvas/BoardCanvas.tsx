@@ -4,6 +4,7 @@ import { AddTile } from "../AddTile/AddTile";
 import { KanbanColumn } from "../KanbanColumn/KanbanColumn";
 import type { CardSummary, Column } from "../../../types/domain";
 import { useFlipCards } from "./useFlipCards";
+import { useTouchDrag, type TouchDropTarget } from "./useTouchDrag";
 import styles from "./BoardCanvas.module.css";
 
 export interface BoardCanvasProps {
@@ -51,6 +52,8 @@ export function BoardCanvas({
   className,
 }: BoardCanvasProps) {
   const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
+  const [touchTarget, setTouchTarget] = useState<TouchDropTarget | null>(null);
+  const [touchDragging, setTouchDragging] = useState(false);
   const [addingColumn, setAddingColumn] = useState(false);
   const [columnDraft, setColumnDraft] = useState("");
   const columnInputRef = useRef<HTMLInputElement>(null);
@@ -79,6 +82,24 @@ export function BoardCanvas({
     .join("|");
   useFlipCards(rootRef, flipSignature);
 
+  useTouchDrag(rootRef, dndEnabled && columns.length > 0, {
+    onStart: (cardId) => {
+      setTouchDragging(true);
+      setDraggingCardId(cardId);
+    },
+    onTarget: setTouchTarget,
+    onDrop: (cardId, target) => {
+      if (cardId !== target.beforeCardId) {
+        onMoveCard?.(cardId, target.columnId, target.beforeCardId);
+      }
+    },
+    onEnd: () => {
+      setTouchDragging(false);
+      setTouchTarget(null);
+      setDraggingCardId(null);
+    },
+  });
+
   // First column reads as "not started", done columns as finished, and the
   // stages in between take turns so neighbours are easy to tell apart.
   const accentFor = (columnId: string, index: number) => {
@@ -104,6 +125,14 @@ export function BoardCanvas({
           isDoneColumn={doneColumnIds.includes(column.id)}
           draggable={dndEnabled}
           draggingCardId={draggingCardId}
+          {...(touchDragging
+            ? {
+                touchDropBeforeId:
+                  touchTarget?.columnId === column.id
+                    ? touchTarget.beforeCardId
+                    : undefined,
+              }
+            : {})}
           onAddCard={(title) => onAddCard(column.id, title)}
           onOpenCard={onOpenCard}
           {...(dndEnabled
