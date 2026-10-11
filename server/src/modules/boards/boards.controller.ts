@@ -29,14 +29,16 @@ export async function get(req: Request, res: Response) {
 }
 
 export async function update(req: Request, res: Response) {
-  const board = await service.updateBoard(
+  const { board, cardsChanged } = await service.updateBoard(
     req.params.projectId,
     req.params.boardId,
     req.body,
   );
   const dto = boardDto(board);
-  emitBoardUpdated(req.params.projectId, dto);
-  res.json(dto);
+  // `cardsChanged` tells viewers their card list is stale too, which a column
+  // rename or reorder on its own would not.
+  emitBoardUpdated(req.params.projectId, { ...dto, cardsChanged });
+  res.json({ ...dto, cardsChanged });
 }
 
 export async function remove(req: Request, res: Response) {
