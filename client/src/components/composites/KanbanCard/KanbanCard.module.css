@@ -5,26 +5,49 @@
   width: 100%;
   padding: var(--space-3);
   border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--card-edge, var(--border-subtle));
   border-radius: var(--radius-md);
   background-color: var(--bg-surface);
   box-shadow: var(--shadow-xs);
   text-align: left;
-  cursor: pointer;
+  cursor: grab;
+  flex: 0 0 auto;
 
-  transition: box-shadow var(--duration-fast) var(--ease-standard);
+  transition:
+    box-shadow var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
 }
 .root:hover {
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.root:active {
+  cursor: grabbing;
+}
+
+.root[data-priority="low"] {
+  --card-edge: var(--priority-low);
+}
+.root[data-priority="medium"] {
+  --card-edge: var(--priority-medium);
+}
+.root[data-priority="high"] {
+  --card-edge: var(--priority-high);
+}
+.root[data-priority="urgent"] {
+  --card-edge: var(--priority-urgent);
 }
 .root:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
 }
 
+/* The card left behind while its copy is being dragged: clearly "in transit". */
 .root[data-dragging="true"] {
-  transform: rotate(2deg);
-  box-shadow: var(--shadow-dragging);
-  border-color: var(--primary);
+  opacity: 0.4;
+  transform: none;
+  box-shadow: none;
+  border-style: dashed;
 }
 
 .labels {
@@ -62,4 +85,33 @@
 
 .assignee {
   margin-left: auto;
+}
+
+.progress {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+}
+.progress[data-complete="true"] {
+  color: var(--success);
+}
+.progressTrack {
+  width: 2.25rem;
+  height: 0.25rem;
+  border-radius: var(--radius-full);
+  background-color: var(--border-subtle);
+  overflow: hidden;
+}
+.progressFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--primary);
+  transition: width var(--duration-base) var(--ease-standard);
+}
+.progress[data-complete="true"] .progressFill {
+  background-color: var(--success);
 }

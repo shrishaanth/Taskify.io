@@ -27,6 +27,13 @@ export interface BoardCanvasProps {
   className?: string;
 }
 
+const STAGE_ACCENTS = [
+  "var(--color-sky-500)",
+  "var(--color-violet-500)",
+  "var(--color-amber-500)",
+  "var(--color-pink-500)",
+];
+
 export function BoardCanvas({
   columns,
   cardsByColumn,
@@ -72,19 +79,28 @@ export function BoardCanvas({
     .join("|");
   useFlipCards(rootRef, flipSignature);
 
+  // First column reads as "not started", done columns as finished, and the
+  // stages in between take turns so neighbours are easy to tell apart.
+  const accentFor = (columnId: string, index: number) => {
+    if (doneColumnIds.includes(columnId)) return "var(--color-green-500)";
+    if (index === 0) return "var(--color-slate-400)";
+    return STAGE_ACCENTS[(index - 1) % STAGE_ACCENTS.length];
+  };
+
   if (columns.length === 0 && emptyState) {
     return <>{emptyState}</>;
   }
 
   return (
     <div ref={rootRef} className={cn(styles.root, className)}>
-      {ordered.map((column) => (
+      {ordered.map((column, index) => (
         <KanbanColumn
           key={column.id}
           column={column}
           cards={cardsByColumn[column.id] ?? []}
           canManage={canManage}
           loading={loadingCards}
+          accent={accentFor(column.id, index)}
           isDoneColumn={doneColumnIds.includes(column.id)}
           draggable={dndEnabled}
           draggingCardId={draggingCardId}
@@ -152,7 +168,11 @@ export function BoardCanvas({
               </div>
             </div>
           ) : (
-            <AddTile label="Add column" onClick={() => setAddingColumn(true)} />
+            <AddTile
+              label="Add column"
+              className={styles.addColumnTile}
+              onClick={() => setAddingColumn(true)}
+            />
           )}
         </div>
       )}

@@ -1,5 +1,5 @@
 import { cn } from "../../utils/cn";
-import { formatDueDate, isOverdue } from "../../../lib/format";
+import { formatDueDate, isDueSoon, isOverdue } from "../../../lib/format";
 import styles from "./DueDateChip.module.css";
 
 export interface DueDateChipProps {
@@ -49,13 +49,15 @@ export function DueDateChip({
   }
 
   const overdue = isOverdue(date, { done, ...(now ? { now } : {}) });
+  const soon = isDueSoon(date, { done, ...(now ? { now } : {}) });
 
   return (
     <span
       className={cn(styles.root, className)}
       data-size={size}
       data-overdue={overdue ? "true" : "false"}
-      title={overdue ? "Overdue" : undefined}
+      data-soon={soon ? "true" : "false"}
+      title={overdue ? "Overdue" : soon ? "Due soon" : undefined}
     >
       <CalendarIcon />
       {formatDueDate(date, now)}

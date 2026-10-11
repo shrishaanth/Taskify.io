@@ -56,6 +56,8 @@ export interface CardSummary {
   subtaskDone: number;
   subtaskTotal: number;
   commentCount: number;
+  /** The board shows a small mark for this without loading the text itself. */
+  hasDescription?: boolean;
 }
 
 export interface CardDetail extends CardSummary {

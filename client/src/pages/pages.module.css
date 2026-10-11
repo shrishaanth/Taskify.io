@@ -4,8 +4,16 @@
   padding: var(--space-8) var(--space-6);
 }
 
+/* The board fills the screen below the top bar; its columns scroll inside it. */
+.boardPage {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 3.5rem);
+  min-height: 24rem;
+}
 .boardHead {
-  padding: var(--space-6) var(--space-4) 0;
+  flex: 0 0 auto;
+  padding: var(--space-5) var(--space-4) 0;
 }
 
 .authScreen {
@@ -46,7 +54,7 @@
   width: 1.75rem;
   height: 1.75rem;
   border-radius: var(--radius-md);
-  background-color: var(--primary);
+  background: var(--brand-gradient);
   color: var(--primary-fg);
 }
 
@@ -147,7 +155,7 @@
 }
 
 .inviteSection {
-  margin-top: var(--space-6);
+  margin-bottom: var(--space-6);
 }
 .inviteSection h2 {
   font-size: var(--font-size-lg);

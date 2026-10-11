@@ -2,8 +2,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  width: 17rem;
-  flex-shrink: 0;
+  /* Columns share spare width up to a comfortable reading measure instead of
+     huddling at the left edge of a wide screen. */
+  flex: 1 0 17rem;
+  max-width: 22rem;
+  max-height: 100%;
+  min-height: 0;
 }
 
 /*
@@ -78,16 +82,37 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 6rem;
   padding: var(--space-2);
   border-radius: var(--radius-lg);
-  background-color: var(--bg-surface-muted);
-  border: 1px solid transparent;
-  transition: border-color var(--duration-fast) var(--ease-standard);
+  background-color: var(--bg-column);
+  border: 1px solid var(--border-subtle);
+  /* The strip says which stage of the work this column is. */
+  border-top: 3px solid var(--column-accent, var(--color-slate-400));
+  transition:
+    box-shadow var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
 }
 .root[data-drag-over="true"] .body {
-  border-color: var(--primary);
+  background-color: var(--primary-subtle);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+/* Where the dragged card will land. */
+.dropSlot {
+  flex: 0 0 auto;
+  height: 2.75rem;
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius-md);
+  background-color: rgb(14 165 233 / 0.1);
+  animation: slotIn var(--duration-fast) var(--ease-out);
+}
+@keyframes slotIn {
+  from {
+    height: 0;
+    opacity: 0;
+  }
 }
 
 .list {
@@ -97,15 +122,21 @@
   flex-wrap: nowrap;
   align-items: stretch;
   gap: var(--space-2);
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 2rem;
   overflow-y: auto;
+  /* Room for the cards' focus ring and shadow inside the scroll box. */
+  padding: 2px;
+  margin: -2px;
+  scrollbar-width: thin;
 }
 
 .add {
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  /* Sits outside the scrolling list, so it is always in reach. */
+  flex: 0 0 auto;
   width: 100%;
   padding: var(--space-2) var(--space-3);
   border: 1px dashed var(--border-strong);

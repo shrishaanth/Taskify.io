@@ -1,24 +1,34 @@
 .root {
   display: flex;
   gap: var(--space-4);
-  align-items: stretch;
+  /* Columns keep their own height and scroll inside themselves, so a long
+     column never drags the whole page down with it. */
+  align-items: flex-start;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: var(--space-4);
 }
 
 .addColumn {
-  width: 17rem;
+  width: 15rem;
   flex-shrink: 0;
   display: flex;
-
+  /* Lines the tile up with the column bodies, below their headings. */
   padding-top: 2.25rem;
 }
 .addColumn > * {
   width: 100%;
-  height: 100%;
-  min-height: 0;
 }
-
+/* A quiet, header-height tile: it is an action, not another column. */
+.addColumn .addColumnTile {
+  flex-direction: row;
+  justify-content: flex-start;
+  min-height: 0;
+  padding: var(--space-2-5) var(--space-3);
+  border-width: 1px;
+}
 .columnComposer {
   display: flex;
   flex-direction: column;

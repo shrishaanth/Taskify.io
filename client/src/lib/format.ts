@@ -39,6 +39,18 @@ export function isOverdue(
   return dueDay(iso) < localDay(opts.now ?? new Date());
 }
 
+/** Due today or within the next two days, and not yet overdue. */
+export function isDueSoon(
+  iso: string | undefined,
+  opts: { done?: boolean; now?: Date } = {},
+): boolean {
+  if (!iso || opts.done || isOverdue(iso, opts)) return false;
+  if (Number.isNaN(new Date(iso).getTime())) return false;
+  const now = opts.now ?? new Date();
+  const horizon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
+  return dueDay(iso) <= localDay(horizon);
+}
+
 export function formatRelativeTime(iso: string, now: Date = new Date()): string {
   const then = new Date(iso);
   if (Number.isNaN(then.getTime())) return "";
