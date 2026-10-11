@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../../lib/http.js";
+import { credentialLimiter } from "../../middleware/rateLimit.js";
 import { requireAuth } from "../../middleware/requireAuth.js";
 import { requireOrgRole } from "../../middleware/requireOrgRole.js";
 import { validate } from "../../middleware/validate.js";
@@ -20,6 +21,7 @@ export const orgsRouter: Router = Router();
 
 orgsRouter.post(
   "/invites/:inviteToken/accept",
+  credentialLimiter,
   validate(acceptInviteSchema),
   asyncHandler(controller.acceptInvite),
 );

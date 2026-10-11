@@ -1,4 +1,8 @@
-import { getAccessToken, setAccessToken } from "./tokenStore";
+import {
+  getAccessToken,
+  setAccessToken,
+  syncAccessTokenFromStorage,
+} from "./tokenStore";
 
 export const API_BASE: string =
   (import.meta.env.VITE_API_URL as string | undefined) ??
@@ -56,29 +60,47 @@ async function parse(res: Response): Promise<unknown> {
 
 let refreshInFlight: Promise<boolean> | null = null;
 
+async function requestNewToken(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: "{}",
+    });
+    if (!res.ok) return false;
+    const data = (await res.json()) as { accessToken?: string };
+    if (!data.accessToken) return false;
+    setAccessToken(data.accessToken);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The refresh cookie is shared by every tab and is single-use. If two tabs
+ * exchanged it at once, one would be refused and logged out, so the exchange
+ * is serialised across tabs and a tab that waited adopts the winner's token.
+ */
+async function refreshAcrossTabs(): Promise<boolean> {
+  const before = getAccessToken();
+  const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
+  if (!locks) return requestNewToken();
+  return locks.request("taskify-refresh", async () => {
+    const current = syncAccessTokenFromStorage();
+    if (current && current !== before) return true;
+    return requestNewToken();
+  });
+}
+
 /** Exchanges the refresh cookie for a new access token. Shared by every caller in flight. */
 export async function refreshAccessToken(): Promise<boolean> {
-  refreshInFlight ??= (async () => {
-    try {
-      const res = await fetch(`${API_BASE}/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: "{}",
-      });
-      if (!res.ok) return false;
-      const data = (await res.json()) as { accessToken?: string };
-      if (!data.accessToken) return false;
-      setAccessToken(data.accessToken);
-      return true;
-    } catch {
-      return false;
-    } finally {
-      setTimeout(() => {
-        refreshInFlight = null;
-      }, 0);
-    }
-  })();
+  refreshInFlight ??= refreshAcrossTabs().finally(() => {
+    setTimeout(() => {
+      refreshInFlight = null;
+    }, 0);
+  });
   return refreshInFlight;
 }
 

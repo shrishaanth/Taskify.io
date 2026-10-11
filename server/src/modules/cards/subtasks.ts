@@ -7,7 +7,11 @@ import { requireAuth } from "../../middleware/requireAuth.js";
 import { requireProjectRole } from "../../middleware/requireProjectRole.js";
 import { resolveProjectFromCard } from "../../middleware/resolveScope.js";
 import { validate } from "../../middleware/validate.js";
-import { CardModel, SubtaskModel } from "../../models/index.js";
+import {
+  CardModel,
+  ProjectMembershipModel,
+  SubtaskModel,
+} from "../../models/index.js";
 import { emitCardUpdated } from "../../realtime/emit.js";
 import { serializeCard } from "./cards.service.js";
 
@@ -19,6 +23,20 @@ async function broadcastParentCard(
 ): Promise<void> {
   const card = await CardModel.findById(cardId).lean();
   if (card) emitCardUpdated(boardId, await serializeCard(card));
+}
+
+/** A subtask can only be handed to someone who can open the card. */
+async function assertCanBeAssigned(
+  projectId: string | undefined,
+  assigneeId: string | null | undefined,
+): Promise<void> {
+  if (!assigneeId) return;
+  const member =
+    projectId &&
+    (await ProjectMembershipModel.exists({ projectId, userId: assigneeId }));
+  if (!member) {
+    throw AppError.validation("The assignee must be a member of this project");
+  }
 }
 
 export const subtasksRouter: Router = Router({ mergeParams: true });
@@ -45,6 +63,7 @@ subtasksRouter.post(
     }),
   }),
   asyncHandler(async (req, res) => {
+    await assertCanBeAssigned(req.resolvedProjectId, req.body.assigneeId);
     const doc = await SubtaskModel.create({
       cardId: req.params.cardId,
       title: req.body.title,
@@ -74,6 +93,7 @@ subtasksRouter.patch(
       cardId: req.params.cardId,
     });
     if (!doc) throw AppError.notFound();
+    await assertCanBeAssigned(req.resolvedProjectId, req.body.assigneeId);
     if (req.body.title !== undefined) doc.title = req.body.title;
     if (req.body.done !== undefined) doc.done = req.body.done;
     if (req.body.assigneeId !== undefined) {

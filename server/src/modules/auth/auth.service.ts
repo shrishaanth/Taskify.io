@@ -84,19 +84,41 @@ export async function login(input: {
   return { user, tokens };
 }
 
+/**
+ * Two requests can legitimately present the same token a moment apart (two
+ * tabs waking up together). Inside this window a second use is refused but
+ * not treated as theft.
+ */
+const ROTATION_GRACE_MS = 10_000;
+
 export async function rotate(
   rawRefreshToken: string,
   deviceInfo?: string,
 ): Promise<IssuedTokens> {
   const tokenHash = hashRefreshToken(rawRefreshToken);
-  const record = await RefreshTokenModel.findOne({ tokenHash });
+  const now = new Date();
 
-  if (!record || record.revokedAt || record.expiresAt.getTime() < Date.now()) {
+  // Claim the token in one atomic step. Reading it and then saving left a
+  // gap in which the same token could be exchanged twice.
+  const record = await RefreshTokenModel.findOneAndUpdate(
+    { tokenHash, revokedAt: { $exists: false }, expiresAt: { $gt: now } },
+    { $set: { revokedAt: now } },
+  );
+
+  if (!record) {
+    const spent = await RefreshTokenModel.findOne({ tokenHash })
+      .select("userId revokedAt")
+      .lean();
+    // A token that was rotated a while ago and shows up again has been copied.
+    // Whoever holds its successor may not be the owner, so end every session.
+    if (
+      spent?.revokedAt &&
+      now.getTime() - spent.revokedAt.getTime() > ROTATION_GRACE_MS
+    ) {
+      await logoutAll(String(spent.userId));
+    }
     throw AppError.unauthenticated("Refresh token is invalid or expired");
   }
-
-  record.revokedAt = new Date();
-  await record.save();
 
   // A token minted before the account was deleted must not be exchangeable.
   const stillActive = await UserModel.exists({

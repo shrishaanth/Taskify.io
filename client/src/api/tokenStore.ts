@@ -23,3 +23,19 @@ export function setAccessToken(token: string | null): void {
     /* storage unavailable — in-memory only */
   }
 }
+
+/**
+ * Each tab holds its own copy, so a token another tab just obtained has to be
+ * picked up from storage or this tab would go on to spend a refresh token
+ * that has already been rotated.
+ */
+export function syncAccessTokenFromStorage(): string | null {
+  accessToken = readInitial();
+  return accessToken;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === STORAGE_KEY) accessToken = e.newValue;
+  });
+}
