@@ -1,22 +1,14 @@
 import type { Request, Response } from "express";
-import { config } from "../../config/index.js";
 import { AppError } from "../../lib/errors.js";
 import { userDto } from "../../lib/serialize.js";
 import { auth } from "../../lib/http.js";
+import {
+  REFRESH_COOKIE,
+  clearRefreshCookie,
+  setRefreshCookie,
+} from "../../lib/refreshCookie.js";
 import { disconnectUser } from "../../realtime/io.js";
 import * as service from "./auth.service.js";
-
-const REFRESH_COOKIE = "taskify_refresh";
-
-function setRefreshCookie(res: Response, token: string, expiresAt: Date) {
-  res.cookie(REFRESH_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: config.isProduction,
-    expires: expiresAt,
-    path: "/api/v1/auth",
-  });
-}
 
 function readRefreshToken(req: Request): string {
   const fromBody =
@@ -69,14 +61,14 @@ export async function refresh(req: Request, res: Response) {
 
 export async function logout(req: Request, res: Response) {
   await service.logout(readRefreshToken(req));
-  res.clearCookie(REFRESH_COOKIE, { path: "/api/v1/auth" });
+  clearRefreshCookie(res);
   res.status(204).end();
 }
 
 export async function logoutAll(req: Request, res: Response) {
   await service.logoutAll(auth(req).userId);
   disconnectUser(auth(req).userId);
-  res.clearCookie(REFRESH_COOKIE, { path: "/api/v1/auth" });
+  clearRefreshCookie(res);
   res.status(204).end();
 }
 
@@ -93,6 +85,6 @@ export async function deleteAccount(req: Request, res: Response) {
   await service.deleteAccount(auth(req).userId, req.body);
   // Revoking tokens does nothing to connections that are already open.
   disconnectUser(auth(req).userId);
-  res.clearCookie(REFRESH_COOKIE, { path: "/api/v1/auth" });
+  clearRefreshCookie(res);
   res.status(204).end();
 }
