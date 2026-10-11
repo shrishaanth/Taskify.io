@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AppShell } from "./pages/AppShell";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
@@ -33,8 +33,18 @@ function FullPageLoader() {
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const status = useSession((s) => s.status);
+  const location = useLocation();
   if (status === "loading") return <FullPageLoader />;
-  if (status !== "authenticated") return <Navigate to="/login" replace />;
+  if (status !== "authenticated") {
+    // Remember where they were heading so login can send them back there.
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}` }}
+      />
+    );
+  }
   return <>{children}</>;
 }
 

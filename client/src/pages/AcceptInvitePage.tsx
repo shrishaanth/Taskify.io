@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Input } from "../components/primitives/Input/Input";
 import { Button } from "../components/primitives/Button/Button";
 import { IconButton } from "../components/primitives/IconButton/IconButton";
@@ -15,6 +15,7 @@ type Phase = "working" | "needAccount" | "error";
 export function AcceptInvitePage() {
   const { token = "" } = useParams();
   const navigate = useNavigate();
+  const here = useLocation().pathname;
   const status = useSession((s) => s.status);
   const bootstrap = useSession((s) => s.bootstrap);
   const refresh = useSession((s) => s.refresh);
@@ -107,7 +108,9 @@ export function AcceptInvitePage() {
             <p className={styles.authSubtitle}>Invite couldn&apos;t be accepted</p>
             <p className={styles.formError}>{error}</p>
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
-              <Button onClick={() => navigate("/login")}>Go to log in</Button>
+              <Button onClick={() => navigate("/login", { state: { from: here } })}>
+                Go to log in
+              </Button>
               {status === "authenticated" && (
                 <Button
                   variant="secondary"
@@ -171,8 +174,11 @@ export function AcceptInvitePage() {
             </Button>
 
             <p className={styles.authFooter}>
-              Already have an account? <Link to="/login">Log in</Link> first, then
-              open the invite link again.
+              Already have an account?{" "}
+              <Link to="/login" state={{ from: here }}>
+                Log in
+              </Link>{" "}
+              and you will come straight back to this invite.
             </p>
           </form>
         )}
