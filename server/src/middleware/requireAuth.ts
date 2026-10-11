@@ -20,12 +20,12 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
 
     // Re-read on every request, so an access token minted before the account
     // was deleted stops working immediately rather than at its 15-minute TTL.
-    const exists = await UserModel.exists({ _id: userId, ...activeUser });
+    // Independent lookups, so they share one round trip instead of two.
+    const [exists, memberships] = await Promise.all([
+      UserModel.exists({ _id: userId, ...activeUser }),
+      OrgMembershipModel.find({ userId }).select("organizationId role").lean(),
+    ]);
     if (!exists) throw AppError.unauthenticated("Account no longer exists");
-
-    const memberships = await OrgMembershipModel.find({ userId })
-      .select("organizationId role")
-      .lean();
 
     const auth: AuthContext = {
       userId,

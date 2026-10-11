@@ -229,51 +229,57 @@ export async function moveCard(input: {
   columnId: string;
   order: number;
 }) {
-  const board = await loadBoard(input.boardId);
+  const [board, card] = await Promise.all([
+    loadBoard(input.boardId),
+    findCardOnBoard(input.boardId, input.cardId),
+  ]);
   assertColumnExists(board.columns, input.columnId);
-  const card = await findCardOnBoard(input.boardId, input.cardId);
 
   const fromColumn = card.columnId;
   const toColumn = input.columnId;
 
-  const targetSiblings = (
-    await CardModel.find({
+  const [targetRows, sourceRows] = await Promise.all([
+    CardModel.find({
       boardId: input.boardId,
       columnId: toColumn,
       _id: { $ne: card._id },
     })
       .sort({ order: 1 })
-      .lean()
-  ).map((c) => c._id);
+      .select("_id")
+      .lean(),
+    fromColumn === toColumn
+      ? Promise.resolve([])
+      : CardModel.find({
+          boardId: input.boardId,
+          columnId: fromColumn,
+          _id: { $ne: card._id },
+        })
+          .sort({ order: 1 })
+          .select("_id")
+          .lean(),
+  ]);
 
-  const insertAt = Math.max(0, Math.min(input.order, targetSiblings.length));
-  targetSiblings.splice(insertAt, 0, card._id);
+  const target = targetRows.map((c) => c._id);
+  const insertAt = Math.max(0, Math.min(input.order, target.length));
+  target.splice(insertAt, 0, card._id);
+
+  // One write for the whole move. A statement per sibling cost a round trip
+  // each, so a move in a long column was the slowest thing a user could do.
+  await CardModel.bulkWrite([
+    ...target.map((id, i) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { columnId: toColumn, order: i } },
+      },
+    })),
+    ...sourceRows.map((c, i) => ({
+      updateOne: { filter: { _id: c._id }, update: { $set: { order: i } } },
+    })),
+  ]);
 
   card.columnId = toColumn;
   card.order = insertAt;
-  await card.save();
-
-  await Promise.all(
-    targetSiblings.map((id, i) =>
-      CardModel.updateOne({ _id: id }, { $set: { order: i } }),
-    ),
-  );
-
-  if (fromColumn !== toColumn) {
-    const sourceSiblings = await CardModel.find({
-      boardId: input.boardId,
-      columnId: fromColumn,
-    })
-      .sort({ order: 1 })
-      .lean();
-    await Promise.all(
-      sourceSiblings.map((c, i) =>
-        CardModel.updateOne({ _id: c._id }, { $set: { order: i } }),
-      ),
-    );
-  }
-
-  return (await CardModel.findById(card._id))!;
+  return card;
 }
 
 export async function deleteCard(boardId: string, cardId: string) {

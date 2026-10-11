@@ -17,9 +17,14 @@ function build({ roles = [], allowOrgManagerOverride = false }: Options): Reques
       const projectId = req.params.projectId ?? req.resolvedProjectId;
       if (!projectId || !isValidObjectId(projectId)) throw AppError.notFound();
 
-      const project = await ProjectModel.findById(projectId)
-        .select("organizationId")
-        .lean();
+      // Neither lookup needs the other's answer; the project membership is
+      // only trusted below, after the org check has passed.
+      const [project, pm] = await Promise.all([
+        ProjectModel.findById(projectId).select("organizationId").lean(),
+        ProjectMembershipModel.findOne({ projectId, userId: req.auth.userId })
+          .select("role")
+          .lean(),
+      ]);
       if (!project) throw AppError.notFound();
 
       const orgId = String(project.organizationId);
@@ -31,12 +36,6 @@ function build({ roles = [], allowOrgManagerOverride = false }: Options): Reques
       const isOrgManager =
         orgMembership.role === "owner" || orgMembership.role === "admin";
 
-      const pm = await ProjectMembershipModel.findOne({
-        projectId,
-        userId: req.auth.userId,
-      })
-        .select("role")
-        .lean();
       const projectRole: ProjectRole | null = pm?.role ?? null;
 
       const roleAllowed =
