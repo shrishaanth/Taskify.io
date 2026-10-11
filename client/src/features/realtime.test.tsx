@@ -18,6 +18,7 @@ class FakeSocket {
   off(event: string, cb: (p: unknown) => void) {
     this.handlers.get(event)?.delete(cb);
   }
+  connected = false;
   emit(event: string, payload?: unknown) {
     this.emitted.push({ event, payload });
   }
@@ -168,9 +169,41 @@ describe("useBoardRealtime", () => {
 
     fake.server("card:moved", { id: "c1", columnId: "col-2", order: 3 });
 
+    // Clamped to the end of the (empty) target column, as the server does.
     expect(qc.getQueryData(["cards", "b1"])).toEqual([
-      expect.objectContaining({ id: "c1", columnId: "col-2", order: 3 }),
+      expect.objectContaining({ id: "c1", columnId: "col-2", order: 0 }),
     ]);
+  });
+
+  it("renumbers the siblings so a remote move lands in the right slot", () => {
+    const qc = new QueryClient();
+    seed(qc, [
+      { id: "a", title: "A", columnId: "col-1", order: 0 },
+      { id: "b", title: "B", columnId: "col-1", order: 1 },
+      { id: "c", title: "C", columnId: "col-1", order: 2 },
+    ]);
+    renderHook(() => useBoardRealtime("p1", "b1"), { wrapper: wrapper(qc) });
+
+    fake.server("card:moved", { id: "c", columnId: "col-1", order: 0 });
+
+    const cards = qc.getQueryData(["cards", "b1"]) as { id: string; order: number }[];
+    const order = [...cards].sort((x, y) => x.order - y.order).map((x) => x.id);
+    expect(order).toEqual(["c", "a", "b"]);
+    expect(new Set(cards.map((x) => x.order)).size).toBe(3);
+  });
+
+  it("re-reads the board after a reconnect but not on the first connect", () => {
+    const qc = new QueryClient();
+    seed(qc, []);
+    const spy = vi.spyOn(qc, "invalidateQueries");
+    renderHook(() => useBoardRealtime("p1", "b1"), { wrapper: wrapper(qc) });
+
+    fake.server("connect");
+    expect(spy).not.toHaveBeenCalledWith({ queryKey: ["cards", "b1"] });
+
+    fake.server("connect");
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["cards", "b1"] });
+    expect(fake.emitted.filter((e) => e.event === "subscribe:board")).toHaveLength(3);
   });
 
   it("drops the card from the cache on card:deleted", () => {
